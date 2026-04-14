@@ -10,7 +10,23 @@ module.exports = {
 
 	// tailwind themes - light dark ect
 	theme: {
-		extend: {},
+		extend: {
+			colors: {
+				// primary color set
+				primary: {
+					500: "#22c55e", // Bright green (success, active tab, buttons)
+					600: "#16a34a",
+				},
+				// Dark gym background colors
+				zinc: {
+					900: "#18181b", // Main background
+					800: "#27272a", // Cards / surfaces
+					700: "#3f3f46",
+				},
+				accent: "#eab308", // Yellow for streaks / achievements
+				muted: "#a1a1aa", // Secondary text
+			},
+		},
 	},
 
 	// tailwind plugins for typography forms ect later
