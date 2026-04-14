@@ -1,0 +1,75 @@
+import { Ionicons } from "@expo/vector-icons";
+import { Tabs } from "expo-router";
+
+// here we will set our tab layout,
+export default function TabLayout() {
+	return (
+		<Tabs
+			screenOptions={{
+				// We must set this again because Tabs is a separate navigator
+				headerShown: false,
+
+				// Icon-only tabs
+				tabBarShowLabel: false,
+
+				// Tab bar styling - using our theme colors
+				tabBarStyle: {
+					backgroundColor: "#18181b", // or use "bg-zinc-900" once we wrap properly
+					borderTopColor: "#27272a",
+					height: 60,
+				},
+				tabBarActiveTintColor: "#22c55e", // or "text-primary-500"
+				tabBarInactiveTintColor: "#a1a1aa",
+			}}
+		>
+			<Tabs.Screen
+				name="dashboard"
+				options={{
+					title: "Dashboard",
+					tabBarIcon: ({ color, size }) => (
+						<Ionicons name="home-outline" size={size} color={color} />
+					),
+				}}
+			/>
+			<Tabs.Screen
+				name="log-workout"
+				options={{
+					title: "Log Workout",
+					tabBarIcon: ({ color, size }) => (
+						<Ionicons name="add-circle-outline" size={size} color={color} />
+					),
+				}}
+			/>
+
+			<Tabs.Screen
+				name="history"
+				options={{
+					title: "History",
+					tabBarIcon: ({ color, size }) => (
+						<Ionicons name="calendar-outline" size={size} color={color} />
+					),
+				}}
+			/>
+
+			<Tabs.Screen
+				name="library"
+				options={{
+					title: "Library",
+					tabBarIcon: ({ color, size }) => (
+						<Ionicons name="barbell-outline" size={size} color={color} />
+					),
+				}}
+			/>
+
+			<Tabs.Screen
+				name="profile"
+				options={{
+					title: "Profile",
+					tabBarIcon: ({ color, size }) => (
+						<Ionicons name="person-outline" size={size} color={color} />
+					),
+				}}
+			/>
+		</Tabs>
+	);
+}
