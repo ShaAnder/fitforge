@@ -12,13 +12,13 @@ export default function TabLayout() {
 				// Icon-only tabs
 				tabBarShowLabel: false,
 
-				// Tab bar styling - using our theme colors
+				// Tab bar styling
 				tabBarStyle: {
-					backgroundColor: "#18181b", // or use "bg-zinc-900" once we wrap properly
+					backgroundColor: "#18181b",
 					borderTopColor: "#27272a",
 					height: 60,
 				},
-				tabBarActiveTintColor: "#22c55e", // or "text-primary-500"
+				tabBarActiveTintColor: "#22c55e",
 				tabBarInactiveTintColor: "#a1a1aa",
 			}}
 		>
