@@ -16,7 +16,7 @@ export default function TabLayout() {
 				tabBarStyle: {
 					backgroundColor: "#18181b",
 					borderTopColor: "#27272a",
-					height: 60,
+					height: 64,
 				},
 				tabBarActiveTintColor: "#22c55e",
 				tabBarInactiveTintColor: "#a1a1aa",
@@ -27,7 +27,16 @@ export default function TabLayout() {
 				options={{
 					title: "Dashboard",
 					tabBarIcon: ({ color, size }) => (
-						<Ionicons name="home-outline" size={size} color={color} />
+						<Ionicons name="home-outline" size={size + 2} color={color} />
+					),
+				}}
+			/>
+			<Tabs.Screen
+				name="library"
+				options={{
+					title: "Library",
+					tabBarIcon: ({ color, size }) => (
+						<Ionicons name="barbell-outline" size={size + 2} color={color} />
 					),
 				}}
 			/>
@@ -36,37 +45,29 @@ export default function TabLayout() {
 				options={{
 					title: "Log Workout",
 					tabBarIcon: ({ color, size }) => (
-						<Ionicons name="add-circle-outline" size={size} color={color} />
+						<Ionicons
+							name="add-circle-outline"
+							size={size + 20}
+							color={color}
+						/>
 					),
 				}}
 			/>
-
 			<Tabs.Screen
 				name="history"
 				options={{
 					title: "History",
 					tabBarIcon: ({ color, size }) => (
-						<Ionicons name="calendar-outline" size={size} color={color} />
+						<Ionicons name="calendar-outline" size={size + 2} color={color} />
 					),
 				}}
 			/>
-
-			<Tabs.Screen
-				name="library"
-				options={{
-					title: "Library",
-					tabBarIcon: ({ color, size }) => (
-						<Ionicons name="barbell-outline" size={size} color={color} />
-					),
-				}}
-			/>
-
 			<Tabs.Screen
 				name="profile"
 				options={{
 					title: "Profile",
 					tabBarIcon: ({ color, size }) => (
-						<Ionicons name="person-outline" size={size} color={color} />
+						<Ionicons name="person-outline" size={size + 2} color={color} />
 					),
 				}}
 			/>
