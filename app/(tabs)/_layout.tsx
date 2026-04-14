@@ -16,7 +16,7 @@ export default function TabLayout() {
 				tabBarStyle: {
 					backgroundColor: "#18181b",
 					borderTopColor: "#27272a",
-					height: 64,
+					height: 70,
 				},
 				tabBarActiveTintColor: "#22c55e",
 				tabBarInactiveTintColor: "#a1a1aa",
@@ -45,11 +45,7 @@ export default function TabLayout() {
 				options={{
 					title: "Log Workout",
 					tabBarIcon: ({ color, size }) => (
-						<Ionicons
-							name="add-circle-outline"
-							size={size + 20}
-							color={color}
-						/>
+						<Ionicons name="add-circle-outline" size={size + 2} color={color} />
 					),
 				}}
 			/>
@@ -69,6 +65,13 @@ export default function TabLayout() {
 					tabBarIcon: ({ color, size }) => (
 						<Ionicons name="person-outline" size={size + 2} color={color} />
 					),
+				}}
+			/>
+			{/* Hidden Redirect - This prevents the 6th tab from showing */}
+			<Tabs.Screen
+				name="index"
+				options={{
+					href: null,
 				}}
 			/>
 		</Tabs>
