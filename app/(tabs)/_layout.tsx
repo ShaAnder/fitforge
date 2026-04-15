@@ -1,23 +1,22 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
+import { View } from "react-native";
 
-// here we will set our tab layout,
 export default function TabLayout() {
 	return (
 		<Tabs
 			screenOptions={{
-				// We must set this again because Tabs is a separate navigator
 				headerShown: false,
-
-				// Icon-only tabs
 				tabBarShowLabel: false,
 
-				// Tab bar styling
 				tabBarStyle: {
 					backgroundColor: "#18181b",
 					borderTopColor: "#27272a",
 					height: 70,
+					paddingBottom: 8,
+					paddingTop: 8,
 				},
+
 				tabBarActiveTintColor: "#22c55e",
 				tabBarInactiveTintColor: "#a1a1aa",
 			}}
@@ -26,54 +25,57 @@ export default function TabLayout() {
 				name="dashboard"
 				options={{
 					title: "Dashboard",
-					tabBarIcon: ({ color, size }) => (
-						<Ionicons name="home-outline" size={size + 2} color={color} />
+					tabBarIcon: ({ color }) => (
+						<Ionicons name="home-outline" size={28} color={color} />
 					),
 				}}
 			/>
+
 			<Tabs.Screen
 				name="library"
 				options={{
 					title: "Library",
-					tabBarIcon: ({ color, size }) => (
-						<Ionicons name="barbell-outline" size={size + 2} color={color} />
+					tabBarIcon: ({ color }) => (
+						<Ionicons name="barbell-outline" size={28} color={color} />
 					),
 				}}
 			/>
+
+			{/* Log Workout - Large Floating Button */}
 			<Tabs.Screen
 				name="log-workout"
 				options={{
-					title: "Log Workout",
-					tabBarIcon: ({ color, size }) => (
-						<Ionicons name="add-circle-outline" size={size + 2} color={color} />
+					tabBarIcon: ({ color }) => (
+						<View className="-mt-8 items-center">
+							<View className="bg-[#18181b] w-20 h-20 rounded-full items-center justify-center -mb-6">
+								<Ionicons name="add-circle-outline" size={52} color={color} />
+							</View>
+						</View>
 					),
 				}}
 			/>
+
 			<Tabs.Screen
 				name="history"
 				options={{
 					title: "History",
-					tabBarIcon: ({ color, size }) => (
-						<Ionicons name="calendar-outline" size={size + 2} color={color} />
+					tabBarIcon: ({ color }) => (
+						<Ionicons name="calendar-outline" size={28} color={color} />
 					),
 				}}
 			/>
+
 			<Tabs.Screen
 				name="profile"
 				options={{
 					title: "Profile",
-					tabBarIcon: ({ color, size }) => (
-						<Ionicons name="person-outline" size={size + 2} color={color} />
+					tabBarIcon: ({ color }) => (
+						<Ionicons name="person-outline" size={28} color={color} />
 					),
 				}}
 			/>
-			{/* Hidden Redirect - This prevents the 6th tab from showing */}
-			<Tabs.Screen
-				name="index"
-				options={{
-					href: null,
-				}}
-			/>
+
+			<Tabs.Screen name="index" options={{ href: null }} />
 		</Tabs>
 	);
 }
