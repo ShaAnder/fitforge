@@ -7,6 +7,7 @@ import StreakCard from "@/components/common/StreakCard";
 import Button from "@/components/ui/Button";
 
 export default function Dashboard() {
+	// Mock data for demonstration
 	const currentStreak = 12;
 	const daysTrainedThisMonth = 19;
 	const daysInMonth = 31;
@@ -21,10 +22,13 @@ export default function Dashboard() {
 				contentContainerStyle={{ paddingTop: 48, paddingBottom: 90 }}
 				showsVerticalScrollIndicator={false}
 			>
+				{/* Header Section */}
 				<Header subtitle="Welcome back, Alex" />
 
+				{/* Current Streak Card */}
 				<StreakCard streak={currentStreak} />
 
+				{/* This Month Section */}
 				<View className="mb-10 mt-8">
 					<Text className="text-zinc-400 text-lg font-semibold mb-5">
 						This Month
@@ -41,10 +45,13 @@ export default function Dashboard() {
 					</View>
 				</View>
 
+				{/* Weekly Volume Section */}
 				<View className="mb-10">
 					<Text className="text-zinc-400 text-lg font-semibold mb-4">
 						Weekly Volume
 					</Text>
+
+					{/* Placeholder for Weekly Volume Chart */}
 					<View className="bg-zinc-900 rounded-3xl h-80 border border-zinc-800 items-center justify-center">
 						<Text className="text-zinc-500 text-center">
 							Weekly Volume Chart{"\n"}
@@ -55,6 +62,7 @@ export default function Dashboard() {
 					</View>
 				</View>
 
+				{/* Quick Action Button */}
 				<Button
 					title="QUICK LOG WORKOUT"
 					icon="add-circle"
