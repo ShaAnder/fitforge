@@ -2,7 +2,8 @@
 	"extends": "expo/tsconfig.base",
 	"compilerOptions": {
 		"strict": true,
-		"baseUrl": ".",
+		// set the paths we set our @as our base path then we set some
+		// additional path aliasing to prevent paths becoming too long
 		"paths": {
 			"@/*": ["./*"],
 			"@/components/*": ["./components/*"],
@@ -15,11 +16,13 @@
 		// Silence the baseUrl deprecation warning
 		"ignoreDeprecations": "6.0"
 	},
+	// include a list of files for us to type check / compile
 	"include": [
 		"**/*.ts",
 		"**/*.tsx",
 		".expo/types/**/*.ts",
 		"expo-env.d.ts",
+		// tailwind for react native
 		"nativewind-env.d.ts"
 	]
 }

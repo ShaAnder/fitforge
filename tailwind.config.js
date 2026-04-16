@@ -8,23 +8,28 @@ module.exports = {
 	// tells tailwind to use nativewind RN compatible preset
 	presets: [require("nativewind/preset")],
 
-	// tailwind themes - light dark ect
+	// tailwind themes - light dark ect, we're setting customs here so we can use them in our code base, without them tailwind falls back to defaults.
 	theme: {
 		extend: {
 			colors: {
 				// primary color set
 				primary: {
-					500: "#22c55e", // Bright green (success, active tab, buttons)
+					// Bright green (success)
+					500: "#22c55e",
 					600: "#16a34a",
 				},
 				// Dark gym background colors
 				zinc: {
-					900: "#18181b", // Main background
-					800: "#27272a", // Cards / surfaces
+					// Main background
+					900: "#18181b",
+					// Cards / surfaces
+					800: "#27272a",
 					700: "#3f3f46",
 				},
-				accent: "#eab308", // Yellow for streaks / achievements
-				muted: "#a1a1aa", // Secondary text
+				// Yellow for streaks / achievements
+				accent: "#eab308",
+				// Secondary text
+				muted: "#a1a1aa",
 			},
 		},
 	},

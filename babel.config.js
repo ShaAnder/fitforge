@@ -1,6 +1,3 @@
-// babel.config.js
-// NativeWind v4 needs this preset to convert className="..." into actual React Native styles. Without it, Tailwind classes are ignored.
-
 module.exports = function (api) {
 	api.cache(true);
 	return {
@@ -10,18 +7,21 @@ module.exports = function (api) {
 			"nativewind/babel",
 		],
 		plugins: [
+			// module-resolver plugin tells Metro (Expo's bundler) how to resolve our
+			// nice @/ aliases (from tsconfig) into real file paths at build time.
+			// TypeScript only handles type-checking, Metro needs this for actual bundling.
 			[
 				"module-resolver",
 				{
 					root: ["./"],
 					alias: {
-						"@": "./",
-						"@/components": "./components",
-						"@/constants": "./constants",
-						"@/types": "./types",
-						"@/hooks": "./hooks",
-						"@/lib": "./lib",
-						"@/utils": "./utils",
+						"@/*": "./*",
+						"@/components/*": "./components/*",
+						"@/constants/*": "./constants/*",
+						"@/types/*": "./types/*",
+						"@/hooks/*": "./hooks/*",
+						"@/lib/*": "./lib/*",
+						"@/utils/*": "./utils/*",
 					},
 				},
 			],

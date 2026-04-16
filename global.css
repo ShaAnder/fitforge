@@ -1,3 +1,6 @@
-@tailwind base; /* resets + base styles */
-@tailwind components; /* any custom component classes we create later */
-@tailwind utilities; /* all the utility classes like bg-zinc-950, text-white, etc. */
+/* resets + base styles */
+@tailwind base;
+/* any custom component classes we create later */
+@tailwind components;
+/* all the utility classes like bg-zinc-950, text-white, etc. */
+@tailwind utilities;
