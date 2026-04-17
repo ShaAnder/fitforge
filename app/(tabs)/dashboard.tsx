@@ -19,7 +19,7 @@ export default function Dashboard() {
 
 			<ScrollView
 				className="flex-1 px-5"
-				contentContainerStyle={{ paddingTop: 48, paddingBottom: 90 }}
+				contentContainerStyle={{ paddingTop: 40, paddingBottom: 100 }}
 				showsVerticalScrollIndicator={false}
 			>
 				{/* Header Section */}
@@ -29,10 +29,12 @@ export default function Dashboard() {
 				<StreakCard streak={currentStreak} />
 
 				{/* This Month Section */}
-				<View className="mb-10 mt-8">
-					<Text className="text-zinc-400 text-lg font-semibold mb-5">
-						This Month
-					</Text>
+				<View className="mb-10 mt-10">
+					<View className="flex-row justify-between items-baseline mb-5">
+						<Text className="text-zinc-400 text-lg font-semibold">
+							This Month
+						</Text>
+					</View>
 
 					<View className="flex-row gap-4">
 						<StatCard
@@ -47,7 +49,7 @@ export default function Dashboard() {
 
 				{/* Weekly Volume Section */}
 				<View className="mb-10">
-					<Text className="text-zinc-400 text-lg font-semibold mb-4">
+					<Text className="text-zinc-400 text-lg font-semibold mb-5">
 						Weekly Volume
 					</Text>
 
@@ -62,10 +64,12 @@ export default function Dashboard() {
 					</View>
 				</View>
 
-				{/* Quick Action Button */}
+				{/* Quick Log Button - Prominent CTA */}
 				<Button
 					title="QUICK LOG WORKOUT"
 					icon="add-circle"
+					variant="primary"
+					size="large"
 					onPress={() => console.log("Navigate to Log Workout")}
 				/>
 			</ScrollView>
