@@ -30,7 +30,9 @@ export default function ProgressBar({
 
 	return (
 		<View
-			className={`h-${height} ${backgroundColor} rounded-full overflow-hidden ${className}`}
+			className={`${backgroundColor} rounded-full overflow-hidden ${className}`}
+			// we use style for dynamic height instead of className to prevent it hardlocking
+			style={{ height }}
 		>
 			<View
 				className={`${color} h-full rounded-full transition-all`}

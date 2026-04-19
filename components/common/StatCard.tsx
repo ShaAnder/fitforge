@@ -29,14 +29,14 @@ export default function StatCard({
 	progress,
 }: StatCardProps) {
 	return (
-		<Card className="p-6 flex-1">
+		<Card className="p-6 flex-1 ">
 			{/* Stat Title */}
-			<Text className="text-emerald-400 text-xs font-medium tracking-widest">
+			<Text className="text-emerald-400 text-s font-medium tracking-widest text-center">
 				{title}
 			</Text>
 
 			{/* Main Value + Optional Subtitle */}
-			<Text className="text-5xl font-bold text-white mt-3">
+			<Text className="text-5xl font-bold text-white mt-3 text-center">
 				{value}
 				{subtitle && (
 					<Text className="text-2xl text-zinc-500 font-normal">
@@ -48,7 +48,7 @@ export default function StatCard({
 
 			{/* Progress Bar - only rendered when progress is provided */}
 			{progress !== undefined && (
-				<ProgressBar progress={progress} height={8} className="mt-6" />
+				<ProgressBar progress={progress} height={1} className="mt-6" />
 			)}
 		</Card>
 	);

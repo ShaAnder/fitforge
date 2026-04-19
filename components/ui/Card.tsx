@@ -14,7 +14,7 @@ interface CardProps extends ViewProps {
  *
  * @param children   - Content to display inside the card
  * @param variant    - Visual elevation style ("default" or "elevated")
- * @param className  - Additional Tailwind/NativeWind classes for customization
+   - Additional Tailwind/NativeWind classes for customization
  * @param ...props   - All other props passed down to the View component
  */
 export default function Card({
