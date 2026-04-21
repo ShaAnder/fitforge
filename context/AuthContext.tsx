@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 import { Session, User } from "@supabase/supabase-js";
 import {
 	createContext,
@@ -39,25 +39,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	const [session, setSession] = useState<Session | null>(null);
 	const [loading, setLoading] = useState(true);
 
+	const supabase = getSupabase();
+
 	// Run when app starts get the current session if it exists (user logged in)
 	useEffect(() => {
-		//1. get session
-		supabase.auth.getSession().then(({ data: { session } }) => {
-			setSession(session);
-			setUser(session?.user ?? null);
-			setLoading(false);
-		});
+		// 1. Get initial session
+		supabase.auth
+			.getSession()
+			.then((result: { data: { session: Session | null } }) => {
+				const { session } = result.data;
+				setSession(session);
+				setUser(session?.user ?? null);
+				setLoading(false);
+			});
 
-		//2. Begin listening for any auth changes (login, logout, refresh ect)
+		// 2. Listen for auth state changes
 		const {
 			data: { subscription },
-		} = supabase.auth.onAuthStateChange((_event, session) => {
-			setSession(session);
-			setUser(session?.user ?? null);
-			setLoading(false);
-		});
+		} = supabase.auth.onAuthStateChange(
+			(event: any, session: Session | null) => {
+				setSession(session);
+				setUser(session?.user ?? null);
+				setLoading(false);
+			},
+		);
 
-		// cleanup / unsubscribe when component unmounts
+		// Cleanup: unsubscribe when component unmounts
 		return () => subscription.unsubscribe();
 	}, []);
 
