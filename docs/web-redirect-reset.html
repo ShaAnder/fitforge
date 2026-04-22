@@ -3,119 +3,156 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Redirecting… | FitForge</title>
+		<title>Redirecting to FitForge...</title>
+
+		<!-- FitForge Dark Gym Theme -->
 		<style>
+			:root {
+				--bg: #18181b;
+				--surface: #27272a;
+				--accent: #22c55e;
+				--text: #ffffff;
+				--text-muted: #a1a1aa;
+			}
+
 			body {
-				background: #18181b;
-				color: #fff;
-				font-family: "Inter", "Segoe UI", Arial, sans-serif;
+				margin: 0;
+				padding: 0;
+				background: var(--bg);
+				color: var(--text);
+				font-family:
+					-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 				display: flex;
-				flex-direction: column;
 				align-items: center;
 				justify-content: center;
 				min-height: 100vh;
-				margin: 0;
-			}
-			.container {
-				background: #27272a;
-				border-radius: 24px;
-				padding: 2.5rem 2rem;
-				box-shadow: 0 4px 32px rgba(0, 0, 0, 0.18);
-				display: flex;
-				flex-direction: column;
-				align-items: center;
-				max-width: 90vw;
-			}
-			.logo {
-				width: 64px;
-				height: 64px;
-				margin-bottom: 1.5rem;
-			}
-			h1 {
-				font-size: 2rem;
-				font-weight: 700;
-				margin: 0 0 0.5rem 0;
-				letter-spacing: -1px;
-				color: #22c55e;
-			}
-			p {
-				color: #a1a1aa;
-				font-size: 1.1rem;
-				margin-bottom: 1.5rem;
 				text-align: center;
 			}
-			.spinner {
-				border: 4px solid #27272a;
-				border-top: 4px solid #22c55e;
-				border-radius: 50%;
-				width: 36px;
-				height: 36px;
-				animation: spin 1s linear infinite;
-				margin-bottom: 1rem;
+
+			.container {
+				background: var(--surface);
+				border-radius: 24px;
+				padding: 3rem 2.5rem;
+				max-width: 420px;
+				box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+				border: 1px solid rgba(34, 197, 94, 0.15);
 			}
+
+			.logo {
+				width: 72px;
+				height: 72px;
+				margin-bottom: 1.5rem;
+				filter: drop-shadow(0 4px 12px rgba(34, 197, 94, 0.4));
+			}
+
+			h1 {
+				font-size: 2.1rem;
+				font-weight: 700;
+				margin: 0 0 0.75rem 0;
+				letter-spacing: -0.04em;
+				color: var(--accent);
+			}
+
+			p {
+				color: var(--text-muted);
+				font-size: 1.05rem;
+				line-height: 1.5;
+				margin-bottom: 2rem;
+			}
+
+			.spinner {
+				width: 42px;
+				height: 42px;
+				border: 5px solid rgba(34, 197, 94, 0.2);
+				border-top-color: var(--accent);
+				border-radius: 50%;
+				animation: spin 1s linear infinite;
+				margin: 1.5rem auto;
+			}
+
 			@keyframes spin {
-				0% {
-					transform: rotate(0deg);
-				}
-				100% {
+				to {
 					transform: rotate(360deg);
 				}
 			}
+
+			.manual-btn {
+				background: var(--accent);
+				color: #000;
+				border: none;
+				padding: 12px 28px;
+				border-radius: 9999px;
+				font-weight: 600;
+				font-size: 1rem;
+				cursor: pointer;
+				margin-top: 1rem;
+				transition: all 0.2s;
+			}
+
+			.manual-btn:hover {
+				background: #16a34a;
+				transform: translateY(-1px);
+			}
+
 			.error {
 				color: #ef4444;
-				font-weight: 600;
-				margin-top: 1rem;
+				margin-top: 1.5rem;
+				font-size: 0.95rem;
 			}
 		</style>
+	</head>
+	<body>
+		<div class="container">
+			<!-- Logo / Branding -->
+			<h1>FitForge</h1>
+
+			<!-- Spinner -->
+			<div class="spinner"></div>
+
+			<p>
+				Redirecting you back to the FitForge app...<br />
+				This should only take a moment.
+			</p>
+
+			<!-- Manual redirect button (shown only if auto-redirect fails) -->
+			<button id="manual-redirect" class="manual-btn" style="display: none">
+				Open FitForge App Manually
+			</button>
+
+			<div id="error" class="error"></div>
+		</div>
+
 		<script>
 			window.onload = function () {
 				const hash = window.location.hash.substring(1);
 				const params = new URLSearchParams(hash);
+
 				const access_token = params.get("access_token");
 				const refresh_token = params.get("refresh_token");
+
 				const manualBtn = document.getElementById("manual-redirect");
+				const errorDiv = document.getElementById("error");
+
 				if (access_token && refresh_token) {
+					// Auto redirect using your custom scheme
 					window.location.href = `fitforge://reset-password?access_token=${encodeURIComponent(access_token)}&refresh_token=${encodeURIComponent(refresh_token)}`;
 				} else {
-					document.getElementById("error").textContent =
-						"Missing tokens in URL.";
-					manualBtn.style.display = "inline-block";
+					// Show error and manual button if tokens are missing
+					errorDiv.textContent =
+						"Missing reset tokens. Please try again or contact support.";
+					manualBtn.style.display = "block";
+
 					manualBtn.onclick = function () {
 						if (access_token && refresh_token) {
 							window.location.href = `fitforge://reset-password?access_token=${encodeURIComponent(access_token)}&refresh_token=${encodeURIComponent(refresh_token)}`;
 						} else {
-							alert("Tokens are missing from the URL.");
+							alert(
+								"Tokens are missing from the URL. Please request a new reset link.",
+							);
 						}
 					};
 				}
 			};
 		</script>
-	</head>
-	<body>
-		<div class="container">
-			<h1>Redirecting…</h1>
-			<div class="spinner"></div>
-			<p>
-				Sending you back to the FitForge app.<br />If nothing happens, you can
-				close this page.
-			</p>
-			<button
-				id="manual-redirect"
-				style="
-					display: none;
-					margin-top: 1rem;
-					padding: 0.5rem 1.5rem;
-					border-radius: 8px;
-					background: #22c55e;
-					color: #fff;
-					font-weight: 600;
-					border: none;
-					cursor: pointer;
-				"
-			>
-				Redirect Manually
-			</button>
-			<div id="error" class="error"></div>
-		</div>
 	</body>
 </html>

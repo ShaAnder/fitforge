@@ -4,18 +4,25 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
 
+/**
+ * ResetPassword Screen - Allows users to set a new password after clicking the reset link in email.
+ *
+ * This screen is reached via deep link from Supabase's password reset email.
+ */
 export default function ResetPassword() {
+	// state for the passwsord reset
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
 	const [loading, setLoading] = useState(false);
 
+	// set our vars
 	const supabase = getSupabase();
-
 	const router = useRouter();
 
-	// Supabase passes these in the deep link
+	// Supabase passes these tokens in the deep link URL
 	const { access_token, refresh_token } = useLocalSearchParams();
 
+	//check if password or confirm password and if passwords match and if longer than 6 chars
 	const handleReset = async () => {
 		if (!password || !confirmPassword) {
 			Alert.alert("Error", "Please fill both password fields");
@@ -35,21 +42,18 @@ export default function ResetPassword() {
 		setLoading(true);
 
 		try {
-			// Set the session from the deep link tokens
+			// Set the session using tokens from the deep link
 			if (access_token && refresh_token) {
-				console.log("access_token:", access_token);
-				console.log("refresh_token:", refresh_token);
-				const { data: sessionData, error: sessionError } =
-					await supabase.auth.setSession({
-						access_token: access_token as string,
-						refresh_token: refresh_token as string,
-					});
-				console.log("setSession result:", sessionData, sessionError);
+				const { error: sessionError } = await supabase.auth.setSession({
+					access_token: access_token as string,
+					refresh_token: refresh_token as string,
+				});
 				if (sessionError) throw sessionError;
 			} else {
 				throw new Error("Missing access or refresh token.");
 			}
 
+			// Update the user's password and grab error response for feedback
 			const { error } = await supabase.auth.updateUser({
 				password: password,
 			});
