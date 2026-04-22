@@ -69,14 +69,24 @@
 		</style>
 		<script>
 			window.onload = function () {
-				const params = new URLSearchParams(window.location.search);
+				const hash = window.location.hash.substring(1);
+				const params = new URLSearchParams(hash);
 				const access_token = params.get("access_token");
 				const refresh_token = params.get("refresh_token");
+				const manualBtn = document.getElementById("manual-redirect");
 				if (access_token && refresh_token) {
 					window.location.href = `fitforge://reset-password?access_token=${encodeURIComponent(access_token)}&refresh_token=${encodeURIComponent(refresh_token)}`;
 				} else {
 					document.getElementById("error").textContent =
 						"Missing tokens in URL.";
+					manualBtn.style.display = "inline-block";
+					manualBtn.onclick = function () {
+						if (access_token && refresh_token) {
+							window.location.href = `fitforge://reset-password?access_token=${encodeURIComponent(access_token)}&refresh_token=${encodeURIComponent(refresh_token)}`;
+						} else {
+							alert("Tokens are missing from the URL.");
+						}
+					};
 				}
 			};
 		</script>
@@ -89,6 +99,22 @@
 				Sending you back to the FitForge app.<br />If nothing happens, you can
 				close this page.
 			</p>
+			<button
+				id="manual-redirect"
+				style="
+					display: none;
+					margin-top: 1rem;
+					padding: 0.5rem 1.5rem;
+					border-radius: 8px;
+					background: #22c55e;
+					color: #fff;
+					font-weight: 600;
+					border: none;
+					cursor: pointer;
+				"
+			>
+				Redirect Manually
+			</button>
 			<div id="error" class="error"></div>
 		</div>
 	</body>
