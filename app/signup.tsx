@@ -1,14 +1,8 @@
+import AuthForm from "@/components/ui/AuthForm";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import {
-	ActivityIndicator,
-	Alert,
-	Text,
-	TextInput,
-	TouchableOpacity,
-	View,
-} from "react-native";
+import { Alert, Text, TouchableOpacity, View } from "react-native";
 
 /**
  * Signup Screen - Allows new users to create an account with email and password.
@@ -71,6 +65,31 @@ export default function Signup() {
 		}
 	};
 
+	// Authform signup fields
+	const signupFields = [
+		{
+			name: "email",
+			placeholder: "Email",
+			type: "email" as const,
+			value: email,
+			onChangeText: setEmail,
+		},
+		{
+			name: "password",
+			placeholder: "Password",
+			type: "password" as const,
+			value: password,
+			onChangeText: setPassword,
+		},
+		{
+			name: "confirmPassword",
+			placeholder: "Confirm Password",
+			type: "password" as const,
+			value: confirmPassword,
+			onChangeText: setConfirmPassword,
+		},
+	];
+
 	return (
 		<View className="flex-1 bg-zinc-950 px-6 justify-center">
 			<View className="mb-12 items-center">
@@ -80,51 +99,13 @@ export default function Signup() {
 				<Text className="text-zinc-400 text-lg mt-2">Create your account</Text>
 			</View>
 
-			{Boolean(error) && (
-				<Text className="text-red-500 text-center mb-6">{error}</Text>
-			)}
-
-			<TextInput
-				className="bg-zinc-900 text-white p-5 rounded-2xl mb-4 text-base"
-				placeholder="Email"
-				placeholderTextColor="#71717a"
-				value={email}
-				onChangeText={setEmail}
-				autoCapitalize="none"
-				keyboardType="email-address"
+			<AuthForm
+				fields={signupFields}
+				buttonText="Create Account"
+				onSubmit={handleSignup}
+				loading={loading}
+				error={error}
 			/>
-
-			<TextInput
-				className="bg-zinc-900 text-white p-5 rounded-2xl mb-4 text-base"
-				placeholder="Password"
-				placeholderTextColor="#71717a"
-				value={password}
-				onChangeText={setPassword}
-				secureTextEntry
-			/>
-
-			<TextInput
-				className="bg-zinc-900 text-white p-5 rounded-2xl mb-8 text-base"
-				placeholder="Confirm Password"
-				placeholderTextColor="#71717a"
-				value={confirmPassword}
-				onChangeText={setConfirmPassword}
-				secureTextEntry
-			/>
-
-			<TouchableOpacity
-				onPress={handleSignup}
-				disabled={loading}
-				className="bg-emerald-500 py-5 rounded-3xl"
-			>
-				{loading ? (
-					<ActivityIndicator color="#000" />
-				) : (
-					<Text className="text-black font-semibold text-xl text-center">
-						Create Account
-					</Text>
-				)}
-			</TouchableOpacity>
 
 			<TouchableOpacity
 				onPress={() => router.replace("/login")}

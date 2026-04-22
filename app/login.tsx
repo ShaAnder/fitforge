@@ -1,13 +1,8 @@
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import {
-	ActivityIndicator,
-	Text,
-	TextInput,
-	TouchableOpacity,
-	View,
-} from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
+import AuthForm from "@/components/ui/AuthForm";
 
 /**
  * Login Screen - Allows existing users to sign in with email and password.
@@ -59,6 +54,24 @@ export default function Login() {
 		}
 	};
 
+	// Set our fields for the form
+	const loginFields = [
+		{
+			name: "email",
+			placeholder: "Email",
+			type: "email" as const,
+			value: email,
+			onChangeText: setEmail,
+		},
+		{
+			name: "password",
+			placeholder: "Password",
+			type: "password" as const,
+			value: password,
+			onChangeText: setPassword,
+		},
+	];
+
 	return (
 		<View className="flex-1 bg-zinc-950 px-6 justify-center">
 			<View className="mb-12 items-center">
@@ -68,42 +81,14 @@ export default function Login() {
 				<Text className="text-zinc-400 text-lg mt-2">Welcome back</Text>
 			</View>
 
-			{Boolean(error) && (
-				<Text className="text-red-500 text-center mb-6">{error}</Text>
-			)}
-
-			<TextInput
-				className="bg-zinc-900 text-white p-5 rounded-2xl mb-4 text-base"
-				placeholder="Email"
-				placeholderTextColor="#71717a"
-				value={email}
-				onChangeText={setEmail}
-				autoCapitalize="none"
-				keyboardType="email-address"
+			{/* Reusable AuthForm handles inputs, password toggle, button, error */}
+			<AuthForm
+				fields={loginFields}
+				buttonText="Log In"
+				onSubmit={handleLogin}
+				loading={loading}
+				error={error}
 			/>
-
-			<TextInput
-				className="bg-zinc-900 text-white p-5 rounded-2xl mb-8 text-base"
-				placeholder="Password"
-				placeholderTextColor="#71717a"
-				value={password}
-				onChangeText={setPassword}
-				secureTextEntry
-			/>
-
-			<TouchableOpacity
-				onPress={handleLogin}
-				disabled={loading}
-				className="bg-emerald-500 py-5 rounded-3xl"
-			>
-				{loading ? (
-					<ActivityIndicator color="#000" />
-				) : (
-					<Text className="text-black font-semibold text-xl text-center">
-						Log In
-					</Text>
-				)}
-			</TouchableOpacity>
 
 			<TouchableOpacity
 				onPress={() => router.replace("/signup")}

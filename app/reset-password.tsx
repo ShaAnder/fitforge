@@ -1,73 +1,90 @@
-// app/reset-password.tsx
+import AuthForm from "@/components/ui/AuthForm";
+import LoadingScreen from "@/components/ui/LoadingScreen";
 import { getSupabase } from "@/lib/supabase";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, Text, TouchableOpacity, View } from "react-native";
 
 /**
- * ResetPassword Screen - Allows users to set a new password after clicking the reset link in email.
+ * ResetPassword Screen - Clean version.
  *
- * This screen is reached via deep link from Supabase's password reset email.
+ * Flow:
+ *   1. Use temporary tokens to allow password update
+ *   2. Update password
+ *   3. Immediately sign out
+ *   4. Navigate to login screen
+ *   5. Let the global auth listener + protection logic handle the rest naturally
  */
 export default function ResetPassword() {
-	// state for the passwsord reset
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
-	const [loading, setLoading] = useState(false);
+	const [isProcessing, setIsProcessing] = useState(false);
 
-	// set our vars
 	const supabase = getSupabase();
 	const router = useRouter();
-
-	// Supabase passes these tokens in the deep link URL
 	const { access_token, refresh_token } = useLocalSearchParams();
 
-	//check if password or confirm password and if passwords match and if longer than 6 chars
 	const handleReset = async () => {
-		if (!password || !confirmPassword) {
-			Alert.alert("Error", "Please fill both password fields");
+		if (
+			!password ||
+			!confirmPassword ||
+			password !== confirmPassword ||
+			password.length < 6
+		) {
+			Alert.alert("Error", "Please check your passwords");
 			return;
 		}
 
-		if (password !== confirmPassword) {
-			Alert.alert("Error", "Passwords do not match");
-			return;
-		}
-
-		if (password.length < 6) {
-			Alert.alert("Error", "Password must be at least 6 characters");
-			return;
-		}
-
-		setLoading(true);
+		setIsProcessing(true);
 
 		try {
-			// Set the session using tokens from the deep link
 			if (access_token && refresh_token) {
-				const { error: sessionError } = await supabase.auth.setSession({
+				await supabase.auth.setSession({
 					access_token: access_token as string,
 					refresh_token: refresh_token as string,
 				});
-				if (sessionError) throw sessionError;
-			} else {
-				throw new Error("Missing access or refresh token.");
 			}
 
-			// Update the user's password and grab error response for feedback
-			const { error } = await supabase.auth.updateUser({
-				password: password,
-			});
-
+			// 2. Update the password
+			const { error } = await supabase.auth.updateUser({ password });
 			if (error) throw error;
 
-			Alert.alert("Success", "Your password has been reset successfully!");
+			// 3. Immediately sign out
+			await supabase.auth.signOut();
+
+			// 4. Navigate to
 			router.replace("/login");
+
+			Alert.alert(
+				"Password Reset Successful",
+				"Your password has been updated.\n\nPlease log in with your new password.",
+			);
 		} catch (error: any) {
 			Alert.alert("Error", error.message || "Failed to reset password");
 		} finally {
-			setLoading(false);
+			setIsProcessing(false);
 		}
 	};
+
+	if (isProcessing) {
+		return <LoadingScreen />;
+	}
+	const resetFields = [
+		{
+			name: "password",
+			placeholder: "New Password",
+			type: "password" as const,
+			value: password,
+			onChangeText: setPassword,
+		},
+		{
+			name: "confirmPassword",
+			placeholder: "Confirm New Password",
+			type: "password" as const,
+			value: confirmPassword,
+			onChangeText: setConfirmPassword,
+		},
+	];
 
 	return (
 		<View className="flex-1 bg-zinc-950 px-6 justify-center">
@@ -75,33 +92,12 @@ export default function ResetPassword() {
 				Reset Password
 			</Text>
 
-			<TextInput
-				className="bg-zinc-900 text-white p-5 rounded-2xl mb-4 text-base"
-				placeholder="New Password"
-				placeholderTextColor="#71717a"
-				value={password}
-				onChangeText={setPassword}
-				secureTextEntry
+			<AuthForm
+				fields={resetFields}
+				buttonText="Update Password"
+				onSubmit={handleReset}
+				loading={isProcessing}
 			/>
-
-			<TextInput
-				className="bg-zinc-900 text-white p-5 rounded-2xl mb-8 text-base"
-				placeholder="Confirm New Password"
-				placeholderTextColor="#71717a"
-				value={confirmPassword}
-				onChangeText={setConfirmPassword}
-				secureTextEntry
-			/>
-
-			<TouchableOpacity
-				onPress={handleReset}
-				disabled={loading}
-				className="bg-emerald-500 py-5 rounded-3xl"
-			>
-				<Text className="text-black font-semibold text-xl text-center">
-					{loading ? "Updating..." : "Update Password"}
-				</Text>
-			</TouchableOpacity>
 
 			<TouchableOpacity
 				onPress={() => router.replace("/login")}

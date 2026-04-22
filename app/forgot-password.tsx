@@ -1,7 +1,8 @@
+import AuthForm from "@/components/ui/AuthForm";
 import { getSupabase } from "@/lib/supabase";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, Text, TouchableOpacity, View } from "react-native";
 
 /**
  * ForgotPassword Screen - Allows users to request a password reset link.
@@ -47,31 +48,29 @@ export default function ForgotPassword() {
 		setLoading(false);
 	};
 
+	// Authform forgot fields
+	const forgotFields = [
+		{
+			name: "email",
+			placeholder: "Enter your email",
+			type: "email" as const,
+			value: email,
+			onChangeText: setEmail,
+		},
+	];
+
 	return (
 		<View className="flex-1 bg-zinc-950 px-6 justify-center">
 			<Text className="text-white text-4xl font-bold mb-8 text-center">
 				Forgot Password
 			</Text>
 
-			<TextInput
-				className="bg-zinc-900 text-white p-5 rounded-2xl mb-8 text-base"
-				placeholder="Enter your email"
-				placeholderTextColor="#71717a"
-				value={email}
-				onChangeText={setEmail}
-				autoCapitalize="none"
-				keyboardType="email-address"
+			<AuthForm
+				fields={forgotFields}
+				buttonText="Send Reset Link"
+				onSubmit={handleReset}
+				loading={loading}
 			/>
-
-			<TouchableOpacity
-				onPress={handleReset}
-				disabled={loading}
-				className="bg-emerald-500 py-5 rounded-3xl"
-			>
-				<Text className="text-black font-semibold text-xl text-center">
-					{loading ? "Sending..." : "Send Reset Link"}
-				</Text>
-			</TouchableOpacity>
 
 			<TouchableOpacity
 				onPress={() => router.replace("/login")}

@@ -1,8 +1,9 @@
+import LoadingScreen from "@/components/ui/LoadingScreen";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import "@/global.css";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
 import { View } from "react-native";
-import "../global.css";
 
 /**
  * RootLayoutNav - Inner navigation component that handles route protection.
@@ -30,6 +31,9 @@ function RootLayoutNav() {
 			segments[0] === "forgot-password" ||
 			segments[0] === "reset-password";
 
+		// If we're on reset-password, don't do any redirect logic
+		if (segments[0] === "reset-password") return;
+
 		if (!user && !inAuthGroup) {
 			// Not logged in → force to login
 			router.replace("/login");
@@ -39,6 +43,11 @@ function RootLayoutNav() {
 		}
 		// Re-run whenever user, loading, or route changes
 	}, [user, loading, segments]);
+
+	// Show branded loading screen while checking auth state
+	if (loading) {
+		return <LoadingScreen />;
+	}
 
 	return (
 		<Stack screenOptions={{ headerShown: false }}>
