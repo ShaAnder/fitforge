@@ -18,7 +18,7 @@ export default function ForgotPassword() {
 
 		setLoading(true);
 		const { error } = await supabase.auth.resetPasswordForEmail(email, {
-			redirectTo: "fitforge://reset-password",
+			redirectTo: "https://shaander.github.io/fitforge/web-redirect-reset.html",
 		});
 
 		if (error) {
