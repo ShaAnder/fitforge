@@ -114,8 +114,8 @@ export default function Signup() {
 				className="mt-8"
 			>
 				<Text className="text-zinc-400 text-center text-base">
-					Already have an account?
-					<Text className="text-emerald-500">Sign up</Text>
+					Already have an account?{" "}
+					<Text className="text-emerald-500">Login</Text>
 				</Text>
 			</TouchableOpacity>
 		</View>

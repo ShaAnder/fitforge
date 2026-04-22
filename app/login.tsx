@@ -88,9 +88,15 @@ export default function Login() {
 				className="mt-8"
 			>
 				<Text className="text-zinc-400 text-center text-base">
-					Don't have an account?
+					Don't have an account?{" "}
 					<Text className="text-emerald-500">Sign up</Text>
 				</Text>
+			</TouchableOpacity>
+			<TouchableOpacity
+				onPress={() => router.push("/forgot-password")}
+				className="mt-4"
+			>
+				<Text className="text-emerald-500 text-center">Forgot password?</Text>
 			</TouchableOpacity>
 		</View>
 	);

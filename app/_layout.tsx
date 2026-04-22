@@ -24,7 +24,11 @@ function RootLayoutNav() {
 		if (loading) return;
 
 		// Check if the user is currently on an auth-related screen
-		const inAuthGroup = segments[0] === "login" || segments[0] === "signup";
+		const inAuthGroup =
+			segments[0] === "login" ||
+			segments[0] === "signup" ||
+			segments[0] === "forgot-password" ||
+			segments[0] === "reset-password";
 
 		if (!user && !inAuthGroup) {
 			// Not logged in → force to login
