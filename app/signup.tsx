@@ -1,8 +1,9 @@
 import AuthForm from "@/components/ui/AuthForm";
+import CustomAlert from "@/components/ui/CustomAlert";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 
 /**
  * Signup Screen - Allows new users to create an account with email and password.
@@ -20,52 +21,59 @@ export default function Signup() {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState("");
 
-	// same as signin we destructure this from useAuth
+	// custom alert state
+	const [alert, setAlert] = useState<{
+		visible: boolean;
+		title: string;
+		message: string;
+		type?: "success" | "error";
+	}>({
+		visible: false,
+		title: "",
+		message: "",
+	});
+
 	const { signup } = useAuth();
-	// set our router
 	const router = useRouter();
 
-	// get user credentials, all fields must be filled
+	/**
+	 * Handles the signup process.
+	 * We do this to register a new user, validate input, and provide feedback.
+	 * @returns {Promise<void>}
+	 */
 	const handleSignup = async () => {
 		if (!email || !password || !confirmPassword) {
 			setError("Please fill all fields");
 			return;
 		}
-
-		// if passwords don't match tell user
 		if (password !== confirmPassword) {
 			setError("Passwords do not match");
 			return;
 		}
-
-		// if password len < 6 = pw must be longer
 		if (password.length < 6) {
 			setError("Password must be at least 6 characters");
 			return;
 		}
 
-		// set our loading state
 		setLoading(true);
 		setError("");
 
 		try {
 			await signup(email, password);
-			// Note: username will be saved later in profiles table
-			Alert.alert(
-				"Account Created",
-				"Please check your email to confirm your account.",
-			);
-			// send user to login
+			setAlert({
+				visible: true,
+				title: "Account Created",
+				message: "Please check your email to confirm your account.",
+				type: "success",
+			});
 			router.replace("/login");
 		} catch (err: any) {
-			// if error let user know
 			setError(err.message || "Failed to create account");
 		} finally {
 			setLoading(false);
 		}
 	};
 
-	// Authform signup fields
 	const signupFields = [
 		{
 			name: "email",
@@ -96,7 +104,7 @@ export default function Signup() {
 				<Text className="text-white text-5xl font-bold tracking-tighter">
 					FitForge
 				</Text>
-				<Text className="text-zinc-400 text-lg mt-2">Create your account</Text>
+				<Text className="text-zinc-400 text-lg mt-2">Join the grind</Text>
 			</View>
 
 			<AuthForm
@@ -109,13 +117,21 @@ export default function Signup() {
 
 			<TouchableOpacity
 				onPress={() => router.replace("/login")}
-				className="mt-8"
+				className="mt-10"
 			>
 				<Text className="text-zinc-400 text-center text-base">
 					Already have an account?{" "}
-					<Text className="text-emerald-500">Login</Text>
+					<Text className="text-emerald-500">Log in</Text>
 				</Text>
 			</TouchableOpacity>
+
+			<CustomAlert
+				visible={alert.visible}
+				title={alert.title}
+				message={alert.message}
+				type={alert.type}
+				onClose={() => setAlert((prev) => ({ ...prev, visible: false }))}
+			/>
 		</View>
 	);
 }

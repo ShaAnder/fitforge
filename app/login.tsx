@@ -1,8 +1,15 @@
+/**
+ * Login Screen
+ * ------------
+ * We provide a login form for users to authenticate with email and password.
+ * We do this to allow secure access to user-specific features and data.
+ */
+import AuthForm from "@/components/ui/AuthForm";
+import CustomAlert from "@/components/ui/CustomAlert";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
-import AuthForm from "@/components/ui/AuthForm";
 
 /**
  * Login Screen - Allows existing users to sign in with email and password.
@@ -15,46 +22,50 @@ import AuthForm from "@/components/ui/AuthForm";
  *   - Link to Forgot Password screen
  */
 export default function Login() {
-	// set our state here
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState("");
 
-	// destructure our signing from useauth
+	//alert state
+	const [alert, setAlert] = useState<{
+		visible: boolean;
+		title: string;
+		message: string;
+		type?: "success" | "error";
+	}>({
+		visible: false,
+		title: "",
+		message: "",
+	});
+
 	const { signIn } = useAuth();
-	// set our router
 	const router = useRouter();
 
-	// check if the user has name and pass fields populated if not
-	// seterror feedback
+	/**
+	 * Handles the login process.
+	 * We do this to validate user credentials and navigate to the dashboard on success.
+	 * @returns {Promise<void>}
+	 */
 	const handleLogin = async () => {
 		if (!email || !password) {
 			setError("Please fill in all fields");
 			return;
 		}
 
-		// if filled set our loading to true and error to empty
 		setLoading(true);
 		setError("");
 
-		// try signing in with the credentials
 		try {
-			// use our signing function from useAuth
 			await signIn(email, password);
-			// move the user to dashboard, we replace as we don't want the user
-			// to go back to / see login UNLESS they logout
 			router.replace("/(tabs)/dashboard");
 		} catch (err: any) {
-			// pass error message for feedback if invalid login
-			setError(err.message || "Invalid credentials");
+			setError(err.message || "Invalid email or password");
 		} finally {
-			// set loading to false
 			setLoading(false);
 		}
 	};
 
-	// Set our fields for the form
 	const loginFields = [
 		{
 			name: "email",
@@ -74,14 +85,17 @@ export default function Login() {
 
 	return (
 		<View className="flex-1 bg-zinc-950 px-6 justify-center">
+			{/* Branding Header */}
 			<View className="mb-12 items-center">
 				<Text className="text-white text-5xl font-bold tracking-tighter">
 					FitForge
 				</Text>
-				<Text className="text-zinc-400 text-lg mt-2">Welcome back</Text>
+				<Text className="text-zinc-400 text-lg mt-2">
+					Welcome back, warrior
+				</Text>
 			</View>
 
-			{/* Reusable AuthForm handles inputs, password toggle, button, error */}
+			{/* Form */}
 			<AuthForm
 				fields={loginFields}
 				buttonText="Log In"
@@ -90,21 +104,32 @@ export default function Login() {
 				error={error}
 			/>
 
-			<TouchableOpacity
-				onPress={() => router.replace("/signup")}
-				className="mt-8"
-			>
-				<Text className="text-zinc-400 text-center text-base">
-					Don't have an account?{" "}
-					<Text className="text-emerald-500">Sign up</Text>
-				</Text>
-			</TouchableOpacity>
-			<TouchableOpacity
-				onPress={() => router.push("/forgot-password")}
-				className="mt-4"
-			>
-				<Text className="text-emerald-500 text-center">Forgot password?</Text>
-			</TouchableOpacity>
+			{/* Links */}
+			<View className="mt-10">
+				<TouchableOpacity onPress={() => router.replace("/signup")}>
+					<Text className="text-zinc-400 text-center text-base">
+						Don't have an account?{" "}
+						<Text className="text-emerald-500 font-medium">Sign up</Text>
+					</Text>
+				</TouchableOpacity>
+
+				<TouchableOpacity
+					onPress={() => router.replace("/forgot-password")}
+					className="mt-4"
+				>
+					<Text className="text-emerald-500 text-center text-base">
+						Forgot your password?
+					</Text>
+				</TouchableOpacity>
+			</View>
+			{/* Branded Custom Alert */}
+			<CustomAlert
+				visible={alert.visible}
+				title={alert.title}
+				message={alert.message}
+				type={alert.type}
+				onClose={() => setAlert((prev) => ({ ...prev, visible: false }))}
+			/>
 		</View>
 	);
 }

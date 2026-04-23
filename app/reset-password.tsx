@@ -1,4 +1,5 @@
 import AuthForm from "@/components/ui/AuthForm";
+import CustomAlert from "@/components/ui/CustomAlert";
 import LoadingScreen from "@/components/ui/LoadingScreen";
 import { getSupabase } from "@/lib/supabase";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -13,12 +14,24 @@ import { Alert, Text, TouchableOpacity, View } from "react-native";
  *   2. Update password
  *   3. Immediately sign out
  *   4. Navigate to login screen
- *   5. Let the global auth listener + protection logic handle the rest naturally
+ *   5. Let the global auth listener + protection logic handle redirect
  */
 export default function ResetPassword() {
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
 	const [isProcessing, setIsProcessing] = useState(false);
+
+	// custom alert
+	const [alert, setAlert] = useState<{
+		visible: boolean;
+		title: string;
+		message: string;
+		type?: "success" | "error";
+	}>({
+		visible: false,
+		title: "",
+		message: "",
+	});
 
 	const supabase = getSupabase();
 	const router = useRouter();
@@ -45,22 +58,30 @@ export default function ResetPassword() {
 				});
 			}
 
-			// 2. Update the password
 			const { error } = await supabase.auth.updateUser({ password });
 			if (error) throw error;
 
-			// 3. Immediately sign out
 			await supabase.auth.signOut();
 
-			// 4. Navigate to
-			router.replace("/login");
+			// Small delay for clean transition
+			await new Promise((resolve) => setTimeout(resolve, 400));
 
-			Alert.alert(
-				"Password Reset Successful",
-				"Your password has been updated.\n\nPlease log in with your new password.",
-			);
+			setAlert({
+				visible: true,
+				title: "Password Reset Successful",
+				message:
+					"Your password has been updated.\n\nPlease log in with your new password.",
+				type: "success",
+			});
+
+			router.replace("/login");
 		} catch (error: any) {
-			Alert.alert("Error", error.message || "Failed to reset password");
+			setAlert({
+				visible: true,
+				title: "Error",
+				message: error.message || "Failed to reset password",
+				type: "error",
+			});
 		} finally {
 			setIsProcessing(false);
 		}
@@ -69,6 +90,7 @@ export default function ResetPassword() {
 	if (isProcessing) {
 		return <LoadingScreen />;
 	}
+
 	const resetFields = [
 		{
 			name: "password",
@@ -88,7 +110,7 @@ export default function ResetPassword() {
 
 	return (
 		<View className="flex-1 bg-zinc-950 px-6 justify-center">
-			<Text className="text-white text-4xl font-bold mb-10 text-center">
+			<Text className="text-white text-5xl font-bold mb-12 text-center">
 				Reset Password
 			</Text>
 
@@ -101,10 +123,18 @@ export default function ResetPassword() {
 
 			<TouchableOpacity
 				onPress={() => router.replace("/login")}
-				className="mt-8"
+				className="mt-12"
 			>
 				<Text className="text-zinc-400 text-center">Back to Login</Text>
 			</TouchableOpacity>
+
+			<CustomAlert
+				visible={alert.visible}
+				title={alert.title}
+				message={alert.message}
+				type={alert.type}
+				onClose={() => setAlert((prev) => ({ ...prev, visible: false }))}
+			/>
 		</View>
 	);
 }
