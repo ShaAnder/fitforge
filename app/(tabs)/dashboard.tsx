@@ -1,13 +1,19 @@
+import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { ScrollView, Text, View } from "react-native";
+import { useState } from "react";
 
 import Header from "@/components/common/Header";
 import StatCard from "@/components/common/StatCard";
 import StreakCard from "@/components/common/StreakCard";
 import WeeklyVolumeChart from "@/components/dashboard/WeeklyVolumeChart";
 import Button from "@/components/ui/Button";
+import NavDrawer from "@/components/ui/NavDrawer";
 
 export default function Dashboard() {
+	const [drawerOpen, setDrawerOpen] = useState(false);
+	const router = useRouter();
+
 	// Mock data for chart
 	const weeklyData = [
 		{ value: 80, label: "M" },
@@ -51,8 +57,11 @@ export default function Dashboard() {
 				contentContainerStyle={{ paddingTop: 40, paddingBottom: 100 }}
 				showsVerticalScrollIndicator={false}
 			>
-				{/* Header Section */}
-				<Header subtitle="Welcome back, Alex" />
+				{/* Header */}
+				<Header
+					subtitle="Welcome back, Alex"
+					onProfilePress={() => router.push("/(tabs)/profile")}
+				/>
 
 				{/* Current Streak Card */}
 				<StreakCard streak={currentStreak} />
@@ -98,6 +107,9 @@ export default function Dashboard() {
 					onPress={() => console.log("Navigate to Log Workout")}
 				/>
 			</ScrollView>
+
+			{/* NavDrawer controlled by 3-dot "More" tab */}
+			<NavDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
 		</View>
 	);
 }

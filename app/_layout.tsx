@@ -1,4 +1,3 @@
-import LoadingScreen from "@/components/ui/LoadingScreen";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import "@/global.css";
 import { Stack, useRouter, useSegments } from "expo-router";
@@ -20,42 +19,28 @@ function RootLayoutNav() {
 	const segments = useSegments();
 	const router = useRouter();
 
-	// perform another auth state check here
 	useEffect(() => {
 		if (loading) return;
 
-		// Check if the user is currently on an auth-related screen
 		const inAuthGroup =
 			segments[0] === "login" ||
 			segments[0] === "signup" ||
 			segments[0] === "forgot-password" ||
 			segments[0] === "reset-password";
 
-		// If we're on reset-password, don't do any redirect logic
-		if (segments[0] === "reset-password") return;
-
 		if (!user && !inAuthGroup) {
-			// Not logged in → force to login
 			router.replace("/login");
 		} else if (user && inAuthGroup) {
-			// Logged in but on login/signup page → send to dashboard
 			router.replace("/(tabs)/dashboard");
 		}
-		// Re-run whenever user, loading, or route changes
 	}, [user, loading, segments]);
-
-	// Show branded loading screen while checking auth state
-	if (loading) {
-		return <LoadingScreen />;
-	}
 
 	return (
 		<Stack screenOptions={{ headerShown: false }}>
-			{/* Public auth screens */}
 			<Stack.Screen name="login" />
 			<Stack.Screen name="signup" />
-
-			{/* Protected main app (tabs) */}
+			<Stack.Screen name="forgot-password" />
+			<Stack.Screen name="reset-password" />
 			<Stack.Screen name="(tabs)" />
 		</Stack>
 	);
@@ -73,6 +58,8 @@ export default function RootLayout() {
 	return (
 		<AuthProvider>
 			<View className="flex-1 bg-zinc-950">
+				{/* DrawerLayout wraps the entire app content */}
+
 				<RootLayoutNav />
 			</View>
 		</AuthProvider>

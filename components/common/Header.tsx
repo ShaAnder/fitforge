@@ -1,43 +1,61 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Text, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 
 interface HeaderProps {
-	// Main title text (defaults to "FitForge")
+	/** Main title text (defaults to "FitForge") */
 	title?: string;
-	// Whether to show the flame icon on the right (defaults to true)
-	showFlame?: boolean;
-	// Optional subtitle text displayed below the title
+
+	/** Optional subtitle text displayed below the title */
 	subtitle?: string;
+
+	/** Called when the profile icon is pressed */
+	onProfilePress?: () => void;
+
+	/** logo bool to determine if we render logo or not */
+	flameIcon?: boolean;
 }
 
 /**
- * App header component with title, optional flame icon, and subtitle.
- * Used primarily on screens like Dashboard.
+ * Header - Reusable header for main screens.
  *
- * @param title      - Main heading text
- * @param showFlame  - Show flame icon on the right side
- * @param subtitle   - Optional smaller text below the title
+ * - Flame icon on the left next to "FitForge"
+ * - Profile icon on the right (clickable)
+ */
+/**
+ * Header - Reusable header for main screens.
+ *
+ * - Flame icon + "FitForge" on the left
+ * - Profile icon (placeholder for user profile picture) on the right
  */
 export default function Header({
 	title = "FitForge",
-	showFlame = true,
 	subtitle,
+	onProfilePress,
+	flameIcon = true,
 }: HeaderProps) {
 	return (
 		<View className="mb-10">
 			<View className="flex-row justify-between items-center">
-				{/* Main Title */}
-				<Text className="text-4xl font-bold text-white tracking-tighter">
-					{title}
-				</Text>
+				{/* Left: Flame + Title */}
+				<View className="flex-row items-center gap-3">
+					{flameIcon && <Ionicons name="flame" size={36} color="#eab308" />}
 
-				{/* Flame Icon */}
-				{showFlame && <Ionicons name="flame" size={36} color="#eab308" />}
+					<Text className="text-4xl font-bold text-white tracking-tighter">
+						{title}
+					</Text>
+				</View>
+
+				{/* Right: Profile Picture / Icon */}
+				{onProfilePress && (
+					<TouchableOpacity onPress={onProfilePress} className="p-1">
+						{/* TODO: Replace Ionicons with actual user profile picture */}
+						<Ionicons name="person-circle-outline" size={34} color="#22c55e" />
+					</TouchableOpacity>
+				)}
 			</View>
 
-			{/* Subtitle - only rendered if provided */}
 			{subtitle && (
-				<Text className="text-zinc-400 text-base mt-1">{subtitle}</Text>
+				<Text className="text-zinc-400 text-base mt-1 ml-1">{subtitle}</Text>
 			)}
 		</View>
 	);

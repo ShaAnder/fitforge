@@ -1,13 +1,19 @@
+import Header from "@/components/common/Header";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { ScrollView, Text, TextInput, View } from "react-native";
 
 export default function Library() {
+	const router = useRouter();
 	return (
 		<View className="flex-1 bg-zinc-950">
 			<ScrollView className="flex-1 px-5 pt-12">
-				<Text className="text-4xl font-bold text-white tracking-tighter mb-8">
-					Exercise Library
-				</Text>
+				<Header
+					title="Exercises"
+					subtitle="Find The Perfect Workout"
+					onProfilePress={() => router.push("/(tabs)/profile")}
+					flameIcon={true}
+				/>
 
 				{/* Search Bar */}
 				<View className="bg-zinc-900 rounded-3xl p-4 flex-row items-center mb-8 border border-zinc-800">

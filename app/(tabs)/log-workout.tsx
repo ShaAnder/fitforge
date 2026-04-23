@@ -1,13 +1,19 @@
+import Header from "@/components/common/Header";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 export default function LogWorkout() {
+	const router = useRouter();
 	return (
 		<View className="flex-1 bg-zinc-950">
 			<ScrollView className="flex-1 px-5 pt-12">
-				<Text className="text-4xl font-bold text-white tracking-tighter mb-8">
-					Log Workout
-				</Text>
+				<Header
+					title="Log Workout"
+					subtitle="Show Me Your Progress!"
+					onProfilePress={() => router.push("/(tabs)/profile")}
+					flameIcon={true}
+				/>
 
 				{/* Exercise Search / Quick Add */}
 				<View className="bg-zinc-900 rounded-3xl p-6 mb-6">
