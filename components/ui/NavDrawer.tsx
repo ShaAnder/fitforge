@@ -31,10 +31,14 @@ export default function NavDrawer({ isOpen, onClose }: NavDrawerProps) {
 	};
 
 	const handleSignOut = async () => {
-		await signOut();
-		onClose();
+		try {
+			await signOut();
+			onClose();
+			// The AuthContext + route protection will automatically redirect to login
+		} catch (error) {
+			console.error("Sign out failed:", error);
+		}
 	};
-
 	// Only render content when open (prevents unnecessary renders)
 	if (!isOpen) return null;
 
@@ -52,7 +56,6 @@ export default function NavDrawer({ isOpen, onClose }: NavDrawerProps) {
 					{user && <Text className="text-zinc-400 text-sm">{user.email}</Text>}
 				</View>
 			</View>
-
 			<ScrollView className="flex-1">
 				{menuItems.map((item) => (
 					<TouchableOpacity
@@ -66,18 +69,15 @@ export default function NavDrawer({ isOpen, onClose }: NavDrawerProps) {
 						</Text>
 					</TouchableOpacity>
 				))}
-
-				{/* Sign Out */}
-				<TouchableOpacity
-					onPress={handleSignOut}
-					className="flex-row items-center py-5 mt-8 border-t border-zinc-800"
-				>
-					<Ionicons name="log-out-outline" size={26} color="#ef4444" />
-					<Text className="text-red-500 text-xl ml-5 font-medium">
-						Sign Out
-					</Text>
-				</TouchableOpacity>
-			</ScrollView>
+			</ScrollView>{" "}
+			{/* Sign Out */}
+			<TouchableOpacity
+				onPress={handleSignOut}
+				className="flex-row items-center py-5 mt-8 border-t border-zinc-800"
+			>
+				<Ionicons name="log-out-outline" size={26} color="#ef4444" />
+				<Text className="text-red-500 text-xl ml-5 font-medium">Sign Out</Text>
+			</TouchableOpacity>
 		</View>
 	);
 }
