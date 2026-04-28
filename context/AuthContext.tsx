@@ -52,7 +52,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 					setLoading(false);
 				}
 			} catch (error) {
-				console.error("Failed to restore session:", error);
 				if (mounted) setLoading(false);
 			}
 		};
@@ -64,9 +63,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			data: { subscription },
 		} = supabase.auth.onAuthStateChange(
 			(event: string, currentSession: Session | null) => {
-				// ← Fixed types here
-				console.log(`🔐 Auth event: ${event}`);
-
 				if (mounted) {
 					setSession(currentSession);
 					setUser(currentSession?.user ?? null);

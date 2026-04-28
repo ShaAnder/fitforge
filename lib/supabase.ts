@@ -20,12 +20,7 @@ export const getSupabase = () => {
 					detectSessionInUrl: false,
 				},
 			});
-			console.log("✅ Supabase initialized with AsyncStorage persistence");
 		} catch (error) {
-			// Fallback if AsyncStorage fails to load
-			console.warn(
-				"⚠️ AsyncStorage not available, using in-memory session (no persistence across reloads)",
-			);
 			supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
 				auth: {
 					storage: undefined,

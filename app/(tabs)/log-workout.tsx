@@ -1,3 +1,4 @@
+// app/(tabs)/log-workout.tsx
 import { useMemo, useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 
@@ -7,7 +8,7 @@ import ExerciseSlot from "@/components/workout/ExerciseSlot";
 import { useAuth } from "@/context/AuthContext";
 import { getSupabase } from "@/lib/supabase";
 
-// Local exercise library for real-time suggestions
+// Local exercise library
 const EXERCISE_LIBRARY = [
 	"Bench Press",
 	"Squat",
@@ -35,23 +36,14 @@ const EXERCISE_LIBRARY = [
  * LogWorkout Screen
  *
  * Main screen for logging a complete workout session.
- *
- * Features:
- * - Real-time search with dropdown suggestions
- * - Tap suggestion or press Enter to add new exercise
- * - Dynamic sets per exercise (reps + weight)
- * - Strict validation before saving
- * - Uses TabScreen wrapper for consistent layout
  */
 export default function LogWorkout() {
 	const { user } = useAuth();
 	const supabase = getSupabase();
 
-	// Stable ID counters
 	const [nextExerciseId, setNextExerciseId] = useState(1);
 	const [nextSetId, setNextSetId] = useState(1);
 
-	// Current workout (starts empty)
 	const [exercises, setExercises] = useState<any[]>([]);
 
 	const [searchQuery, setSearchQuery] = useState("");
@@ -70,9 +62,6 @@ export default function LogWorkout() {
 		type: "info",
 	});
 
-	/**
-	 * Live filtered suggestions from the exercise library.
-	 */
 	const filteredExercises = useMemo(() => {
 		if (!searchQuery.trim()) return [];
 		return EXERCISE_LIBRARY.filter((name) =>
@@ -80,10 +69,6 @@ export default function LogWorkout() {
 		).slice(0, 10);
 	}, [searchQuery]);
 
-	/**
-	 * Adds a new exercise from search or manual entry.
-	 * Clears search field after adding.
-	 */
 	const addExercise = (name: string) => {
 		if (!name.trim()) return;
 
@@ -116,11 +101,19 @@ export default function LogWorkout() {
 	};
 
 	/**
-	 * Strict validation before saving:
-	 * - At least one exercise
-	 * - Every exercise has a name
-	 * - Every set has both reps and weight filled
+	 * Calculate total volume from all sets
 	 */
+	const calculateTotalVolume = (): number => {
+		return exercises.reduce((total, exercise) => {
+			const exerciseVolume = exercise.sets.reduce((sum: number, set: any) => {
+				const weight = parseFloat(set.weight) || 0;
+				const reps = parseFloat(set.reps) || 0;
+				return sum + weight * reps;
+			}, 0);
+			return total + exerciseVolume;
+		}, 0);
+	};
+
 	const isWorkoutValid = (): boolean => {
 		if (exercises.length === 0) return false;
 
@@ -156,11 +149,13 @@ export default function LogWorkout() {
 
 		setIsSaving(true);
 
+		const totalVolume = calculateTotalVolume();
+
 		try {
 			const { error } = await supabase.from("workouts").insert({
 				user_id: user.id,
 				exercises: exercises,
-				total_volume: 0,
+				total_volume: totalVolume,
 				notes: "",
 			});
 
@@ -169,11 +164,11 @@ export default function LogWorkout() {
 			setAlert({
 				visible: true,
 				title: "Success!",
-				message: "Workout saved successfully.",
+				message: `Workout saved! Total volume: ${totalVolume} kg`,
 				type: "success",
 			});
 
-			// Reset form after successful save
+			// Reset form
 			setExercises([]);
 			setSearchQuery("");
 		} catch (err: any) {
@@ -207,7 +202,7 @@ export default function LogWorkout() {
 			}
 		>
 			{/* Search Bar */}
-			<View className="pt-4 pb-6 relative z-10">
+			<View className="px-5 pt-4 pb-6 relative z-10">
 				<TextInput
 					className="bg-zinc-900 text-white px-5 py-4 rounded-2xl text-base"
 					placeholder="Search or type exercise name..."
@@ -217,7 +212,6 @@ export default function LogWorkout() {
 					onSubmitEditing={() => addExercise(searchQuery)}
 				/>
 
-				{/* Dropdown Suggestions */}
 				{searchQuery.length > 0 && filteredExercises.length > 0 && (
 					<View className="absolute top-16 left-5 right-5 bg-zinc-900 rounded-2xl border border-zinc-800 z-20 shadow-xl">
 						{filteredExercises.map((item) => (
@@ -233,7 +227,7 @@ export default function LogWorkout() {
 				)}
 			</View>
 
-			{/* List of Exercises */}
+			{/* Exercise List */}
 			{exercises.map((exercise) => (
 				<ExerciseSlot
 					key={exercise.id}
@@ -245,7 +239,6 @@ export default function LogWorkout() {
 				/>
 			))}
 
-			{/* Bottom padding */}
 			<View className="h-32" />
 		</TabScreen>
 	);
