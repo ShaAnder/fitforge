@@ -76,7 +76,8 @@ export default function TabLayout() {
 
 				{/* 3-Dot More - Pure custom button, NO route */}
 				<Tabs.Screen
-					name="more" // Leading underscore tells Expo Router to ignore this as a real route
+					// Leading underscore tells Expo Router to ignore this as a real route
+					name="more"
 					options={{
 						tabBarIcon: ({ color }) => (
 							<Ionicons name="ellipsis-horizontal" size={28} color={color} />

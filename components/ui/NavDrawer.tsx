@@ -53,7 +53,9 @@ export default function NavDrawer({ isOpen, onClose }: NavDrawerProps) {
 					<Text className="text-white text-3xl font-bold tracking-tighter">
 						FitForge
 					</Text>
-					{user && <Text className="text-zinc-400 text-sm">{user.email}</Text>}
+					{user?.email ? (
+						<Text className="text-zinc-400 text-sm">{user.email}</Text>
+					) : null}
 				</View>
 			</View>
 			<ScrollView className="flex-1">
@@ -69,7 +71,7 @@ export default function NavDrawer({ isOpen, onClose }: NavDrawerProps) {
 						</Text>
 					</TouchableOpacity>
 				))}
-			</ScrollView>{" "}
+			</ScrollView>
 			{/* Sign Out */}
 			<TouchableOpacity
 				onPress={handleSignOut}

@@ -1,3 +1,4 @@
+import LoadingScreen from "@/components/ui/LoadingScreen";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import "@/global.css";
 import { Stack, useRouter, useSegments } from "expo-router";
@@ -35,12 +36,26 @@ function RootLayoutNav() {
 		}
 	}, [user, loading, segments]);
 
+	// Show branded loading screen while checking auth
+	if (loading) {
+		return <LoadingScreen />;
+	}
+
+	// Only render tabs when we know the user is logged in
+	if (!user) {
+		return (
+			<Stack screenOptions={{ headerShown: false }}>
+				<Stack.Screen name="login" />
+				<Stack.Screen name="signup" />
+				<Stack.Screen name="forgot-password" />
+				<Stack.Screen name="reset-password" />
+			</Stack>
+		);
+	}
+
+	// User is logged in → show tabs
 	return (
 		<Stack screenOptions={{ headerShown: false }}>
-			<Stack.Screen name="login" />
-			<Stack.Screen name="signup" />
-			<Stack.Screen name="forgot-password" />
-			<Stack.Screen name="reset-password" />
 			<Stack.Screen name="(tabs)" />
 		</Stack>
 	);
@@ -59,7 +74,6 @@ export default function RootLayout() {
 		<AuthProvider>
 			<View className="flex-1 bg-zinc-950">
 				{/* DrawerLayout wraps the entire app content */}
-
 				<RootLayoutNav />
 			</View>
 		</AuthProvider>

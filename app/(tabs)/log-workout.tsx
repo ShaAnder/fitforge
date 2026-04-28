@@ -1,61 +1,92 @@
-import Header from "@/components/common/Header";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { useState } from "react";
+import { ScrollView, View } from "react-native";
 
+import Header from "@/components/common/Header";
+import Button from "@/components/ui/Button";
+import ExerciseSlot from "@/components/workout/ExerciseSlot";
+
+/**
+ * LogWorkout Screen
+ *
+ * Main workout logging screen.
+ * Add Exercise and Save Workout buttons are both at the bottom for easy access.
+ */
 export default function LogWorkout() {
-	const router = useRouter();
+	const [nextExerciseId, setNextExerciseId] = useState(2);
+	const [nextSetId, setNextSetId] = useState(2);
+
+	const [exercises, setExercises] = useState([
+		{
+			id: 1,
+			name: "",
+			sets: [{ id: 1, reps: "", weight: "" }],
+		},
+	]);
+
+	const addNewExercise = () => {
+		const exerciseId = nextExerciseId;
+		const setId = nextSetId;
+
+		setNextExerciseId((prev) => prev + 1);
+		setNextSetId((prev) => prev + 1);
+
+		setExercises((prev) => [
+			...prev,
+			{
+				id: exerciseId,
+				name: "",
+				sets: [{ id: setId, reps: "", weight: "" }],
+			},
+		]);
+	};
+
+	const updateExercise = (id: number, newData: any) => {
+		setExercises((prev) =>
+			prev.map((ex) => (ex.id === id ? { ...ex, ...newData } : ex)),
+		);
+	};
+
+	const removeExercise = (id: number) => {
+		setExercises((prev) => prev.filter((ex) => ex.id !== id));
+	};
+
 	return (
 		<View className="flex-1 bg-zinc-950">
-			<ScrollView className="flex-1 px-5 pt-12">
-				<Header
-					title="Log Workout"
-					subtitle="Show Me Your Progress!"
-					onProfilePress={() => router.push("/(tabs)/profile")}
-					flameIcon={true}
+			<View className="mt-10">
+				<Header title="Log Workout" subtitle="Today's Session" />
+			</View>
+
+			<ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
+				{exercises.map((exercise) => (
+					<ExerciseSlot
+						key={exercise.id}
+						exercise={exercise}
+						onUpdate={(newData) => updateExercise(exercise.id, newData)}
+						onRemove={() => removeExercise(exercise.id)}
+						nextSetId={nextSetId}
+						setNextSetId={setNextSetId}
+					/>
+				))}
+			</ScrollView>
+
+			{/* Bottom Action Buttons */}
+			<View className="px-5 pb-8 bg-zinc-950 flex-row gap-3">
+				<Button
+					title="+ Add Exercise"
+					variant="secondary"
+					size="large"
+					onPress={addNewExercise}
+					className="flex-1"
 				/>
 
-				{/* Exercise Search / Quick Add */}
-				<View className="bg-zinc-900 rounded-3xl p-6 mb-6">
-					<Text className="text-emerald-400 text-sm font-medium mb-3">
-						QUICK ADD EXERCISE
-					</Text>
-					<View className="bg-zinc-800 rounded-2xl p-4 flex-row items-center">
-						<Ionicons name="search" size={20} color="#a1a1aa" />
-						<Text className="text-zinc-400 ml-3">Search exercises...</Text>
-					</View>
-				</View>
-
-				{/* Current Workout Session */}
-				<View className="mb-8">
-					<Text className="text-zinc-400 text-lg font-semibold mb-4">
-						Current Session
-					</Text>
-					<View className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800">
-						<Text className="text-white text-xl">No exercises added yet</Text>
-						<Text className="text-zinc-500 text-sm mt-2">
-							Add your first exercise to begin logging
-						</Text>
-					</View>
-				</View>
-
-				{/* Recent Templates */}
-				<View>
-					<Text className="text-zinc-400 text-lg font-semibold mb-4">
-						Quick Templates
-					</Text>
-					<View className="flex-row gap-3">
-						{["Push Day", "Pull Day", "Leg Day"].map((template) => (
-							<TouchableOpacity
-								key={template}
-								className="bg-zinc-900 flex-1 rounded-2xl p-5 border border-zinc-800"
-							>
-								<Text className="text-white font-medium">{template}</Text>
-							</TouchableOpacity>
-						))}
-					</View>
-				</View>
-			</ScrollView>
+				<Button
+					title="Save Workout"
+					variant="primary"
+					size="large"
+					onPress={() => console.log("TODO: Save workout", exercises)}
+					className="flex-1"
+				/>
+			</View>
 		</View>
 	);
 }

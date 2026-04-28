@@ -34,7 +34,7 @@ export default function Header({
 	flameIcon = true,
 }: HeaderProps) {
 	return (
-		<View className="mb-10">
+		<View className="mb-3">
 			<View className="flex-row justify-between items-center">
 				{/* Left: Flame + Title */}
 				<View className="flex-row items-center gap-3">

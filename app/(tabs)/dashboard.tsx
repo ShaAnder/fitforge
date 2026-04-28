@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { ScrollView, Text, View } from "react-native";
 import { useState } from "react";
+import { ScrollView, Text, View } from "react-native";
 
 import Header from "@/components/common/Header";
 import StatCard from "@/components/common/StatCard";
@@ -53,7 +53,6 @@ export default function Dashboard() {
 			<StatusBar style="light" />
 
 			<ScrollView
-				className="flex-1 px-5"
 				contentContainerStyle={{ paddingTop: 40, paddingBottom: 100 }}
 				showsVerticalScrollIndicator={false}
 			>
