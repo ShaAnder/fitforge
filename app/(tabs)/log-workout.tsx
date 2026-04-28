@@ -1,29 +1,92 @@
-import { useState } from "react";
-import { ScrollView, View } from "react-native";
+import { useMemo, useState } from "react";
+import { Text, TextInput, TouchableOpacity, View } from "react-native";
 
-import Header from "@/components/common/Header";
+import TabScreen from "@/components/layout/TabScreen";
 import Button from "@/components/ui/Button";
 import ExerciseSlot from "@/components/workout/ExerciseSlot";
+import { useAuth } from "@/context/AuthContext";
+import { getSupabase } from "@/lib/supabase";
+
+// Local exercise library for real-time suggestions
+const EXERCISE_LIBRARY = [
+	"Bench Press",
+	"Squat",
+	"Deadlift",
+	"Overhead Press",
+	"Pull Up",
+	"Barbell Row",
+	"Dumbbell Curl",
+	"Tricep Extension",
+	"Leg Press",
+	"Lunges",
+	"Lat Pulldown",
+	"Face Pull",
+	"Incline Bench Press",
+	"Romanian Deadlift",
+	"Push Up",
+	"Plank",
+	"Chest Fly",
+	"Lateral Raise",
+	"Hammer Curl",
+	"Calf Raise",
+];
 
 /**
  * LogWorkout Screen
  *
- * Main workout logging screen.
- * Add Exercise and Save Workout buttons are both at the bottom for easy access.
+ * Main screen for logging a complete workout session.
+ *
+ * Features:
+ * - Real-time search with dropdown suggestions
+ * - Tap suggestion or press Enter to add new exercise
+ * - Dynamic sets per exercise (reps + weight)
+ * - Strict validation before saving
+ * - Uses TabScreen wrapper for consistent layout
  */
 export default function LogWorkout() {
-	const [nextExerciseId, setNextExerciseId] = useState(2);
-	const [nextSetId, setNextSetId] = useState(2);
+	const { user } = useAuth();
+	const supabase = getSupabase();
 
-	const [exercises, setExercises] = useState([
-		{
-			id: 1,
-			name: "",
-			sets: [{ id: 1, reps: "", weight: "" }],
-		},
-	]);
+	// Stable ID counters
+	const [nextExerciseId, setNextExerciseId] = useState(1);
+	const [nextSetId, setNextSetId] = useState(1);
 
-	const addNewExercise = () => {
+	// Current workout (starts empty)
+	const [exercises, setExercises] = useState<any[]>([]);
+
+	const [searchQuery, setSearchQuery] = useState("");
+	const [isSaving, setIsSaving] = useState(false);
+
+	// Custom Alert State
+	const [alert, setAlert] = useState<{
+		visible: boolean;
+		title: string;
+		message: string;
+		type: "success" | "error" | "info";
+	}>({
+		visible: false,
+		title: "",
+		message: "",
+		type: "info",
+	});
+
+	/**
+	 * Live filtered suggestions from the exercise library.
+	 */
+	const filteredExercises = useMemo(() => {
+		if (!searchQuery.trim()) return [];
+		return EXERCISE_LIBRARY.filter((name) =>
+			name.toLowerCase().includes(searchQuery.toLowerCase()),
+		).slice(0, 10);
+	}, [searchQuery]);
+
+	/**
+	 * Adds a new exercise from search or manual entry.
+	 * Clears search field after adding.
+	 */
+	const addExercise = (name: string) => {
+		if (!name.trim()) return;
+
 		const exerciseId = nextExerciseId;
 		const setId = nextSetId;
 
@@ -34,10 +97,12 @@ export default function LogWorkout() {
 			...prev,
 			{
 				id: exerciseId,
-				name: "",
+				name: name.trim(),
 				sets: [{ id: setId, reps: "", weight: "" }],
 			},
 		]);
+
+		setSearchQuery("");
 	};
 
 	const updateExercise = (id: number, newData: any) => {
@@ -50,43 +115,138 @@ export default function LogWorkout() {
 		setExercises((prev) => prev.filter((ex) => ex.id !== id));
 	};
 
+	/**
+	 * Strict validation before saving:
+	 * - At least one exercise
+	 * - Every exercise has a name
+	 * - Every set has both reps and weight filled
+	 */
+	const isWorkoutValid = (): boolean => {
+		if (exercises.length === 0) return false;
+
+		return exercises.every((exercise) => {
+			if (!exercise.name?.trim()) return false;
+			return exercise.sets.every(
+				(set: any) => set.reps?.trim() !== "" && set.weight?.trim() !== "",
+			);
+		});
+	};
+
+	const saveWorkout = async () => {
+		if (!user) {
+			setAlert({
+				visible: true,
+				title: "Not Logged In",
+				message: "You must be logged in to save workouts.",
+				type: "error",
+			});
+			return;
+		}
+
+		if (!isWorkoutValid()) {
+			setAlert({
+				visible: true,
+				title: "Incomplete Workout",
+				message:
+					"Please add at least one exercise and fill in reps + weight for every set.",
+				type: "error",
+			});
+			return;
+		}
+
+		setIsSaving(true);
+
+		try {
+			const { error } = await supabase.from("workouts").insert({
+				user_id: user.id,
+				exercises: exercises,
+				total_volume: 0,
+				notes: "",
+			});
+
+			if (error) throw error;
+
+			setAlert({
+				visible: true,
+				title: "Success!",
+				message: "Workout saved successfully.",
+				type: "success",
+			});
+
+			// Reset form after successful save
+			setExercises([]);
+			setSearchQuery("");
+		} catch (err: any) {
+			setAlert({
+				visible: true,
+				title: "Save Failed",
+				message: err.message || "Failed to save workout.",
+				type: "error",
+			});
+		} finally {
+			setIsSaving(false);
+		}
+	};
+
+	const closeAlert = () => {
+		setAlert((prev) => ({ ...prev, visible: false }));
+	};
+
 	return (
-		<View className="flex-1 bg-zinc-950">
-			<View className="mt-10">
-				<Header title="Log Workout" subtitle="Today's Session" />
-			</View>
-
-			<ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
-				{exercises.map((exercise) => (
-					<ExerciseSlot
-						key={exercise.id}
-						exercise={exercise}
-						onUpdate={(newData) => updateExercise(exercise.id, newData)}
-						onRemove={() => removeExercise(exercise.id)}
-						nextSetId={nextSetId}
-						setNextSetId={setNextSetId}
-					/>
-				))}
-			</ScrollView>
-
-			{/* Bottom Action Buttons */}
-			<View className="px-5 pb-8 bg-zinc-950 flex-row gap-3">
+		<TabScreen
+			title="Log Workout"
+			subtitle="Today's Session"
+			footer={
 				<Button
-					title="+ Add Exercise"
-					variant="secondary"
-					size="large"
-					onPress={addNewExercise}
-					className="flex-1"
-				/>
-
-				<Button
-					title="Save Workout"
+					title={isSaving ? "Saving..." : "Save Workout"}
 					variant="primary"
 					size="large"
-					onPress={() => console.log("TODO: Save workout", exercises)}
-					className="flex-1"
+					onPress={saveWorkout}
+					disabled={isSaving}
 				/>
+			}
+		>
+			{/* Search Bar */}
+			<View className="px-5 pt-4 pb-6 relative z-10">
+				<TextInput
+					className="bg-zinc-900 text-white px-5 py-4 rounded-2xl text-base"
+					placeholder="Search or type exercise name..."
+					placeholderTextColor="#71717a"
+					value={searchQuery}
+					onChangeText={setSearchQuery}
+					onSubmitEditing={() => addExercise(searchQuery)}
+				/>
+
+				{/* Dropdown Suggestions */}
+				{searchQuery.length > 0 && filteredExercises.length > 0 && (
+					<View className="absolute top-16 left-5 right-5 bg-zinc-900 rounded-2xl border border-zinc-800 z-20 shadow-xl">
+						{filteredExercises.map((item) => (
+							<TouchableOpacity
+								key={item}
+								className="px-5 py-4 border-b border-zinc-800 active:bg-zinc-800"
+								onPress={() => addExercise(item)}
+							>
+								<Text className="text-white text-base">{item}</Text>
+							</TouchableOpacity>
+						))}
+					</View>
+				)}
 			</View>
-		</View>
+
+			{/* List of Exercises */}
+			{exercises.map((exercise) => (
+				<ExerciseSlot
+					key={exercise.id}
+					exercise={exercise}
+					onUpdate={(newData) => updateExercise(exercise.id, newData)}
+					onRemove={() => removeExercise(exercise.id)}
+					nextSetId={nextSetId}
+					setNextSetId={setNextSetId}
+				/>
+			))}
+
+			{/* Bottom padding */}
+			<View className="h-32" />
+		</TabScreen>
 	);
 }

@@ -1,4 +1,3 @@
-// components/ui/NavDrawer.tsx
 import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";

@@ -1,12 +1,12 @@
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
-import Header from "@/components/common/Header";
 import StatCard from "@/components/common/StatCard";
 import StreakCard from "@/components/common/StreakCard";
 import WeeklyVolumeChart from "@/components/dashboard/WeeklyVolumeChart";
+import TabScreen from "@/components/layout/TabScreen";
 import Button from "@/components/ui/Button";
 import NavDrawer from "@/components/ui/NavDrawer";
 
@@ -51,17 +51,7 @@ export default function Dashboard() {
 	return (
 		<View className="flex-1 bg-zinc-950">
 			<StatusBar style="light" />
-
-			<ScrollView
-				contentContainerStyle={{ paddingTop: 40, paddingBottom: 100 }}
-				showsVerticalScrollIndicator={false}
-			>
-				{/* Header */}
-				<Header
-					subtitle="Welcome back, Alex"
-					onProfilePress={() => router.push("/(tabs)/profile")}
-				/>
-
+			<TabScreen title="FitForge" subtitle="Welcome Back Alex">
 				{/* Current Streak Card */}
 				<StreakCard streak={currentStreak} />
 
@@ -105,8 +95,7 @@ export default function Dashboard() {
 					size="large"
 					onPress={() => console.log("Navigate to Log Workout")}
 				/>
-			</ScrollView>
-
+			</TabScreen>
 			{/* NavDrawer controlled by 3-dot "More" tab */}
 			<NavDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
 		</View>

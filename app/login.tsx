@@ -1,9 +1,3 @@
-/**
- * Login Screen
- * ------------
- * We provide a login form for users to authenticate with email and password.
- * We do this to allow secure access to user-specific features and data.
- */
 import AuthForm from "@/components/ui/AuthForm";
 import CustomAlert from "@/components/ui/CustomAlert";
 import { useAuth } from "@/context/AuthContext";

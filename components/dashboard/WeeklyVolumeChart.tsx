@@ -1,4 +1,3 @@
-// components/dashboard/WeeklyVolumeChart.tsx
 import React, { useState } from "react";
 import { View } from "react-native";
 import { BarChart } from "react-native-gifted-charts";
