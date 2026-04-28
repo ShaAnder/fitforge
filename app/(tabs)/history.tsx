@@ -1,6 +1,7 @@
 // app/(tabs)/history.tsx
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback, useState } from "react";
 import {
 	Pressable,
 	ScrollView,
@@ -39,9 +40,11 @@ export default function History() {
 		type: "info",
 	});
 
-	useEffect(() => {
-		if (user?.id) loadWorkouts();
-	}, [user]);
+	useFocusEffect(
+		useCallback(() => {
+			if (user?.id) loadWorkouts();
+		}, [user]),
+	);
 
 	const loadWorkouts = async () => {
 		try {
