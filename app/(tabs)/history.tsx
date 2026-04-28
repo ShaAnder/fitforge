@@ -2,16 +2,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
-import {
-	Pressable,
-	ScrollView,
-	Text,
-	TouchableOpacity,
-	View,
-} from "react-native";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 import TabScreen from "@/components/layout/TabScreen";
 import CustomAlert from "@/components/ui/CustomAlert";
+import ModalView from "@/components/ui/ModalView";
 import { useAuth } from "@/context/AuthContext";
 import { fetchWorkouts } from "@/lib/supabaseQueries";
 
@@ -127,69 +122,63 @@ export default function History() {
 			</ScrollView>
 
 			{/* Workout Detail Modal */}
-			{selectedWorkout && (
-				<Pressable
-					className="absolute inset-0 bg-black/90 z-50 pt-5"
-					style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-					onPress={closeDetail}
+			<ModalView
+				visible={!!selectedWorkout}
+				onRequestClose={closeDetail}
+				width="90%"
+				height="70%"
+			>
+				{/* Header */}
+				<Text className="text-white text-2xl font-bold mb-6">
+					{selectedWorkout &&
+						new Date(selectedWorkout.date).toLocaleDateString("en-US", {
+							weekday: "long",
+							month: "long",
+							day: "numeric",
+						})}
+				</Text>
+
+				{/* Scrollable Content */}
+				<ScrollView
+					className="flex-1 -mx-1 px-1"
+					showsVerticalScrollIndicator={false}
+					contentContainerStyle={{ paddingBottom: 40 }}
 				>
-					<Pressable
-						onPress={(e) => e.stopPropagation()}
-						className="bg-zinc-900 rounded-3xl p-6 w-[100%] max-w-xl"
-						style={{ height: "100%" }}
-					>
-						<Text className="text-white text-2xl font-bold mb-4">
-							{new Date(selectedWorkout.date).toLocaleDateString()}
-						</Text>
-						<View style={{ flex: 1 }}>
-							<ScrollView
-								contentContainerStyle={{ paddingBottom: 12 }}
-								showsVerticalScrollIndicator={true}
-								decelerationRate="fast"
-							>
-								{Array.isArray(selectedWorkout.exercises) &&
-								selectedWorkout.exercises.length > 0 ? (
-									selectedWorkout.exercises.map((ex: any, idx: number) => (
-										<View
-											key={idx}
-											className="mb-6 bg-zinc-800 rounded-2xl p-4"
-										>
-											<Text className="text-emerald-400 font-semibold text-lg mb-3">
-												{ex?.name || "Unnamed Exercise"}
-											</Text>
-											{Array.isArray(ex?.sets) && ex.sets.length > 0 ? (
-												ex.sets.map((set: any, sIdx: number) => (
-													<Text
-														key={sIdx}
-														className="text-zinc-300 text-base mb-1"
-													>
-														Set {sIdx + 1}: {set?.reps || "?"} reps ×{" "}
-														{set?.weight || "?"} kg
-													</Text>
-												))
-											) : (
-												<Text className="text-zinc-500">No sets recorded</Text>
-											)}
-										</View>
+					{selectedWorkout &&
+					Array.isArray(selectedWorkout.exercises) &&
+					selectedWorkout.exercises.length > 0 ? (
+						selectedWorkout.exercises.map((ex: any, idx: number) => (
+							<View key={idx} className="mb-6 bg-zinc-800 rounded-2xl p-5">
+								<Text className="text-emerald-400 font-semibold text-lg mb-3">
+									{ex?.name || "Unnamed Exercise"}
+								</Text>
+								{Array.isArray(ex?.sets) && ex.sets.length > 0 ? (
+									ex.sets.map((set: any, sIdx: number) => (
+										<Text key={sIdx} className="text-zinc-300 text-base mb-1">
+											Set {sIdx + 1}: {set?.reps || "?"} reps ×{" "}
+											{set?.weight || "?"} kg
+										</Text>
 									))
 								) : (
-									<Text className="text-zinc-400 text-center py-8">
-										No exercises found in this workout
-									</Text>
+									<Text className="text-zinc-500">No sets recorded</Text>
 								)}
-							</ScrollView>
-						</View>
-						<TouchableOpacity
-							onPress={closeDetail}
-							className="bg-zinc-700 py-4 rounded-2xl mt-4"
-						>
-							<Text className="text-white text-center font-semibold">
-								Close
-							</Text>
-						</TouchableOpacity>
-					</Pressable>
-				</Pressable>
-			)}
+							</View>
+						))
+					) : (
+						<Text className="text-zinc-400 text-center py-12">
+							No exercises found in this workout
+						</Text>
+					)}
+				</ScrollView>
+
+				{/* Close Button */}
+				<TouchableOpacity
+					onPress={closeDetail}
+					className="bg-zinc-700 py-4 rounded-2xl mt-4"
+				>
+					<Text className="text-white text-center font-semibold">Close</Text>
+				</TouchableOpacity>
+			</ModalView>
 
 			<CustomAlert
 				visible={alert.visible}
