@@ -58,11 +58,7 @@ export default function TabScreen({
 			</ScrollView>
 
 			{/* Fixed footer (e.g. Save Workout button) */}
-			{footer && (
-				<View className="px-5 pb-8 bg-zinc-950 border-t border-zinc-800">
-					{footer}
-				</View>
-			)}
+			{footer && <View className="px-5 pb-8 bg-zinc-950 ">{footer}</View>}
 		</View>
 	);
 }

@@ -207,7 +207,7 @@ export default function LogWorkout() {
 			}
 		>
 			{/* Search Bar */}
-			<View className="px-5 pt-4 pb-6 relative z-10">
+			<View className="pt-4 pb-6 relative z-10">
 				<TextInput
 					className="bg-zinc-900 text-white px-5 py-4 rounded-2xl text-base"
 					placeholder="Search or type exercise name..."
