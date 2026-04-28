@@ -12,7 +12,7 @@ import {
 import TabScreen from "@/components/layout/TabScreen";
 import CustomAlert from "@/components/ui/CustomAlert";
 import { useAuth } from "@/context/AuthContext";
-import { fetchWorkouts } from "@/lib/supabaseWorkoutQuery";
+import { fetchWorkouts } from "@/lib/supabaseQueries";
 
 /**
  * History Screen
@@ -126,47 +126,56 @@ export default function History() {
 			{/* Workout Detail Modal */}
 			{selectedWorkout && (
 				<Pressable
-					className="absolute inset-0 bg-black/90 z-50 justify-center px-5"
+					className="absolute inset-0 bg-black/90 z-50 pt-5"
+					style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
 					onPress={closeDetail}
 				>
 					<Pressable
 						onPress={(e) => e.stopPropagation()}
-						className="bg-zinc-900 rounded-3xl p-6"
+						className="bg-zinc-900 rounded-3xl p-6 w-[100%] max-w-xl"
+						style={{ height: "100%" }}
 					>
 						<Text className="text-white text-2xl font-bold mb-4">
 							{new Date(selectedWorkout.date).toLocaleDateString()}
 						</Text>
-
-						<ScrollView>
-							{Array.isArray(selectedWorkout.exercises) &&
-							selectedWorkout.exercises.length > 0 ? (
-								selectedWorkout.exercises.map((ex: any, idx: number) => (
-									<View key={idx} className="mb-6 bg-zinc-800 rounded-2xl p-4">
-										<Text className="text-emerald-400 font-semibold text-lg mb-3">
-											{ex?.name || "Unnamed Exercise"}
-										</Text>
-										{Array.isArray(ex?.sets) && ex.sets.length > 0 ? (
-											ex.sets.map((set: any, sIdx: number) => (
-												<Text
-													key={sIdx}
-													className="text-zinc-300 text-base mb-1"
-												>
-													Set {sIdx + 1}: {set?.reps || "?"} reps ×{" "}
-													{set?.weight || "?"} kg
-												</Text>
-											))
-										) : (
-											<Text className="text-zinc-500">No sets recorded</Text>
-										)}
-									</View>
-								))
-							) : (
-								<Text className="text-zinc-400 text-center py-8">
-									No exercises found in this workout
-								</Text>
-							)}
-						</ScrollView>
-
+						<View style={{ flex: 1 }}>
+							<ScrollView
+								contentContainerStyle={{ paddingBottom: 12 }}
+								showsVerticalScrollIndicator={true}
+								decelerationRate="fast"
+							>
+								{Array.isArray(selectedWorkout.exercises) &&
+								selectedWorkout.exercises.length > 0 ? (
+									selectedWorkout.exercises.map((ex: any, idx: number) => (
+										<View
+											key={idx}
+											className="mb-6 bg-zinc-800 rounded-2xl p-4"
+										>
+											<Text className="text-emerald-400 font-semibold text-lg mb-3">
+												{ex?.name || "Unnamed Exercise"}
+											</Text>
+											{Array.isArray(ex?.sets) && ex.sets.length > 0 ? (
+												ex.sets.map((set: any, sIdx: number) => (
+													<Text
+														key={sIdx}
+														className="text-zinc-300 text-base mb-1"
+													>
+														Set {sIdx + 1}: {set?.reps || "?"} reps ×{" "}
+														{set?.weight || "?"} kg
+													</Text>
+												))
+											) : (
+												<Text className="text-zinc-500">No sets recorded</Text>
+											)}
+										</View>
+									))
+								) : (
+									<Text className="text-zinc-400 text-center py-8">
+										No exercises found in this workout
+									</Text>
+								)}
+							</ScrollView>
+						</View>
 						<TouchableOpacity
 							onPress={closeDetail}
 							className="bg-zinc-700 py-4 rounded-2xl mt-4"
