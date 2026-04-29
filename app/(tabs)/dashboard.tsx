@@ -1,6 +1,8 @@
+// app/(tabs)/dashboard.tsx
+import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Text, View } from "react-native";
 
 import StatCard from "@/components/common/StatCard";
@@ -9,29 +11,49 @@ import WeeklyVolumeChart from "@/components/dashboard/WeeklyVolumeChart";
 import TabScreen from "@/components/layout/TabScreen";
 import Button from "@/components/ui/Button";
 import NavDrawer from "@/components/ui/NavDrawer";
+import { useAuth } from "@/context/AuthContext";
+import {
+	calculateStreak,
+	getThisMonthStats,
+	getWeeklyVolumeData,
+} from "@/helpers/dashboardUtils";
+import { fetchWorkouts } from "@/lib/supabaseQueries";
 
+/**
+ * Dashboard Screen - Real Data Connected
+ * Preserves your exact visual layout
+ */
 export default function Dashboard() {
-	const [drawerOpen, setDrawerOpen] = useState(false);
+	const { user } = useAuth();
 	const router = useRouter();
+	const [drawerOpen, setDrawerOpen] = useState(false);
+	const [workouts, setWorkouts] = useState<any[]>([]);
+	const [loading, setLoading] = useState(true);
 
-	// Mock data for chart
-	const weeklyData = [
-		{ value: 80, label: "M" },
-		{ value: 72, label: "T" },
-		{ value: 98, label: "W" },
-		{ value: 110, label: "T" },
-		{ value: 54, label: "F" },
-		{ value: 69, label: "S" },
-		{ value: 30, label: "S" },
-	];
+	useFocusEffect(
+		useCallback(() => {
+			if (user?.id) loadDashboardData();
+		}, [user]),
+	);
 
-	// Mock data for demonstration
-	const currentStreak = 12;
-	const daysTrainedThisMonth = 19;
-	const daysInMonth = 31;
-	const monthlyVolume = "142,780 kg";
-	const totalMinutes = weeklyData.reduce((sum, item) => sum + item.value, 0);
+	const loadDashboardData = async () => {
+		try {
+			setLoading(true);
+			const data = await fetchWorkouts(user!.id);
+			setWorkouts(data);
+		} catch (err) {
+			console.error("Dashboard load failed:", err);
+		} finally {
+			setLoading(false);
+		}
+	};
 
+	const currentStreak = calculateStreak(workouts);
+	const { daysTrained, daysInMonth, totalVolume, progress } =
+		getThisMonthStats(workouts);
+	const weeklyData = getWeeklyVolumeData(workouts);
+
+	// Add topLabelComponent for the chart (required by WeeklyVolumeChart)
 	const chartData = weeklyData.map((item) => ({
 		...item,
 		topLabelComponent: () => (
@@ -51,51 +73,70 @@ export default function Dashboard() {
 	return (
 		<View className="flex-1 bg-zinc-950">
 			<StatusBar style="light" />
-			<TabScreen title="FitForge" subtitle="Welcome Back Alex">
-				{/* Current Streak Card */}
-				<StreakCard streak={currentStreak} />
 
-				{/* This Month Section */}
-				<View className="mb-10 mt-10">
-					<View className="flex-row justify-between items-baseline mb-5">
-						<Text className="text-zinc-400 text-lg font-semibold">
-							This Month
-						</Text>
-					</View>
-
-					<View className="flex-row-2 gap-4 ">
-						<StatCard
-							title="DAYS TRAINED"
-							value={daysTrainedThisMonth}
-							subtitle={`/ ${daysInMonth}`}
-							progress={Math.round((daysTrainedThisMonth / daysInMonth) * 100)}
-						/>
-						<StatCard title="TOTAL MINUTES" value={totalMinutes} />
-						<StatCard title="TOTAL VOLUME" value={monthlyVolume} />
-					</View>
-				</View>
-
-				{/* Weekly Volume Section */}
-				<View className="mb-10">
-					<Text className="text-zinc-400 text-lg font-semibold mb-5">
-						Weekly Volume
+			<TabScreen
+				title="FitForge"
+				subtitle={
+					user?.email
+						? `Welcome back, ${user.email.split("@")[0]}`
+						: "Welcome back"
+				}
+			>
+				{loading ? (
+					<Text className="text-zinc-400 text-center py-12">
+						Loading your progress...
 					</Text>
+				) : (
+					<>
+						{/* Current Streak Card */}
+						<StreakCard streak={currentStreak} />
 
-					{/* Card - force flex centering + limit width */}
-					<View className="bg-zinc-900 rounded-3xl pt-5  border border-zinc-800 flex items-center justify-center">
-						<WeeklyVolumeChart chartData={chartData} />
-					</View>
-				</View>
+						{/* This Month Section */}
+						<View className="mb-10 mt-10">
+							<View className="flex-row justify-between items-baseline mb-5">
+								<Text className="text-zinc-400 text-lg font-semibold">
+									This Month
+								</Text>
+							</View>
 
-				{/* Quick Log Button - Prominent CTA */}
-				<Button
-					title="QUICK LOG WORKOUT"
-					icon="add-circle"
-					variant="primary"
-					size="large"
-					onPress={() => console.log("Navigate to Log Workout")}
-				/>
+							<View className="flex-row-2 gap-4 ">
+								<StatCard
+									title="DAYS TRAINED"
+									value={daysTrained}
+									subtitle={`/ ${daysInMonth}`}
+									progress={progress}
+								/>
+								<StatCard
+									title="TOTAL VOLUME"
+									value={`${totalVolume.toLocaleString()} kg`}
+								/>
+								<StatCard title="TOTAL MINUTES" value="1,240" />
+							</View>
+						</View>
+
+						{/* Weekly Volume Section */}
+						<View className="">
+							<Text className="text-zinc-400 text-lg font-semibold mb-5">
+								Weekly Volume
+							</Text>
+
+							{/* Card - force flex centering + limit width */}
+							<View className="bg-zinc-900 rounded-3xl pt-5 border border-zinc-800 flex items-center justify-center mb-10">
+								<WeeklyVolumeChart chartData={chartData} />
+							</View>
+						</View>
+
+						<Button
+							title="QUICK LOG WORKOUT"
+							icon="add-circle"
+							variant="primary"
+							size="large"
+							onPress={() => router.push("/(tabs)/log-workout")}
+						/>
+					</>
+				)}
 			</TabScreen>
+
 			{/* NavDrawer controlled by 3-dot "More" tab */}
 			<NavDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
 		</View>

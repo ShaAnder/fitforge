@@ -52,13 +52,17 @@ export default function TabScreen({
 			<ScrollView
 				className="flex-1 px-5"
 				showsVerticalScrollIndicator={false}
-				contentContainerStyle={{ paddingBottom: 100 }}
+				contentContainerStyle={{ paddingBottom: 50 }}
 			>
 				{children}
 			</ScrollView>
 
 			{/* Fixed footer (e.g. Save Workout button) */}
-			{footer && <View className="px-5 pb-8 bg-zinc-950 ">{footer}</View>}
+			{footer && (
+				<View className="px-5 pb-8 bg-zinc-950" style={{ paddingBottom: 50 }}>
+					{footer}
+				</View>
+			)}
 		</View>
 	);
 }

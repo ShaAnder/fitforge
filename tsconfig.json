@@ -11,7 +11,8 @@
 			"@/types/*": ["./types/*"],
 			"@/hooks/*": ["./hooks/*"],
 			"@/lib/*": ["./lib/*"],
-			"@/utils/*": ["./utils/*"]
+			"@/utils/*": ["./utils/*"],
+			"@/helpers/*": ["./helpers/*"]
 		},
 		// Silence the baseUrl deprecation warning
 		"ignoreDeprecations": "6.0"
