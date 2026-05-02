@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useEffect, useState } from "react";
 import {
+	ActivityIndicator,
 	Alert,
 	Image,
 	Text,
@@ -17,7 +18,7 @@ import { useAuth } from "@/context/AuthContext";
 import { uploadAvatar } from "@/lib/supabaseQueries";
 
 /**
- * Profile Screen - Edit mode toggle
+ * Profile Screen - Batch edit mode (avatar preview + save together)
  */
 export default function Profile() {
 	const { user, profile, updateProfile, signOut } = useAuth();
@@ -25,14 +26,17 @@ export default function Profile() {
 	const [isEditing, setIsEditing] = useState(false);
 	const [uploading, setUploading] = useState(false);
 	const [username, setUsername] = useState(profile?.username || "");
+	const [selectedAvatarAsset, setSelectedAvatarAsset] = useState<any>(null);
+	const [avatarKey, setAvatarKey] = useState(0);
 
 	useEffect(() => {
-		if (!isEditing) setUsername(profile?.username || "");
+		if (!isEditing) {
+			setUsername(profile?.username || "");
+			setSelectedAvatarAsset(null);
+		}
 	}, [profile?.username, isEditing]);
 
 	const handlePickImage = async () => {
-		if (!user?.id) return;
-
 		const result = await ImagePicker.launchImageLibraryAsync({
 			mediaTypes: ImagePicker.MediaTypeOptions.Images,
 			allowsEditing: true,
@@ -42,53 +46,84 @@ export default function Profile() {
 
 		if (result.canceled || !result.assets?.[0]) return;
 
+		setSelectedAvatarAsset(result.assets[0]);
+		setAvatarKey((prev) => prev + 1);
+	};
+
+	const saveChanges = async () => {
+		if (!user?.id) return;
+
 		setUploading(true);
 		try {
-			const publicUrl = await uploadAvatar(user.id, result.assets[0]);
-			await updateProfile({ avatar_url: publicUrl });
-			Alert.alert("Success", "Profile picture updated!");
+			let newAvatarUrl = profile?.avatar_url;
+
+			if (selectedAvatarAsset) {
+				newAvatarUrl = await uploadAvatar(user.id, selectedAvatarAsset);
+			}
+
+			await updateProfile({
+				username: username.trim(),
+				avatar_url: newAvatarUrl,
+			});
+
+			setIsEditing(false);
+			setSelectedAvatarAsset(null);
+			setAvatarKey((prev) => prev + 1);
+
+			Alert.alert("Success", "Profile updated!");
 		} catch (err: any) {
-			Alert.alert("Error", err.message || "Failed to upload image");
+			Alert.alert("Error", err.message || "Failed to update profile");
 		} finally {
 			setUploading(false);
 		}
 	};
 
-	const saveChanges = async () => {
-		if (!user?.id) return;
-		try {
-			await updateProfile({ username: username.trim() });
-			setIsEditing(false);
-			Alert.alert("Success", "Profile updated!");
-		} catch (err: any) {
-			Alert.alert("Error", err.message || "Failed to update profile");
-		}
+	const discardChanges = () => {
+		setUsername(profile?.username || "");
+		setSelectedAvatarAsset(null);
+		setIsEditing(false);
 	};
+
+	const displayedAvatarUrl = selectedAvatarAsset
+		? selectedAvatarAsset.uri
+		: profile?.avatar_url;
 
 	return (
 		<TabScreen title="Profile" subtitle="Your Account">
-			{/* PFP */}
+			{/* Profile Picture */}
 			<View className="items-center mt-8 mb-10">
 				<TouchableOpacity
 					onPress={isEditing ? handlePickImage : undefined}
 					disabled={!isEditing || uploading}
 				>
-					<View className="w-36 h-36 rounded-full border-4 border-emerald-500 overflow-hidden bg-zinc-800">
-						{profile?.avatar_url ? (
+					<View className="w-36 h-36 rounded-full border-4 border-emerald-500 overflow-hidden bg-zinc-800 relative">
+						{displayedAvatarUrl ? (
 							<Image
-								source={{ uri: profile.avatar_url }}
+								key={avatarKey}
+								source={{ uri: displayedAvatarUrl }}
 								className="w-full h-full"
+								resizeMode="cover"
 							/>
 						) : (
 							<View className="flex-1 items-center justify-center">
 								<Ionicons name="person" size={80} color="#22c55e" />
 							</View>
 						)}
+
+						{uploading && (
+							<View className="absolute inset-0 bg-black/60 items-center justify-center">
+								<ActivityIndicator size="large" color="#22c55e" />
+							</View>
+						)}
 					</View>
 				</TouchableOpacity>
 
 				{isEditing && (
-					<TouchableOpacity onPress={handlePickImage} className="mt-4">
+					<TouchableOpacity
+						onPress={handlePickImage}
+						className="mt-4"
+						disabled={uploading}
+					>
 						<Text className="text-emerald-400 font-medium">
 							Change Profile Picture
 						</Text>
@@ -171,27 +206,38 @@ export default function Profile() {
 			{/* Action Buttons */}
 			<View className="gap-4">
 				{isEditing ? (
-					<Button
-						title="Save Changes"
-						variant="primary"
-						size="large"
-						onPress={saveChanges}
-					/>
+					<>
+						<Button
+							title={uploading ? "Saving..." : "Save Changes"}
+							variant="primary"
+							size="large"
+							onPress={saveChanges}
+							disabled={uploading}
+						/>
+						<Button
+							title="Discard Changes"
+							variant="outline"
+							size="large"
+							onPress={discardChanges}
+							disabled={uploading}
+						/>
+					</>
 				) : (
-					<Button
-						title="Edit Profile"
-						variant="secondary"
-						size="large"
-						onPress={() => setIsEditing(true)}
-					/>
+					<>
+						<Button
+							title="Edit Profile"
+							variant="secondary"
+							size="large"
+							onPress={() => setIsEditing(true)}
+						/>
+						<Button
+							title="Sign Out"
+							variant="outline"
+							size="large"
+							onPress={signOut}
+						/>
+					</>
 				)}
-
-				<Button
-					title="Sign Out"
-					variant="outline"
-					size="large"
-					onPress={signOut}
-				/>
 			</View>
 		</TabScreen>
 	);
