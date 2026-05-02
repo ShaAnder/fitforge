@@ -17,17 +17,18 @@ import { useAuth } from "@/context/AuthContext";
 import { uploadAvatar } from "@/lib/supabaseQueries";
 
 /**
- * Profile Screen - Account focused (no nested ScrollView)
+ * Profile Screen - Edit mode toggle
  */
 export default function Profile() {
 	const { user, profile, updateProfile, signOut } = useAuth();
+
+	const [isEditing, setIsEditing] = useState(false);
 	const [uploading, setUploading] = useState(false);
-	const [editingUsername, setEditingUsername] = useState(false);
 	const [username, setUsername] = useState(profile?.username || "");
 
 	useEffect(() => {
-		if (!editingUsername) setUsername(profile?.username || "");
-	}, [profile?.username, editingUsername]);
+		if (!isEditing) setUsername(profile?.username || "");
+	}, [profile?.username, isEditing]);
 
 	const handlePickImage = async () => {
 		if (!user?.id) return;
@@ -53,41 +54,25 @@ export default function Profile() {
 		}
 	};
 
-	const saveUsername = async () => {
-		if (!user?.id || !username.trim()) return;
+	const saveChanges = async () => {
+		if (!user?.id) return;
 		try {
 			await updateProfile({ username: username.trim() });
-			setEditingUsername(false);
-			Alert.alert("Success", "Username updated!");
+			setIsEditing(false);
+			Alert.alert("Success", "Profile updated!");
 		} catch (err: any) {
-			Alert.alert("Error", err.message || "Failed to update username");
+			Alert.alert("Error", err.message || "Failed to update profile");
 		}
 	};
 
 	return (
-		<TabScreen
-			title="Profile"
-			subtitle="Your Account"
-			footer={
-				<View className="gap-4">
-					<Button
-						title="Edit Profile"
-						variant="secondary"
-						size="large"
-						onPress={() => setEditingUsername(true)}
-					/>
-					<Button
-						title="Sign Out"
-						variant="secondary"
-						size="large"
-						onPress={signOut}
-					/>
-				</View>
-			}
-		>
-			{/* Profile Picture */}
+		<TabScreen title="Profile" subtitle="Your Account">
+			{/* PFP */}
 			<View className="items-center mt-8 mb-10">
-				<TouchableOpacity onPress={handlePickImage} disabled={uploading}>
+				<TouchableOpacity
+					onPress={isEditing ? handlePickImage : undefined}
+					disabled={!isEditing || uploading}
+				>
 					<View className="w-36 h-36 rounded-full border-4 border-emerald-500 overflow-hidden bg-zinc-800">
 						{profile?.avatar_url ? (
 							<Image
@@ -102,51 +87,30 @@ export default function Profile() {
 					</View>
 				</TouchableOpacity>
 
-				<TouchableOpacity onPress={handlePickImage} className="mt-4">
-					<Text className="text-emerald-400 font-medium">
-						Change Profile Picture
-					</Text>
-				</TouchableOpacity>
+				{isEditing && (
+					<TouchableOpacity onPress={handlePickImage} className="mt-4">
+						<Text className="text-emerald-400 font-medium">
+							Change Profile Picture
+						</Text>
+					</TouchableOpacity>
+				)}
 			</View>
 
 			{/* Username */}
 			<View className="bg-zinc-900 rounded-3xl p-6 mb-6">
 				<Text className="text-zinc-400 text-sm mb-2">Username</Text>
-				{editingUsername ? (
-					<View className="flex-row items-center gap-3">
-						<TextInput
-							className="flex-1 bg-zinc-800 text-white text-xl px-4 py-3 rounded-2xl"
-							value={username}
-							onChangeText={setUsername}
-							autoFocus
-						/>
-						<TouchableOpacity
-							onPress={saveUsername}
-							className="bg-emerald-500 px-6 py-3 rounded-2xl"
-						>
-							<Text className="text-black font-semibold">Save</Text>
-						</TouchableOpacity>
-						<TouchableOpacity onPress={() => setEditingUsername(false)}>
-							<Text className="text-zinc-400">Cancel</Text>
-						</TouchableOpacity>
-					</View>
+				{isEditing ? (
+					<TextInput
+						className="bg-zinc-800 text-white text-xl px-4 py-3 rounded-2xl"
+						value={username}
+						onChangeText={setUsername}
+						autoFocus
+					/>
 				) : (
-					<TouchableOpacity
-						onPress={() => setEditingUsername(true)}
-						className="flex-row items-center justify-between"
-					>
-						<Text className="text-white text-3xl font-bold tracking-tighter">
-							{profile?.username || "Tap to set username"}
-						</Text>
-						<Ionicons name="pencil" size={24} color="#22c55e" />
-					</TouchableOpacity>
+					<Text className="text-white text-3xl font-bold tracking-tighter">
+						{profile?.username || "No username set"}
+					</Text>
 				)}
-			</View>
-
-			{/* Email */}
-			<View className="bg-zinc-900 rounded-3xl p-6 mb-6">
-				<Text className="text-zinc-400 text-sm">Email</Text>
-				<Text className="text-white text-xl">{user?.email}</Text>
 			</View>
 
 			{/* Join Date */}
@@ -184,6 +148,16 @@ export default function Profile() {
 				</View>
 			</View>
 
+			{/* Lifetime Totals */}
+			<View className="mb-10">
+				<Text className="text-zinc-400 text-lg font-semibold mb-5">
+					Lifetime Totals
+				</Text>
+				<Text className="text-zinc-500 text-center py-8">
+					Lifetime totals builder coming soon...
+				</Text>
+			</View>
+
 			{/* Recent Workouts */}
 			<View className="mb-10">
 				<Text className="text-zinc-400 text-lg font-semibold mb-5">
@@ -192,6 +166,32 @@ export default function Profile() {
 				<Text className="text-zinc-500 text-center py-8">
 					Recent workout history coming soon...
 				</Text>
+			</View>
+
+			{/* Action Buttons */}
+			<View className="gap-4">
+				{isEditing ? (
+					<Button
+						title="Save Changes"
+						variant="primary"
+						size="large"
+						onPress={saveChanges}
+					/>
+				) : (
+					<Button
+						title="Edit Profile"
+						variant="secondary"
+						size="large"
+						onPress={() => setIsEditing(true)}
+					/>
+				)}
+
+				<Button
+					title="Sign Out"
+					variant="outline"
+					size="large"
+					onPress={signOut}
+				/>
 			</View>
 		</TabScreen>
 	);

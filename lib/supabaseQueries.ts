@@ -147,24 +147,15 @@ export const updateProfile = async (
 ) => {
 	const supabase = getSupabase();
 
-	console.log(`[updateProfile] 🚀 Updating profile for user: ${userId}`);
+	const { error } = await supabase.from("profiles").upsert({
+		id: userId,
+		...updates,
+		updated_at: new Date().toISOString(),
+	});
 
-	try {
-		const { error } = await supabase.from("profiles").upsert({
-			id: userId,
-			...updates,
-			updated_at: new Date().toISOString(),
-		});
+	if (error) throw error;
 
-		if (error) throw error;
-
-		console.log(`[updateProfile] ✅ Profile updated`);
-	} catch (err: any) {
-		console.error(
-			`[updateProfile] ❌ Error: ${err?.message || JSON.stringify(err)}`,
-		);
-		throw err;
-	}
+	console.log("[updateProfile] ✅ Profile updated successfully");
 };
 
 /**
@@ -174,19 +165,42 @@ export const updateProfile = async (
  * - Generates filename based on userId + file extension.
  * - Returns public URL for immediate use in UI.
  */
-export const uploadAvatar = async (userId: string, file: any) => {
+export const uploadAvatar = async (userId: string, asset: any) => {
 	const supabase = getSupabase();
-	const fileExt = file.uri.split(".").pop();
+
+	if (!asset?.uri) throw new Error("No image URI");
+
+	const fileExt = asset.uri.split(".").pop()?.toLowerCase() || "jpeg";
 	const fileName = `${userId}.${fileExt}`;
 
-	console.log(`[uploadAvatar] 🚀 Uploading avatar for user: ${userId}`);
-
 	try {
+		console.log(`[uploadAvatar] Checking for existing file: ${fileName}`);
+
+		// Check if file already exists
+		const { data: files } = await supabase.storage
+			.from("avatars")
+			.list("", { search: fileName, limit: 1 });
+
+		const fileExists = files && files.length > 0 && files[0].name === fileName;
+
+		if (fileExists) {
+			console.log("[uploadAvatar] ✅ File exists, skipping upload");
+			const {
+				data: { publicUrl },
+			} = supabase.storage.from("avatars").getPublicUrl(fileName);
+			return publicUrl;
+		}
+
+		// Only upload if it doesn't exist
+		console.log(`[uploadAvatar] Uploading new file: ${fileName}`);
+		const response = await fetch(asset.uri);
+		const arrayBuffer = await response.arrayBuffer();
+
 		const { error } = await supabase.storage
 			.from("avatars")
-			.upload(fileName, file, {
-				cacheControl: "3600",
+			.upload(fileName, arrayBuffer, {
 				upsert: true,
+				contentType: asset.mimeType || `image/${fileExt}`,
 			});
 
 		if (error) throw error;
@@ -195,12 +209,10 @@ export const uploadAvatar = async (userId: string, file: any) => {
 			data: { publicUrl },
 		} = supabase.storage.from("avatars").getPublicUrl(fileName);
 
-		console.log(`[uploadAvatar] ✅ Avatar uploaded`);
+		console.log(`[uploadAvatar] ✅ Uploaded new: ${publicUrl}`);
 		return publicUrl;
 	} catch (err: any) {
-		console.error(
-			`[uploadAvatar] ❌ Error: ${err?.message || JSON.stringify(err)}`,
-		);
+		console.error("[uploadAvatar] ❌", err.message || err);
 		throw err;
 	}
 };

@@ -32,12 +32,9 @@ function formatUrlForLogs(input: RequestInfo | URL): string {
 }
 
 /**
- * Custom fetch wrapper with timeout and detailed logging.
+ * Custom fetch wrapper with timeout.
  *
  * - Adds AbortController with configurable timeout.
- * - Logs request method + URL on start.
- * - Logs response status + duration on success.
- * - Logs detailed error info (name, message, duration) on failure.
  * - Forwards any existing signal from the caller.
  */
 const fetchWithTimeout = async (
@@ -45,8 +42,6 @@ const fetchWithTimeout = async (
 	init?: RequestInit,
 ): Promise<Response> => {
 	const controller = new AbortController();
-	const startedAt = Date.now();
-
 	const timeoutId = setTimeout(() => {
 		controller.abort();
 	}, FETCH_TIMEOUT_MS);
@@ -61,37 +56,14 @@ const fetchWithTimeout = async (
 			});
 	}
 
-	const method =
-		((init as any)?.method as string | undefined)?.toUpperCase?.() ?? "GET";
-	const urlForLogs = formatUrlForLogs(input);
-
-	if (SUPABASE_DEBUG) {
-		console.log(`[supabase] → ${method} ${urlForLogs}`);
-	}
-
 	try {
 		const res = await fetch(input as any, {
 			...(init as any),
 			signal: controller.signal,
 		});
 
-		if (SUPABASE_DEBUG) {
-			const ms = Date.now() - startedAt;
-			console.log(
-				`[supabase] ← ${method} ${urlForLogs} ${res.status} (${ms}ms)`,
-			);
-		}
-
 		return res;
 	} catch (err: any) {
-		if (SUPABASE_DEBUG) {
-			const ms = Date.now() - startedAt;
-			const name = err?.name ?? "Error";
-			const message = err?.message ?? String(err);
-			console.log(
-				`[supabase] ✖ ${method} ${urlForLogs} ${name} (${ms}ms): ${message}`,
-			);
-		}
 		throw err;
 	} finally {
 		clearTimeout(timeoutId);
@@ -103,8 +75,7 @@ const fetchWithTimeout = async (
  *
  * - Returns cached instance on subsequent calls (prevents multiple clients).
  * - Uses AsyncStorage for auth persistence (required for React Native).
- * - Attaches custom fetchWithTimeout for debugging + timeout safety.
- * - Logs initialization details when SUPABASE_DEBUG is true.
+ * - Attaches custom fetchWithTimeout for timeout safety.
  */
 export const getSupabase = (): SupabaseClient => {
 	if (supabaseInstance) return supabaseInstance;
@@ -118,16 +89,6 @@ export const getSupabase = (): SupabaseClient => {
 		);
 	}
 
-	if (SUPABASE_DEBUG) {
-		let origin = supabaseUrl;
-		try {
-			origin = new URL(supabaseUrl).origin;
-		} catch {}
-		console.log(`[supabase] Initializing client for ${origin}`);
-		console.log(`[supabase] Anon key present: ${supabaseAnonKey.length} chars`);
-		console.log(`[supabase] Fetch timeout: ${FETCH_TIMEOUT_MS}ms`);
-	}
-
 	supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
 		global: { fetch: fetchWithTimeout as typeof fetch },
 		auth: {
@@ -137,10 +98,6 @@ export const getSupabase = (): SupabaseClient => {
 			detectSessionInUrl: false,
 		},
 	});
-
-	if (SUPABASE_DEBUG) {
-		console.log("[supabase] Client initialized ✅");
-	}
 
 	return supabaseInstance;
 };

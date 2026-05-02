@@ -1,5 +1,9 @@
 import { loadUserData } from "@/helpers/loadUserData";
 import { getSupabase } from "@/lib/supabase";
+import {
+	updateProfile as updateProfileQuery,
+	uploadAvatar as uploadAvatarQuery,
+} from "@/lib/supabaseQueries";
 import { Session, User } from "@supabase/supabase-js";
 import {
 	createContext,
@@ -12,8 +16,9 @@ import {
 
 /**
  * Type definition for the Auth Context value.
+ *
  * Contains user session, profile, workouts, loading state,
- * and auth action methods.
+ * and all auth + profile action methods.
  */
 type AuthContextType = {
 	user: User | null;
@@ -25,6 +30,7 @@ type AuthContextType = {
 	signIn: (email: string, password: string) => Promise<void>;
 	signOut: () => Promise<void>;
 	updateProfile: (updates: any) => Promise<void>;
+	uploadAvatar: (file: any) => Promise<string>; // ← Added
 	refreshWorkouts: () => Promise<void>;
 };
 
@@ -46,7 +52,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	const [workouts, setWorkouts] = useState<any[]>([]);
 	const [loading, setLoading] = useState(true);
 
-	// Ref to track component mount status (for potential cleanup in future)
 	const mounted = useRef(true);
 
 	/**
@@ -54,65 +59,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	 *
 	 * - Runs getSession() on mount.
 	 * - Listens for auth state changes (SIGNED_IN, SIGNED_OUT, etc.).
-	 * - IMPORTANT: onAuthStateChange callback is NOT async to avoid the
-	 * 	 known 	Supabase JS deadlock bug.
+	 * - IMPORTANT: onAuthStateChange callback is NOT async to avoid the known
+	 *     Supabase JS deadlock bug.
 	 * - Only updates user/session state here. Data loading is handled in a
-	 * 	 separate effect.
+	 *     separate effect.
 	 */
 	useEffect(() => {
 		const supabase = getSupabase();
 
-		// Initial session fetch
 		(async () => {
 			try {
 				const {
 					data: { session },
 				} = await supabase.auth.getSession();
-				console.log("✅ Initial session:", session ? "exists" : "null");
 				setSession(session);
 				setUser(session?.user ?? null);
 			} catch (err) {
-				console.error("❌ getSession failed:", err);
+				// getSession error is non-critical
 			}
 		})();
 
-		// Real-time auth state listener
 		const {
 			data: { subscription },
 		} = supabase.auth.onAuthStateChange(
 			(event: string, currentSession: Session | null) => {
-				console.log(`🔄 Auth state changed: ${event}`);
-
 				setSession(currentSession);
 				setUser(currentSession?.user ?? null);
-
-				if (currentSession?.user) {
-					console.log(`👤 User logged in: ${currentSession.user.id}`);
-				} else {
-					console.log("👤 User logged out");
-				}
 			},
 		);
 
-		return () => {
-			subscription.unsubscribe();
-		};
+		return () => subscription.unsubscribe();
 	}, []);
 
 	/**
-	 * Effect 2: Load user-specific data when authenticated user changes.
+	 * Effect 2: Load user-specific data (profile + workouts) when
+	 *           authenticated user changes.
 	 *
-	 * - Only runs when a valid user.id (skips null state to avoid re-renders).
-	 * - Uses loadUserData helper (which queries in parallel via Promise.all).
+	 * - Only runs when a valid user.id exists (skips null state to avoid
+	 *     unnecessary re-renders).
+	 * - Uses loadUserData helper (which runs queries in parallel via
+	 *     Promise.all).
 	 * - Manages the global loading state for the app.
 	 * - This separation prevents the Supabase deadlock bug that occurs if
-	 * 	 queries are called inside onAuthStateChange.
+	 *     queries are called inside onAuthStateChange.
 	 */
 	useEffect(() => {
-		if (!user?.id) return; // Skip on initial render and logout
+		if (!user?.id) return;
 
 		const loadData = async () => {
-			console.log("📥 AuthContext → loading user data...");
 			setLoading(true);
 
 			try {
@@ -121,13 +115,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 				setProfile(profileData);
 				setWorkouts(workoutsData);
-
-				console.log("✅ AuthContext → user data loaded successfully");
 			} catch (err: any) {
-				console.error(
-					"❌ AuthContext → loadUserData failed:",
-					err?.message || err,
-				);
+				// Data load error is non-critical for initial render
 			} finally {
 				setLoading(false);
 			}
@@ -158,14 +147,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		if (error) throw error;
 	};
 
+	/**
+	 * Update user profile and refresh local state.
+	 *
+	 * - Calls the query layer.
+	 * - Re-fetches full user data to keep context in sync.
+	 * - Throws on error so UI can show alerts.
+	 */
 	const updateProfile = async (updates: any) => {
-		// TODO: Implement once getProfile/updateProfile queries are tested
-		console.log("[updateProfile] TODO: Not implemented yet");
+		if (!user?.id) throw new Error("No user logged in");
+
+		try {
+			await updateProfileQuery(user.id, updates);
+			const { profile: updatedProfile } = await loadUserData(
+				user.id,
+				user.email || "",
+			);
+			setProfile(updatedProfile);
+		} catch (err: any) {
+			throw err;
+		}
 	};
 
+	/**
+	 * Upload avatar and update profile in one flow.
+	 *
+	 * - Uploads file to Supabase Storage.
+	 * - Updates profile record with new public URL.
+	 * - Returns the public URL for immediate use.
+	 */
+	const uploadAvatar = async (file: any) => {
+		if (!user?.id) throw new Error("No user logged in");
+
+		try {
+			const publicUrl = await uploadAvatarQuery(user.id, file);
+			await updateProfile({ avatar_url: publicUrl });
+			return publicUrl;
+		} catch (err: any) {
+			throw err;
+		}
+	};
+
+	/**
+	 * Refresh workouts list from the server.
+	 *
+	 * - Useful after creating/editing workouts.
+	 * - Replaces local workouts array with fresh data.
+	 */
 	const refreshWorkouts = async () => {
-		// TODO: Implement once fetchWorkouts query is tested
-		console.log("[refreshWorkouts] TODO: Not implemented yet");
+		if (!user?.id) return;
+
+		try {
+			const { workouts: newWorkouts } = await loadUserData(
+				user.id,
+				user.email || "",
+			);
+			setWorkouts(newWorkouts);
+		} catch (err) {
+			// Refresh failure is non-critical
+		}
 	};
 
 	return (
@@ -180,6 +220,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				signIn,
 				signOut,
 				updateProfile,
+				uploadAvatar,
 				refreshWorkouts,
 			}}
 		>
@@ -190,6 +231,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 /**
  * Custom hook to consume the AuthContext.
+ *
  * Throws a helpful error if used outside of AuthProvider.
  */
 export const useAuth = () => {
