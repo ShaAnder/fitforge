@@ -6,6 +6,7 @@ import TabScreen from "@/components/layout/TabScreen";
 import Button from "@/components/ui/Button";
 import ExerciseSlot from "@/components/workout/ExerciseSlot";
 import { useAuth } from "@/context/AuthContext";
+import { debugLoad } from "@/helpers/debugLoad";
 import { getSupabase } from "@/lib/supabase";
 
 // Local exercise library
@@ -126,7 +127,12 @@ export default function LogWorkout() {
 	};
 
 	const saveWorkout = async () => {
+		const load = debugLoad("LogWorkout.saveWorkout", {
+			userId: user?.id,
+			exerciseCount: exercises.length,
+		});
 		if (!user) {
+			load.error(new Error("Not logged in"));
 			setAlert({
 				visible: true,
 				title: "Not Logged In",
@@ -137,6 +143,7 @@ export default function LogWorkout() {
 		}
 
 		if (!isWorkoutValid()) {
+			load.error(new Error("Workout invalid"));
 			setAlert({
 				visible: true,
 				title: "Incomplete Workout",
@@ -160,6 +167,7 @@ export default function LogWorkout() {
 			});
 
 			if (error) throw error;
+			load.success({ totalVolume });
 
 			setAlert({
 				visible: true,
@@ -172,6 +180,7 @@ export default function LogWorkout() {
 			setExercises([]);
 			setSearchQuery("");
 		} catch (err: any) {
+			load.error(err);
 			setAlert({
 				visible: true,
 				title: "Save Failed",

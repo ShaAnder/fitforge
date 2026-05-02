@@ -1,21 +1,12 @@
+// app/_layout.tsx
 import LoadingScreen from "@/components/ui/LoadingScreen";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import "@/global.css";
 import { Stack, useRouter, useSegments } from "expo-router";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { View } from "react-native";
 
-/**
- * RootLayoutNav - Inner navigation component that handles route protection.
- *
- * This component:
- *   - Checks the current auth state using the useAuth hook
- *   - Uses useSegments() to know which route the user is trying to visit
- *   - Automatically redirects users based on whether they are logged in or not
- *   - Prevents unauthenticated users from accessing the main app
- *   - Prevents logged-in users from staying on login/signup pages
- */
-function RootLayoutNav() {
+const RootLayoutNav = React.memo(() => {
 	const { user, loading } = useAuth();
 	const segments = useSegments();
 	const router = useRouter();
@@ -34,46 +25,32 @@ function RootLayoutNav() {
 		} else if (user && inAuthGroup) {
 			router.replace("/(tabs)/dashboard");
 		}
-	}, [user, loading, segments]);
+	}, [user, loading, segments, router]);
 
-	// Show branded loading screen while checking auth
 	if (loading) {
 		return <LoadingScreen />;
 	}
 
-	// Only render tabs when we know the user is logged in
-	if (!user) {
-		return (
-			<Stack screenOptions={{ headerShown: false }}>
-				<Stack.Screen name="login" />
-				<Stack.Screen name="signup" />
-				<Stack.Screen name="forgot-password" />
-				<Stack.Screen name="reset-password" />
-			</Stack>
-		);
-	}
-
-	// User is logged in → show tabs
 	return (
 		<Stack screenOptions={{ headerShown: false }}>
-			<Stack.Screen name="(tabs)" />
+			{!user ? (
+				<>
+					<Stack.Screen name="login" />
+					<Stack.Screen name="signup" />
+					<Stack.Screen name="forgot-password" />
+					<Stack.Screen name="reset-password" />
+				</>
+			) : (
+				<Stack.Screen name="(tabs)" />
+			)}
 		</Stack>
 	);
-}
+});
 
-/**
- * RootLayout - The top-most layout of the entire application.
- *
- * This is where we:
- *   - Wrap the whole app with AuthProvider so auth state is everywhere
- *   - Apply the global dark background
- *   - Render the protected navigation (RootLayoutNav)
- */
 export default function RootLayout() {
 	return (
 		<AuthProvider>
 			<View className="flex-1 bg-zinc-950">
-				{/* DrawerLayout wraps the entire app content */}
 				<RootLayoutNav />
 			</View>
 		</AuthProvider>

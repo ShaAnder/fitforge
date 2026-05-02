@@ -1,8 +1,6 @@
 // app/(tabs)/dashboard.tsx
-import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useState } from "react";
 import { Text, View } from "react-native";
 
 import StatCard from "@/components/common/StatCard";
@@ -17,43 +15,19 @@ import {
 	getThisMonthStats,
 	getWeeklyVolumeData,
 } from "@/helpers/dashboardUtils";
-import { fetchWorkouts } from "@/lib/supabaseQueries";
 
 /**
- * Dashboard Screen - Real Data Connected
- * Preserves your exact visual layout
+ * Dashboard Screen - Uses global data from AuthContext (no local loading/fetch)
  */
 export default function Dashboard() {
-	const { user } = useAuth();
+	const { user, profile, workouts, loading } = useAuth();
 	const router = useRouter();
-	const [drawerOpen, setDrawerOpen] = useState(false);
-	const [workouts, setWorkouts] = useState<any[]>([]);
-	const [loading, setLoading] = useState(true);
-
-	useFocusEffect(
-		useCallback(() => {
-			if (user?.id) loadDashboardData();
-		}, [user]),
-	);
-
-	const loadDashboardData = async () => {
-		try {
-			setLoading(true);
-			const data = await fetchWorkouts(user!.id);
-			setWorkouts(data);
-		} catch (err) {
-			console.error("Dashboard load failed:", err);
-		} finally {
-			setLoading(false);
-		}
-	};
 
 	const currentStreak = calculateStreak(workouts);
 	const { daysTrained, daysInMonth, totalVolume, progress } =
 		getThisMonthStats(workouts);
 	const weeklyData = getWeeklyVolumeData(workouts);
 
-	// Add topLabelComponent for the chart (required by WeeklyVolumeChart)
 	const chartData = weeklyData.map((item) => ({
 		...item,
 		topLabelComponent: () => (
@@ -77,9 +51,11 @@ export default function Dashboard() {
 			<TabScreen
 				title="FitForge"
 				subtitle={
-					user?.email
-						? `Welcome back, ${user.email.split("@")[0]}`
-						: "Welcome back"
+					profile?.username
+						? `Welcome back, ${profile.username}`
+						: user?.email
+							? `Welcome back, ${user.email.split("@")[0]}`
+							: "Welcome back"
 				}
 			>
 				{loading ? (
@@ -88,10 +64,8 @@ export default function Dashboard() {
 					</Text>
 				) : (
 					<>
-						{/* Current Streak Card */}
 						<StreakCard streak={currentStreak} />
 
-						{/* This Month Section */}
 						<View className="mb-10 mt-10">
 							<View className="flex-row justify-between items-baseline mb-5">
 								<Text className="text-zinc-400 text-lg font-semibold">
@@ -99,7 +73,7 @@ export default function Dashboard() {
 								</Text>
 							</View>
 
-							<View className="flex-row-2 gap-4 ">
+							<View className="flex-row gap-4">
 								<StatCard
 									title="DAYS TRAINED"
 									value={daysTrained}
@@ -114,14 +88,11 @@ export default function Dashboard() {
 							</View>
 						</View>
 
-						{/* Weekly Volume Section */}
-						<View className="">
+						<View className="mb-10">
 							<Text className="text-zinc-400 text-lg font-semibold mb-5">
 								Weekly Volume
 							</Text>
-
-							{/* Card - force flex centering + limit width */}
-							<View className="bg-zinc-900 rounded-3xl pt-5 border border-zinc-800 flex items-center justify-center mb-10">
+							<View className="bg-zinc-900 rounded-3xl pt-5 border border-zinc-800 flex items-center justify-center">
 								<WeeklyVolumeChart chartData={chartData} />
 							</View>
 						</View>
@@ -137,8 +108,7 @@ export default function Dashboard() {
 				)}
 			</TabScreen>
 
-			{/* NavDrawer controlled by 3-dot "More" tab */}
-			<NavDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
+			<NavDrawer isOpen={false} onClose={() => {}} />
 		</View>
 	);
 }

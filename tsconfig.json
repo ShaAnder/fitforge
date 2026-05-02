@@ -15,7 +15,7 @@
 			"@/helpers/*": ["./helpers/*"]
 		},
 		// Silence the baseUrl deprecation warning
-		"ignoreDeprecations": "6.0"
+		"ignoreDeprecations": "5.0"
 	},
 	// include a list of files for us to type check / compile
 	"include": [

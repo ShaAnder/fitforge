@@ -8,6 +8,7 @@ import TabScreen from "@/components/layout/TabScreen";
 import CustomAlert from "@/components/ui/CustomAlert";
 import ModalView from "@/components/ui/ModalView";
 import { useAuth } from "@/context/AuthContext";
+import { debugLoad } from "@/helpers/debugLoad";
 import { fetchWorkouts } from "@/lib/supabaseQueries";
 
 /**
@@ -42,12 +43,17 @@ export default function History() {
 	);
 
 	const loadWorkouts = async () => {
+		const load = debugLoad("History.loadWorkouts", {
+			userId: user?.id,
+		});
 		try {
 			setLoading(true);
 			const data = await fetchWorkouts(user!.id);
 
 			setWorkouts(data);
+			load.success({ count: data?.length ?? 0 });
 		} catch (err: any) {
+			load.error(err);
 			setAlert({
 				visible: true,
 				title: "Failed to Load",
