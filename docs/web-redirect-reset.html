@@ -99,9 +99,11 @@
 
 					// Choose correct screen based on type
 					if (type === "recovery") {
+						// for resetting password
 						deepLink += "reset-password";
 					} else {
-						deepLink += "verify-email"; // For signup confirmation
+						// For signup confirmation
+						deepLink += "login";
 					}
 
 					deepLink += `?access_token=${encodeURIComponent(access_token)}&refresh_token=${encodeURIComponent(refresh_token)}`;
