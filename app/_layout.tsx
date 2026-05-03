@@ -17,7 +17,8 @@ function RootLayoutNav() {
 			segments[0] === "login" ||
 			segments[0] === "signup" ||
 			segments[0] === "forgot-password" ||
-			segments[0] === "reset-password";
+			segments[0] === "reset-password" ||
+			segments[0] === "resend-verification";
 
 		if (!user && !inAuthGroup) {
 			router.replace("/login");
@@ -33,6 +34,10 @@ function RootLayoutNav() {
 	return (
 		<Stack screenOptions={{ headerShown: false }}>
 			<Stack.Screen name="login" options={{ headerShown: false }} />
+			<Stack.Screen
+				name="resend-verification"
+				options={{ headerShown: false }}
+			/>
 			<Stack.Screen name="signup" options={{ headerShown: false }} />
 			<Stack.Screen name="forgot-password" options={{ headerShown: false }} />
 			<Stack.Screen name="reset-password" options={{ headerShown: false }} />

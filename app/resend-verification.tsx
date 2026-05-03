@@ -43,6 +43,7 @@ export default function ResendVerification() {
 				"Please check your inbox (and spam folder).",
 				"success",
 			);
+			router.replace("/login");
 		} catch (err: any) {
 			showAlert(
 				"Error",
@@ -77,7 +78,6 @@ export default function ResendVerification() {
 				onSubmit={handleResend}
 				loading={loading}
 			/>
-
 			<AuthLink to="/login">Login</AuthLink>
 		</View>
 	);
