@@ -11,7 +11,8 @@ import {
 
 import TabScreen from "@/components/layout/TabScreen";
 import ModalView from "@/components/ui/ModalView";
-import { EXERCISE_LIBRARY, Exercise } from "@/constants/exercises";
+import { Exercise } from "@/lib/supabaseQueries";
+import { getAllExercises } from "@/lib/supabaseQueries";
 
 /**
  * Exercise Library Screen

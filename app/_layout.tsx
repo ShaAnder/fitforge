@@ -1,12 +1,11 @@
-// app/_layout.tsx
 import LoadingScreen from "@/components/ui/LoadingScreen";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import "@/global.css";
 import { Stack, useRouter, useSegments } from "expo-router";
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { View } from "react-native";
 
-const RootLayoutNav = React.memo(() => {
+function RootLayoutNav() {
 	const { user, loading } = useAuth();
 	const segments = useSegments();
 	const router = useRouter();
@@ -33,19 +32,14 @@ const RootLayoutNav = React.memo(() => {
 
 	return (
 		<Stack screenOptions={{ headerShown: false }}>
-			{!user ? (
-				<>
-					<Stack.Screen name="login" />
-					<Stack.Screen name="signup" />
-					<Stack.Screen name="forgot-password" />
-					<Stack.Screen name="reset-password" />
-				</>
-			) : (
-				<Stack.Screen name="(tabs)" />
-			)}
+			<Stack.Screen name="login" options={{ headerShown: false }} />
+			<Stack.Screen name="signup" options={{ headerShown: false }} />
+			<Stack.Screen name="forgot-password" options={{ headerShown: false }} />
+			<Stack.Screen name="reset-password" options={{ headerShown: false }} />
+			<Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 		</Stack>
 	);
-});
+}
 
 export default function RootLayout() {
 	return (

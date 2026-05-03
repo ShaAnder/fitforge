@@ -43,25 +43,30 @@ export type Exercise = {
 	muscle: string;
 	difficulty: "Beginner" | "Intermediate" | "Advanced";
 	description: string;
+	instructions: string;
 	estimatedCalories: string;
+	img_url?: string | null;
 };
 
-import { EXERCISE_LIBRARY as staticExercises } from "@/constants/exercises";
-
 /**
- * Get all exercises - currently static, ready for Supabase.
- *
- * Returns the full static library (no DB call yet).
+ * Get all approved exercises from DB
  */
 export const getAllExercises = async (): Promise<Exercise[]> => {
-	return staticExercises;
+	const supabase = getSupabase();
+	console.log("[getAllExercises] 🚀 Fetching from DB");
+
+	const { data, error } = await supabase
+		.from("exercises")
+		.select("*")
+		.eq("status", "approved")
+		.order("name");
+
+	if (error) throw error;
+	return data || [];
 };
 
 /**
- * Search exercises by name.
- *
- * - Case-insensitive partial match.
- * - Returns full list if query is empty.
+ * Search exercises (client-side for now - fast enough with 50-200 items)
  */
 export const searchExercises = (all: Exercise[], query: string = "") => {
 	if (!query) return all;
@@ -70,21 +75,11 @@ export const searchExercises = (all: Exercise[], query: string = "") => {
 	);
 };
 
-/**
- * Filter exercises by muscle group.
- *
- * - Returns full list if muscle === "All".
- */
 export const getByMuscle = (all: Exercise[], muscle: string) => {
 	if (muscle === "All") return all;
 	return all.filter((ex) => ex.muscle === muscle);
 };
 
-/**
- * Get all unique muscle groups from the exercise list.
- *
- * - Used for filter UI (dropdowns, chips, etc.).
- */
 export const getUniqueMuscles = (all: Exercise[]) => {
 	const muscles = all.map((ex) => ex.muscle);
 	return Array.from(new Set(muscles));
