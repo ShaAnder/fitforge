@@ -1,10 +1,6 @@
-import { loadUserData } from "@/helpers/loadUserData";
 import { getSupabase } from "@/lib/supabase";
-import {
-	updateProfile as updateProfileQuery,
-	uploadAvatar as uploadAvatarQuery,
-} from "@/lib/supabaseQueries";
 import { Session, User } from "@supabase/supabase-js";
+import * as AuthSession from "expo-auth-session";
 import {
 	createContext,
 	ReactNode,
@@ -13,6 +9,11 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { useAlert } from "./AlertContext";
+
+/**
+ * AuthContext - Handles all authentication logic.
+ */
 
 type AuthContextType = {
 	user: User | null;
@@ -20,7 +21,12 @@ type AuthContextType = {
 	profile: any | null;
 	workouts: any[];
 	loading: boolean;
-	signup: (email: string, password: string) => Promise<void>;
+
+	signup: (
+		email: string,
+		password: string,
+		onSuccess?: () => void,
+	) => Promise<void>;
 	signIn: (email: string, password: string) => Promise<void>;
 	signOut: () => Promise<void>;
 	updateProfile: (updates: any) => Promise<void>;
@@ -31,19 +37,17 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+	console.log("[AuthProvider] 🔄 Mounted");
+
 	const [user, setUser] = useState<User | null>(null);
 	const [session, setSession] = useState<Session | null>(null);
 	const [profile, setProfile] = useState<any>(null);
 	const [workouts, setWorkouts] = useState<any[]>([]);
 	const [loading, setLoading] = useState(true);
 
-	const mounted = useRef(true);
+	const { showAlert } = useAlert();
 
-	useEffect(() => {
-		if (!user?.id) {
-			setLoading(false);
-		}
-	}, []);
+	const mounted = useRef(true);
 
 	// ─────────────────────────────────────────────────────────────
 	// EFFECT 1: Auth Session + Listener
@@ -52,8 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		const supabase = getSupabase();
 		console.log("[AuthProvider] 🔄 Mounting auth listener");
 
-		// Initial session
-		(async () => {
+		const initializeAuth = async () => {
 			try {
 				console.log("[AuthProvider] 📡 getSession() called");
 				const {
@@ -67,33 +70,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 					"[AuthProvider] ✅ Initial session:",
 					session ? `user: ${session.user.id}` : "null",
 				);
+
 				setSession(session);
 				setUser(session?.user ?? null);
 			} catch (err) {
 				console.error("[AuthProvider] ❌ getSession failed:", err);
+			} finally {
+				setLoading(false);
 			}
-		})();
+		};
+
+		initializeAuth();
 
 		const {
 			data: { subscription },
-		} = supabase.auth.onAuthStateChange(
-			(event: string, currentSession: Session | null) => {
-				console.log(
-					`[AuthProvider] 🔥 AUTH EVENT: ${event}`,
-					currentSession ? `user: ${currentSession.user.id}` : "no session",
-				);
-
-				setSession(currentSession);
-				setUser(currentSession?.user ?? null);
-
-				if (event === "SIGNED_OUT") {
-					console.log("[AuthProvider] 👋 SIGNED_OUT - clearing all state");
-					setProfile(null);
-					setWorkouts([]);
-					setLoading(false);
-				}
-			},
-		);
+		} = supabase.auth.onAuthStateChange((event, currentSession) => {
+			console.log(`[AuthProvider] 🔥 AUTH EVENT: ${event}`);
+			setSession(currentSession);
+			setUser(currentSession?.user ?? null);
+		});
 
 		return () => {
 			console.log("[AuthProvider] 🧹 Unsubscribing auth listener");
@@ -102,61 +97,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	}, []);
 
 	// ─────────────────────────────────────────────────────────────
-	// EFFECT 2: Load Profile + Workouts
-	// ─────────────────────────────────────────────────────────────
-	useEffect(() => {
-		console.log("[AuthProvider] 🔄 Data effect - user.id:", user?.id);
-
-		if (!user?.id) {
-			console.log("[AuthProvider] ⏭️ No user → reset loading");
-			setLoading(false);
-			setProfile(null);
-			setWorkouts([]);
-			return;
-		}
-
-		const loadData = async () => {
-			console.log(`[AuthProvider] 🚀 loadUserData for ${user.id}`);
-			setLoading(true);
-
-			try {
-				const { profile: profileData, workouts: workoutsData } =
-					await loadUserData(user.id, user.email || "");
-
-				console.log(
-					`[AuthProvider] ✅ Data loaded | Profile: ${!!profileData} | Workouts: ${workoutsData?.length || 0}`,
-				);
-
-				setProfile(profileData);
-				setWorkouts(workoutsData);
-			} catch (err: any) {
-				console.error(
-					"[AuthProvider] ❌ loadUserData error:",
-					err?.message || err,
-				);
-			} finally {
-				console.log("[AuthProvider] 🛑 loading = false");
-				setLoading(false);
-			}
-		};
-
-		loadData();
-	}, [user?.id]);
-
-	// ─────────────────────────────────────────────────────────────
 	// AUTH METHODS
 	// ─────────────────────────────────────────────────────────────
-	const signup = async (email: string, password: string) => {
-		const { error } = await getSupabase().auth.signUp({ email, password });
-		if (error) throw error;
+
+	const signup = async (
+		email: string,
+		password: string,
+		onSuccess?: () => void, // ← Callback for redirect after alert
+	) => {
+		console.log(`[AuthProvider] 📝 signup() called for ${email}`);
+
+		const redirectTo = AuthSession.makeRedirectUri({ path: "/verify-email" });
+
+		const { error } = await getSupabase().auth.signUp({
+			email,
+			password,
+			options: { emailRedirectTo: redirectTo },
+		});
+
+		if (error) {
+			console.log("[AuthProvider] ❌ Signup error:", error.message);
+			showAlert("Signup Failed", error.message, "error");
+			throw error;
+		}
+
+		console.log("[AuthProvider] ✅ Signup successful");
+
+		showAlert(
+			"Account Created",
+			"Please check your email to confirm your account.\n\nYou can close this and log in after confirming.",
+			"success",
+		);
+
+		// Run the callback (redirect) after showing alert
+		if (onSuccess) {
+			onSuccess();
+		}
 	};
 
 	const signIn = async (email: string, password: string) => {
+		console.log(`[AuthProvider] 🔑 signIn() called for ${email}`);
 		const { error } = await getSupabase().auth.signInWithPassword({
 			email,
 			password,
 		});
-		if (error) throw error;
+		if (error) {
+			showAlert("Login Failed", error.message, "error");
+			throw error;
+		}
 	};
 
 	const signOut = async () => {
@@ -164,61 +152,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		try {
 			const supabase = getSupabase();
 			const { error } = await supabase.auth.signOut({ scope: "local" });
-
 			if (error) throw error;
 
-			console.log("[AuthProvider] ✅ Supabase signOut succeeded");
-
-			// Force cleanup
-			setUser(null);
-			setSession(null);
-			setProfile(null);
-			setWorkouts([]);
-			setLoading(false);
+			showAlert(
+				"Signed Out",
+				"You have been successfully signed out.",
+				"success",
+			);
 		} catch (err: any) {
-			console.error("[AuthProvider] ❌ signOut failed:", err);
+			showAlert("Sign Out Failed", err.message, "error");
 			throw err;
 		}
 	};
 
 	const updateProfile = async (updates: any) => {
 		if (!user?.id) throw new Error("No user logged in");
-
-		try {
-			await updateProfileQuery(user.id, updates);
-			const { profile: updatedProfile } = await loadUserData(
-				user.id,
-				user.email || "",
-			);
-			setProfile(updatedProfile);
-		} catch (err: any) {
-			throw err;
-		}
+		throw new Error("Not implemented yet");
 	};
 
 	const uploadAvatar = async (file: any) => {
 		if (!user?.id) throw new Error("No user logged in");
-
-		try {
-			const publicUrl = await uploadAvatarQuery(user.id, file);
-			await updateProfile({ avatar_url: publicUrl });
-			return publicUrl;
-		} catch (err: any) {
-			throw err;
-		}
+		throw new Error("Not implemented yet");
 	};
 
 	const refreshWorkouts = async () => {
-		if (!user?.id) return;
-		try {
-			const { workouts: newWorkouts } = await loadUserData(
-				user.id,
-				user.email || "",
-			);
-			setWorkouts(newWorkouts);
-		} catch (err) {
-			console.error("[refreshWorkouts] error:", err);
-		}
+		throw new Error("Not implemented yet");
 	};
 
 	return (
@@ -245,6 +203,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export const useAuth = () => {
 	const context = useContext(AuthContext);
 	if (context === undefined) {
+		console.error("[useAuth] ❌ Used outside AuthProvider!");
 		throw new Error("useAuth must be used within an AuthProvider");
 	}
 	return context;

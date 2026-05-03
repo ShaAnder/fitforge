@@ -1,38 +1,22 @@
-import AuthForm from "@/components/ui/AuthForm";
-import CustomAlert from "@/components/ui/CustomAlert";
+import AuthForm from "@/components/ui/authPages/AuthForm";
+import AuthHeader from "@/components/ui/authPages/AuthHeader";
+import AuthLink from "@/components/ui/authPages/AuthLink";
 import LoadingScreen from "@/components/ui/LoadingScreen";
+import { useAlert } from "@/context/AlertContext";
 import { getSupabase } from "@/lib/supabase";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert, Text, TouchableOpacity, View } from "react-native";
+import { View } from "react-native";
 
 /**
- * ResetPassword Screen - Clean version.
- *
- * Flow:
- *   1. Use temporary tokens to allow password update
- *   2. Update password
- *   3. Immediately sign out
- *   4. Navigate to login screen
- *   5. Let the global auth listener + protection logic handle redirect
+ * ResetPassword Screen
  */
 export default function ResetPassword() {
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
 	const [isProcessing, setIsProcessing] = useState(false);
 
-	// custom alert
-	const [alert, setAlert] = useState<{
-		visible: boolean;
-		title: string;
-		message: string;
-		type?: "success" | "error";
-	}>({
-		visible: false,
-		title: "",
-		message: "",
-	});
-
+	const { showAlert } = useAlert();
 	const supabase = getSupabase();
 	const router = useRouter();
 	const { access_token, refresh_token } = useLocalSearchParams();
@@ -44,7 +28,7 @@ export default function ResetPassword() {
 			password !== confirmPassword ||
 			password.length < 6
 		) {
-			Alert.alert("Error", "Please check your passwords");
+			showAlert("Error", "Please check your passwords", "error");
 			return;
 		}
 
@@ -63,25 +47,17 @@ export default function ResetPassword() {
 
 			await supabase.auth.signOut();
 
-			// Small delay for clean transition
 			await new Promise((resolve) => setTimeout(resolve, 400));
 
-			setAlert({
-				visible: true,
-				title: "Password Reset Successful",
-				message:
-					"Your password has been updated.\n\nPlease log in with your new password.",
-				type: "success",
-			});
+			showAlert(
+				"Password Reset Successful",
+				"Your password has been updated.\n\nPlease log in with your new password.",
+				"success",
+			);
 
 			router.replace("/login");
 		} catch (error: any) {
-			setAlert({
-				visible: true,
-				title: "Error",
-				message: error.message || "Failed to reset password",
-				type: "error",
-			});
+			showAlert("Error", error.message || "Failed to reset password", "error");
 		} finally {
 			setIsProcessing(false);
 		}
@@ -110,9 +86,7 @@ export default function ResetPassword() {
 
 	return (
 		<View className="flex-1 bg-zinc-950 px-6 justify-center">
-			<Text className="text-white text-5xl font-bold mb-12 text-center">
-				Reset Password
-			</Text>
+			<AuthHeader title="Reset Password" />
 
 			<AuthForm
 				fields={resetFields}
@@ -121,20 +95,7 @@ export default function ResetPassword() {
 				loading={isProcessing}
 			/>
 
-			<TouchableOpacity
-				onPress={() => router.replace("/login")}
-				className="mt-12"
-			>
-				<Text className="text-zinc-400 text-center">Back to Login</Text>
-			</TouchableOpacity>
-
-			<CustomAlert
-				visible={alert.visible}
-				title={alert.title}
-				message={alert.message}
-				type={alert.type}
-				onClose={() => setAlert((prev) => ({ ...prev, visible: false }))}
-			/>
+			<AuthLink to="/login">Login</AuthLink>
 		</View>
 	);
 }

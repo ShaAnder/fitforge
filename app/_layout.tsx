@@ -1,9 +1,9 @@
 import LoadingScreen from "@/components/ui/LoadingScreen";
+import { AlertProvider } from "@/context/AlertContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import "@/global.css";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
-import { View } from "react-native";
 
 function RootLayoutNav() {
 	const { user, loading } = useAuth();
@@ -43,10 +43,10 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
 	return (
-		<AuthProvider>
-			<View className="flex-1 bg-zinc-950">
+		<AlertProvider>
+			<AuthProvider>
 				<RootLayoutNav />
-			</View>
-		</AuthProvider>
+			</AuthProvider>
+		</AlertProvider>
 	);
 }

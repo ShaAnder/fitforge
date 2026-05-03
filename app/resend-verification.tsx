@@ -8,9 +8,9 @@ import { useState } from "react";
 import { View } from "react-native";
 
 /**
- * ForgotPassword Screen - Allows users to request a password reset link.
+ * Resend Verification Screen
  */
-export default function ForgotPassword() {
+export default function ResendVerification() {
 	const [email, setEmail] = useState("");
 	const [loading, setLoading] = useState(false);
 
@@ -18,7 +18,7 @@ export default function ForgotPassword() {
 	const supabase = getSupabase();
 	const router = useRouter();
 
-	const handleReset = async () => {
+	const handleResend = async () => {
 		if (!email) {
 			showAlert("Error", "Please enter your email", "error");
 			return;
@@ -27,26 +27,34 @@ export default function ForgotPassword() {
 		setLoading(true);
 
 		try {
-			const { error } = await supabase.auth.resetPasswordForEmail(email, {
-				redirectTo:
-					"https://shaander.github.io/fitforge/web-redirect-reset.html",
+			const { error } = await supabase.auth.resend({
+				type: "signup",
+				email: email.trim(),
+				options: {
+					emailRedirectTo:
+						"https://shaander.github.io/fitforge/web-redirect-reset.html",
+				},
 			});
 
 			if (error) throw error;
 
 			showAlert(
-				"Reset Link Sent",
-				"Check your email for the password reset link.",
+				"Verification Email Sent",
+				"Please check your inbox (and spam folder).",
 				"success",
 			);
 		} catch (err: any) {
-			showAlert("Error", err.message || "Failed to send reset link", "error");
+			showAlert(
+				"Error",
+				err.message || "Failed to resend verification email",
+				"error",
+			);
 		} finally {
 			setLoading(false);
 		}
 	};
 
-	const forgotFields = [
+	const fields = [
 		{
 			name: "email",
 			placeholder: "Enter your email",
@@ -59,14 +67,14 @@ export default function ForgotPassword() {
 	return (
 		<View className="flex-1 bg-zinc-950 px-6 justify-center">
 			<AuthHeader
-				title="Forgot Password"
-				subtitle="We'll send you a reset link"
+				title="Resend Verification"
+				subtitle="Enter your email to receive a new verification link"
 			/>
 
 			<AuthForm
-				fields={forgotFields}
-				buttonText="Send Reset Link"
-				onSubmit={handleReset}
+				fields={fields}
+				buttonText="Resend Verification Email"
+				onSubmit={handleResend}
 				loading={loading}
 			/>
 

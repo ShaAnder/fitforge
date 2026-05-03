@@ -73,7 +73,7 @@ export default function AuthForm({
 				const isVisible = visiblePasswords[field.name] || false;
 
 				return (
-					<View key={field.name} className="mb-5">
+					<View key={field.name} className="mb-6">
 						{field.label && (
 							<Text className="text-zinc-400 text-sm mb-2 ml-1">
 								{field.label}
