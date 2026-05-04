@@ -18,7 +18,8 @@ function RootLayoutNav() {
 			segments[0] === "signup" ||
 			segments[0] === "forgot-password" ||
 			segments[0] === "reset-password" ||
-			segments[0] === "resend-verification";
+			segments[0] === "resend-verification" ||
+			segments[0] === "verify-email";
 
 		if (!user && !inAuthGroup) {
 			router.replace("/login");
