@@ -96,10 +96,12 @@
 	<body>
 		<div class="container">
 			<h1>FitForge</h1>
+
 			<div class="spinner"></div>
+
 			<p>
-				Redirecting you back to the FitForge app...<br />This should only take a
-				moment.
+				Redirecting you back to the FitForge app...<br />
+				This should only take a moment.
 			</p>
 
 			<button id="manual-redirect" class="manual-btn" style="display: none">
@@ -117,12 +119,16 @@
 				const access_token = params.get("access_token");
 				const refresh_token = params.get("refresh_token");
 
+				const manualBtn = document.getElementById("manual-redirect");
+				const errorDiv = document.getElementById("error");
+
 				if (access_token && refresh_token) {
-					window.location.href = `fitforge://reset-password?access_token=${encodeURIComponent(access_token)}&refresh_token=${encodeURIComponent(refresh_token)}`;
+					// Redirect to verify-email screen
+					window.location.href = `fitforge://verify-email?access_token=${encodeURIComponent(access_token)}&refresh_token=${encodeURIComponent(refresh_token)}`;
 				} else {
-					document.getElementById("error").textContent =
-						"Missing tokens. Please try again.";
-					document.getElementById("manual-redirect").style.display = "block";
+					errorDiv.textContent =
+						"Missing tokens. Please try again or contact support.";
+					manualBtn.style.display = "block";
 				}
 			};
 		</script>

@@ -32,7 +32,7 @@ export default function ResendVerification() {
 				email: email.trim(),
 				options: {
 					emailRedirectTo:
-						"https://shaander.github.io/fitforge/web-redirect-reset.html",
+						"https://shaander.github.io/fitforge/web-redirect-verify.html",
 				},
 			});
 

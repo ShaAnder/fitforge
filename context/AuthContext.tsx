@@ -1,6 +1,5 @@
 import { getSupabase } from "@/lib/supabase";
 import { Session, User } from "@supabase/supabase-js";
-import * as AuthSession from "expo-auth-session";
 import {
 	createContext,
 	ReactNode,
@@ -107,12 +106,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	) => {
 		console.log(`[AuthProvider] 📝 signup() called for ${email}`);
 
-		const redirectTo = AuthSession.makeRedirectUri({ path: "/verify-email" });
-
 		const { error } = await getSupabase().auth.signUp({
 			email,
 			password,
-			options: { emailRedirectTo: redirectTo },
+			options: {
+				// Use static web redirect for reliability
+				emailRedirectTo:
+					"https://shaander.github.io/fitforge/web-redirect-verify.html",
+			},
 		});
 
 		if (error) {
