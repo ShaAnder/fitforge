@@ -1,56 +1,33 @@
 // app/(tabs)/log-workout.tsx
-import { useMemo, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { useEffect, useMemo, useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import TabScreen from "@/components/layout/TabScreen";
 import Button from "@/components/ui/Button";
 import ExerciseSlot from "@/components/workout/ExerciseSlot";
 import { useAuth } from "@/context/AuthContext";
-import { debugLoad } from "@/helpers/debugLoad";
 import { getSupabase } from "@/lib/supabase";
 
-// Local exercise library
-const EXERCISE_LIBRARY = [
-	"Bench Press",
-	"Squat",
-	"Deadlift",
-	"Overhead Press",
-	"Pull Up",
-	"Barbell Row",
-	"Dumbbell Curl",
-	"Tricep Extension",
-	"Leg Press",
-	"Lunges",
-	"Lat Pulldown",
-	"Face Pull",
-	"Incline Bench Press",
-	"Romanian Deadlift",
-	"Push Up",
-	"Plank",
-	"Chest Fly",
-	"Lateral Raise",
-	"Hammer Curl",
-	"Calf Raise",
-];
+import { Exercise, getAllExercises } from "@/lib/supabaseQueries";
 
 /**
- * LogWorkout Screen
- *
- * Main screen for logging a complete workout session.
+ * Log Workout Screen
  */
 export default function LogWorkout() {
 	const { user } = useAuth();
 	const supabase = getSupabase();
 
-	const [nextExerciseId, setNextExerciseId] = useState(1);
-	const [nextSetId, setNextSetId] = useState(1);
-
 	const [exercises, setExercises] = useState<any[]>([]);
+	const [allExercises, setAllExercises] = useState<Exercise[]>([]);
+	const [loadingLibrary, setLoadingLibrary] = useState(true);
+
+	const [nextExerciseId, setNextExerciseId] = useState(1);
+	const [nextSetId, setNextSetId] = useState(1); // ← Explicit number type
 
 	const [searchQuery, setSearchQuery] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
 
-	// Custom Alert State
 	const [alert, setAlert] = useState<{
 		visible: boolean;
 		title: string;
@@ -63,47 +40,57 @@ export default function LogWorkout() {
 		type: "info",
 	});
 
+	// Load exercises
+	useEffect(() => {
+		const loadLibrary = async () => {
+			try {
+				const data = await getAllExercises();
+				setAllExercises(data);
+			} catch (err: any) {
+				console.error("[LogWorkout] ❌ Failed to load library:", err.message);
+			} finally {
+				setLoadingLibrary(false);
+			}
+		};
+
+		loadLibrary();
+	}, []);
+
 	const filteredExercises = useMemo(() => {
 		if (!searchQuery.trim()) return [];
-		return EXERCISE_LIBRARY.filter((name) =>
-			name.toLowerCase().includes(searchQuery.toLowerCase()),
-		).slice(0, 10);
-	}, [searchQuery]);
+		return allExercises
+			.filter((ex) => ex.name.toLowerCase().includes(searchQuery.toLowerCase()))
+			.slice(0, 12);
+	}, [allExercises, searchQuery]);
 
-	const addExercise = (name: string) => {
-		if (!name.trim()) return;
-
-		const exerciseId = nextExerciseId;
-		const setId = nextSetId;
+	const addExercise = (exercise: Exercise) => {
+		const localId = nextExerciseId;
 
 		setNextExerciseId((prev) => prev + 1);
-		setNextSetId((prev) => prev + 1);
+		setNextSetId((prev) => prev + 1); // ← Now safe
 
 		setExercises((prev) => [
 			...prev,
 			{
-				id: exerciseId,
-				name: name.trim(),
-				sets: [{ id: setId, reps: "", weight: "" }],
+				localId,
+				...exercise,
+				sets: [{ id: nextSetId, reps: "", weight: "" }],
 			},
 		]);
 
 		setSearchQuery("");
 	};
 
-	const updateExercise = (id: number, newData: any) => {
+	const updateExercise = (localId: number, newData: any) => {
 		setExercises((prev) =>
-			prev.map((ex) => (ex.id === id ? { ...ex, ...newData } : ex)),
+			prev.map((ex) => (ex.localId === localId ? { ...ex, ...newData } : ex)),
 		);
 	};
 
-	const removeExercise = (id: number) => {
-		setExercises((prev) => prev.filter((ex) => ex.id !== id));
+	const removeExercise = (localId: number) => {
+		setExercises((prev) => prev.filter((ex) => ex.localId !== localId));
 	};
 
-	/**
-	 * Calculate total volume from all sets
-	 */
 	const calculateTotalVolume = (): number => {
 		return exercises.reduce((total, exercise) => {
 			const exerciseVolume = exercise.sets.reduce((sum: number, set: any) => {
@@ -117,83 +104,66 @@ export default function LogWorkout() {
 
 	const isWorkoutValid = (): boolean => {
 		if (exercises.length === 0) return false;
-
-		return exercises.every((exercise) => {
-			if (!exercise.name?.trim()) return false;
-			return exercise.sets.every(
+		return exercises.every((exercise) =>
+			exercise.sets.every(
 				(set: any) => set.reps?.trim() !== "" && set.weight?.trim() !== "",
-			);
-		});
+			),
+		);
 	};
 
 	const saveWorkout = async () => {
-		const load = debugLoad("LogWorkout.saveWorkout", {
-			userId: user?.id,
-			exerciseCount: exercises.length,
-		});
 		if (!user) {
-			load.error(new Error("Not logged in"));
 			setAlert({
 				visible: true,
 				title: "Not Logged In",
-				message: "You must be logged in to save workouts.",
+				message: "You must be logged in.",
 				type: "error",
 			});
 			return;
 		}
 
 		if (!isWorkoutValid()) {
-			load.error(new Error("Workout invalid"));
 			setAlert({
 				visible: true,
 				title: "Incomplete Workout",
-				message:
-					"Please add at least one exercise and fill in reps + weight for every set.",
+				message: "Fill all reps and weights.",
 				type: "error",
 			});
 			return;
 		}
 
 		setIsSaving(true);
-
 		const totalVolume = calculateTotalVolume();
 
 		try {
 			const { error } = await supabase.from("workouts").insert({
 				user_id: user.id,
-				exercises: exercises,
+				exercises,
 				total_volume: totalVolume,
 				notes: "",
 			});
 
 			if (error) throw error;
-			load.success({ totalVolume });
 
 			setAlert({
 				visible: true,
 				title: "Success!",
-				message: `Workout saved! Total volume: ${totalVolume} kg`,
+				message: `Workout saved! Volume: ${totalVolume} kg`,
 				type: "success",
 			});
 
-			// Reset form
 			setExercises([]);
 			setSearchQuery("");
 		} catch (err: any) {
-			load.error(err);
 			setAlert({
 				visible: true,
 				title: "Save Failed",
-				message: err.message || "Failed to save workout.",
+				message: err.message,
 				type: "error",
 			});
 		} finally {
 			setIsSaving(false);
 		}
-	};
-
-	const closeAlert = () => {
-		setAlert((prev) => ({ ...prev, visible: false }));
 	};
 
 	return (
@@ -212,41 +182,57 @@ export default function LogWorkout() {
 		>
 			{/* Search Bar */}
 			<View className="px-5 pt-4 pb-6 relative z-10">
-				<TextInput
-					className="bg-zinc-900 text-white px-5 py-4 rounded-2xl text-base"
-					placeholder="Search or type exercise name..."
-					placeholderTextColor="#71717a"
-					value={searchQuery}
-					onChangeText={setSearchQuery}
-					onSubmitEditing={() => addExercise(searchQuery)}
-				/>
+				<View className="bg-zinc-900 rounded-2xl flex-row items-center px-5 border border-zinc-800">
+					<Ionicons name="search" size={20} color="#a1a1aa" />
+					<TextInput
+						className="flex-1 ml-3 py-4 text-white text-base"
+						placeholder="Search exercises..."
+						placeholderTextColor="#71717a"
+						value={searchQuery}
+						onChangeText={setSearchQuery}
+					/>
+				</View>
 
 				{searchQuery.length > 0 && filteredExercises.length > 0 && (
-					<View className="absolute top-16 left-5 right-5 bg-zinc-900 rounded-2xl border border-zinc-800 z-20 shadow-xl">
-						{filteredExercises.map((item) => (
+					<View className="absolute top-16 left-5 right-5 bg-zinc-900 rounded-2xl border border-zinc-800 z-20 max-h-80 overflow-hidden">
+						{filteredExercises.map((ex) => (
 							<TouchableOpacity
-								key={item}
+								key={ex.id}
 								className="px-5 py-4 border-b border-zinc-800 active:bg-zinc-800"
-								onPress={() => addExercise(item)}
+								onPress={() => addExercise(ex)}
 							>
-								<Text className="text-white text-base">{item}</Text>
+								<Text className="text-white text-base font-medium">
+									{ex.name}
+								</Text>
+								<Text className="text-emerald-400 text-xs capitalize">
+									{ex.muscle} • {ex.difficulty}
+								</Text>
 							</TouchableOpacity>
 						))}
 					</View>
 				)}
 			</View>
 
-			{/* Exercise List */}
+			{/* Exercise Slots with Images */}
 			{exercises.map((exercise) => (
 				<ExerciseSlot
-					key={exercise.id}
+					key={exercise.localId}
 					exercise={exercise}
-					onUpdate={(newData) => updateExercise(exercise.id, newData)}
-					onRemove={() => removeExercise(exercise.id)}
+					onUpdate={(newData) => updateExercise(exercise.localId, newData)}
+					onRemove={() => removeExercise(exercise.localId)}
 					nextSetId={nextSetId}
 					setNextSetId={setNextSetId}
 				/>
 			))}
+
+			{!loadingLibrary && exercises.length === 0 && (
+				<View className="items-center py-20">
+					<Ionicons name="barbell-outline" size={70} color="#3f3f46" />
+					<Text className="text-zinc-500 mt-6 text-center px-10">
+						Search above to add exercises
+					</Text>
+				</View>
+			)}
 
 			<View className="h-32" />
 		</TabScreen>

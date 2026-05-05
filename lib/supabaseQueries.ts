@@ -34,7 +34,7 @@ export const fetchWorkouts = async (userId: string) => {
 };
 
 // ─────────────────────────────────────────────────────────────
-// EXERCISE LIBRARY (new - static for now, ready for Supabase)
+// EXERCISES (Dynamic from Supabase)
 // ─────────────────────────────────────────────────────────────
 
 export type Exercise = {
@@ -43,31 +43,34 @@ export type Exercise = {
 	muscle: string;
 	difficulty: "Beginner" | "Intermediate" | "Advanced";
 	description: string;
-	instructions: string;
-	estimatedCalories: string;
+	instructions: string | null;
+	// kept same name for compatibility
+	estimated_calories_per_set?: string;
 	img_url?: string | null;
 };
 
 /**
- * Get all approved exercises from DB
+ * Get all approved exercises
  */
 export const getAllExercises = async (): Promise<Exercise[]> => {
 	const supabase = getSupabase();
-	console.log("[getAllExercises] 🚀 Fetching from DB");
+	console.log("[getAllExercises] 🚀 Fetching dynamic exercises");
 
 	const { data, error } = await supabase
 		.from("exercises")
 		.select("*")
 		.eq("status", "approved")
-		.order("name");
+		.order("name", { ascending: true });
 
-	if (error) throw error;
+	if (error) {
+		console.error("[getAllExercises] ❌", error);
+		throw error;
+	}
+
+	console.log(`[getAllExercises] ✅ Loaded ${data?.length} exercises`);
 	return data || [];
 };
 
-/**
- * Search exercises (client-side for now - fast enough with 50-200 items)
- */
 export const searchExercises = (all: Exercise[], query: string = "") => {
 	if (!query) return all;
 	return all.filter((ex) =>

@@ -29,6 +29,8 @@ export default function Profile() {
 	const [selectedAvatarAsset, setSelectedAvatarAsset] = useState<any>(null);
 	const [avatarKey, setAvatarKey] = useState(0);
 
+	const displayName = profile?.username || user?.email?.split("@")[0] || "User";
+
 	useEffect(() => {
 		if (!isEditing) {
 			setUsername(profile?.username || "");
@@ -143,7 +145,7 @@ export default function Profile() {
 					/>
 				) : (
 					<Text className="text-white text-3xl font-bold tracking-tighter">
-						{profile?.username || "No username set"}
+						{displayName}
 					</Text>
 				)}
 			</View>

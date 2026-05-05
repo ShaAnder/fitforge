@@ -1,6 +1,6 @@
 // app/(tabs)/library.tsx
 import { Ionicons } from "@expo/vector-icons";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	ScrollView,
 	Text,
@@ -10,9 +10,14 @@ import {
 } from "react-native";
 
 import TabScreen from "@/components/layout/TabScreen";
+import LoadingScreen from "@/components/ui/LoadingScreen";
 import ModalView from "@/components/ui/ModalView";
-import { Exercise } from "@/lib/supabaseQueries";
-import { getAllExercises } from "@/lib/supabaseQueries";
+
+import {
+	Exercise,
+	getAllExercises,
+	getUniqueMuscles,
+} from "@/lib/supabaseQueries";
 
 /**
  * Exercise Library Screen
@@ -24,18 +29,28 @@ export default function Library() {
 		null,
 	);
 
-	const muscleGroups = [
-		"All",
-		"Chest",
-		"Back",
-		"Legs",
-		"Shoulders",
-		"Arms",
-		"Core",
-	];
+	// Dynamic data
+	const [exercises, setExercises] = useState<Exercise[]>([]);
+	const [loading, setLoading] = useState(true);
+
+	// Fetch exercises from Supabase
+	useEffect(() => {
+		const loadExercises = async () => {
+			try {
+				const data = await getAllExercises();
+				setExercises(data);
+			} catch (err: any) {
+				console.error("[Library] ❌ Failed to load exercises:", err.message);
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		loadExercises();
+	}, []);
 
 	const filteredExercises = useMemo(() => {
-		return EXERCISE_LIBRARY.filter((exercise) => {
+		return exercises.filter((exercise: Exercise) => {
 			const matchesSearch = exercise.name
 				.toLowerCase()
 				.includes(searchQuery.toLowerCase());
@@ -43,7 +58,12 @@ export default function Library() {
 				selectedMuscle === "All" || exercise.muscle === selectedMuscle;
 			return matchesSearch && matchesMuscle;
 		});
-	}, [searchQuery, selectedMuscle]);
+	}, [exercises, searchQuery, selectedMuscle]);
+
+	const muscleGroups = useMemo(() => {
+		const unique = getUniqueMuscles(exercises);
+		return ["All", ...unique];
+	}, [exercises]);
 
 	const openExerciseModal = (exercise: Exercise) => {
 		setSelectedExercise(exercise);
@@ -69,39 +89,81 @@ export default function Library() {
 				</View>
 			</View>
 
-			{/* Muscle Group Filters */}
-			<View className="px-5 mb-8">
-				<View className="flex-row flex-wrap gap-2">
-					{muscleGroups.map((group) => (
-						<TouchableOpacity
-							key={group}
-							onPress={() => setSelectedMuscle(group)}
-							className={`px-5 py-2.5 rounded-full border text-sm ${
-								selectedMuscle === group
-									? "bg-emerald-500 border-emerald-500"
-									: "bg-zinc-900 border-zinc-800"
-							}`}
-						>
-							<Text
-								className={`font-medium capitalize ${
-									selectedMuscle === group ? "text-black" : "text-white"
-								}`}
-							>
-								{group}
-							</Text>
-						</TouchableOpacity>
-					))}
+			{/* Muscle Group Filters - Hidden while loading */}
+			{!loading && (
+				<View className="px-5 mb-8">
+					<View className="flex-row flex-wrap gap-2">
+						{muscleGroups
+							.filter((group) => group !== "All")
+							.map((group) => {
+								const isActive = selectedMuscle === group;
+								return (
+									<TouchableOpacity
+										key={group}
+										onPress={() => {
+											if (isActive) {
+												setSelectedMuscle("All");
+											} else {
+												setSelectedMuscle(group);
+											}
+										}}
+										className={`px-5 py-2.5 rounded-full border text-sm ${
+											isActive
+												? "bg-emerald-500 border-emerald-500"
+												: "bg-zinc-900 border-zinc-800"
+										}`}
+									>
+										<Text
+											className={`font-medium capitalize ${
+												isActive ? "text-black" : "text-white"
+											}`}
+										>
+											{group}
+										</Text>
+									</TouchableOpacity>
+								);
+							})}
+
+						{selectedMuscle !== "All" && (
+							<View className="px-4 py-2.5 flex-row items-center">
+								<Text className="text-emerald-400 text-sm font-medium">
+									Filtered by:{" "}
+									<Text className="text-white">{selectedMuscle}</Text>
+								</Text>
+							</View>
+						)}
+					</View>
 				</View>
-			</View>
+			)}
 
 			{/* Exercise List */}
-			<ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
-				{filteredExercises.length === 0 ? (
-					<Text className="text-zinc-400 text-center py-12">
-						No exercises found. Try a different search or filter.
-					</Text>
+			<ScrollView
+				className="flex-1 px-5"
+				showsVerticalScrollIndicator={false}
+				contentContainerStyle={{ paddingBottom: 100 }}
+			>
+				{loading ? (
+					<View className="flex-1 justify-center items-center min-h-[400px]">
+						<LoadingScreen
+							message="Loading exercises..."
+							subMessage=""
+							showBrand={false}
+							size="large"
+							fullScreen={false}
+						/>
+					</View>
+				) : filteredExercises.length === 0 ? (
+					<View className="py-20 items-center">
+						<Ionicons name="search-outline" size={60} color="#3f3f46" />
+						<Text className="text-zinc-400 text-center mt-6 text-base">
+							No exercises found
+						</Text>
+						<Text className="text-zinc-500 text-center text-sm mt-1">
+							Try a different search or filter
+						</Text>
+					</View>
 				) : (
-					filteredExercises.map((item) => (
+					filteredExercises.map((item: Exercise) => (
 						<TouchableOpacity
 							key={item.id}
 							onPress={() => openExerciseModal(item)}
@@ -134,37 +196,72 @@ export default function Library() {
 				height="85%"
 			>
 				{selectedExercise && (
-					<View className="flex-1">
-						{/* Header */}
-						<Text className="text-white text-3xl font-bold mb-6">
-							{selectedExercise.name}
-						</Text>
-
-						{/* GIF Placeholder */}
-						<View className="bg-zinc-800 rounded-3xl h-64 mb-6 items-center justify-center">
-							<Ionicons name="image-outline" size={80} color="#a1a1aa" />
-							<Text className="text-zinc-400 text-sm mt-4">
-								GIF coming soon
-							</Text>
-						</View>
-
-						{/* Instructions */}
-						<Text className="text-emerald-400 text-lg font-semibold mb-3">
-							Instructions
-						</Text>
-						<Text className="text-zinc-300 leading-6 text-base">
-							{selectedExercise.description}
-						</Text>
-
-						{/* Close Button */}
-						<TouchableOpacity
-							onPress={closeModal}
-							className="mt-auto bg-zinc-700 py-4 rounded-2xl"
+					<View className="flex-1 relative">
+						<ScrollView
+							className="flex-1 px-6 pt-6"
+							showsVerticalScrollIndicator={false}
+							bounces={false}
+							contentContainerStyle={{ paddingBottom: 160 }}
 						>
-							<Text className="text-white text-center font-semibold text-base">
-								Close
+							{/* GIF Placeholder */}
+							<View className="bg-zinc-800 h-72 mb-6 rounded-2xl items-center justify-center overflow-hidden">
+								<Ionicons name="image-outline" size={90} color="#a1a1aa" />
+								<Text className="text-zinc-400 text-sm mt-4">
+									GIF coming soon
+								</Text>
+							</View>
+
+							{/* NAME */}
+							<Text className="text-white text-4xl font-bold mb-1">
+								{selectedExercise.name}
 							</Text>
-						</TouchableOpacity>
+
+							<Text className="text-zinc-500 text-lg capitalize mb-1">
+								{selectedExercise.muscle} • {selectedExercise.difficulty}
+							</Text>
+
+							<Text className="text-emerald-500 text-lg font-semibold mb-8">
+								{selectedExercise.estimated_calories_per_set} ~ calories per set
+							</Text>
+
+							<Text className="text-emerald-400 text-xl font-semibold mb-3">
+								About this exercise
+							</Text>
+							<Text className="text-zinc-300 leading-6 text-base mb-8">
+								{selectedExercise.description}
+							</Text>
+
+							<Text className="text-emerald-400 text-xl font-semibold mb-3">
+								How to perform
+							</Text>
+
+							<View className="mb-12">
+								{selectedExercise.instructions
+									?.replace(/\\n/g, "\n")
+									.split("\n")
+									.filter((line) => line.trim().length > 0)
+									.map((line, index) => (
+										<Text
+											key={index}
+											className="text-zinc-300 leading-7 text-base mb-3"
+										>
+											• {line.trim()}
+										</Text>
+									))}
+							</View>
+						</ScrollView>
+
+						{/* Fixed Close Button */}
+						<View className="absolute bottom-6 left-6 right-6">
+							<TouchableOpacity
+								onPress={closeModal}
+								className="bg-zinc-700 py-4 rounded-2xl active:bg-zinc-600"
+							>
+								<Text className="text-white text-center font-semibold text-base">
+									Close
+								</Text>
+							</TouchableOpacity>
+						</View>
 					</View>
 				)}
 			</ModalView>

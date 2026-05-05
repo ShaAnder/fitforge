@@ -2,14 +2,13 @@ import { useAlert } from "@/context/AlertContext";
 import { getSupabase } from "@/lib/supabase";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 
 export default function VerifyEmail() {
 	const router = useRouter();
 	const { showAlert } = useAlert();
 	const { access_token, refresh_token } = useLocalSearchParams();
-	const [isProcessing, setIsProcessing] = useState(true);
 
 	useEffect(() => {
 		const verifyAccount = async () => {
@@ -24,10 +23,10 @@ export default function VerifyEmail() {
 
 					showAlert("Account Verified", "Welcome to FitForge!", "success");
 
-					// Small delay to let alert show
-					setTimeout(() => {
-						router.replace("/(tabs)/dashboard");
-					}, 1200);
+					// Go straight to dashboard
+					router.replace("/(tabs)/dashboard");
+				} else {
+					router.replace("/login");
 				}
 			} catch (err) {
 				showAlert(
@@ -36,27 +35,22 @@ export default function VerifyEmail() {
 					"error",
 				);
 				router.replace("/login");
-			} finally {
-				setIsProcessing(false);
 			}
 		};
 
 		verifyAccount();
 	}, [access_token, refresh_token]);
 
-	if (isProcessing) {
-		return (
-			<View className="flex-1 bg-zinc-950 justify-center items-center px-6">
-				<View className="items-center">
-					<Ionicons name="checkmark-circle" size={100} color="#22c55e" />
-					<Text className="text-white text-3xl font-bold mt-8">
-						Verifying Account
-					</Text>
-					<ActivityIndicator size="large" color="#22c55e" className="mt-6" />
-				</View>
+	// Simple loading state while processing
+	return (
+		<View className="flex-1 bg-zinc-950 justify-center items-center px-6">
+			<View className="items-center">
+				<Ionicons name="checkmark-circle" size={100} color="#22c55e" />
+				<Text className="text-white text-3xl font-bold mt-8">
+					Verifying Account
+				</Text>
+				<ActivityIndicator size="large" color="#22c55e" className="mt-6" />
 			</View>
-		);
-	}
-
-	return null;
+		</View>
+	);
 }
