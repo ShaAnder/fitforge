@@ -12,6 +12,7 @@ import {
 	View,
 } from "react-native";
 
+import { resolveAvatarUrl } from "@/components/common/Avatar";
 import TabScreen from "@/components/layout/TabScreen";
 import Button from "@/components/ui/Button";
 import { useAuth } from "@/context/AuthContext";
@@ -88,7 +89,7 @@ export default function Profile() {
 
 	const displayedAvatarUrl = selectedAvatarAsset
 		? selectedAvatarAsset.uri
-		: profile?.avatar_url;
+		: resolveAvatarUrl(profile?.avatar_url);
 
 	return (
 		<TabScreen title="Profile" subtitle="Your Account">

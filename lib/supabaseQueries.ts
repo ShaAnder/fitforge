@@ -1,3 +1,4 @@
+import { File as ExpoFile } from "expo-file-system";
 import { getSupabase } from "./supabase";
 
 /**
@@ -163,54 +164,56 @@ export const updateProfile = async (
  * - Generates filename based on userId + file extension.
  * - Returns public URL for immediate use in UI.
  */
+
 export const uploadAvatar = async (userId: string, asset: any) => {
 	const supabase = getSupabase();
 
-	if (!asset?.uri) throw new Error("No image URI");
+	if (!asset?.uri) throw new Error("No image selected");
 
-	const fileExt = asset.uri.split(".").pop()?.toLowerCase() || "jpeg";
-	const fileName = `${userId}.${fileExt}`;
+	const rawMimeType: string | undefined = asset?.mimeType;
+	const mimeType =
+		rawMimeType === "image/jpg" ? "image/jpeg" : rawMimeType || "image/jpeg";
+
+	const extFromFileName =
+		typeof asset?.fileName === "string" && asset.fileName.includes(".")
+			? asset.fileName.split(".").pop()?.toLowerCase()
+			: undefined;
+
+	const extFromMime = mimeType.startsWith("image/")
+		? mimeType.split("/")[1]?.toLowerCase()
+		: undefined;
+
+	const fileExt = (extFromFileName || extFromMime || "jpeg")
+		.replace("jpg", "jpeg")
+		.replace(/[^a-z0-9]/g, "");
+
+	const fileName = userId + "-" + Date.now() + "." + (fileExt || "jpeg");
 
 	try {
-		console.log(`[uploadAvatar] Checking for existing file: ${fileName}`);
+		console.log("[uploadAvatar] 📤 Uploading:", fileName);
 
-		// Check if file already exists
-		const { data: files } = await supabase.storage
-			.from("avatars")
-			.list("", { search: fileName, limit: 1 });
-
-		const fileExists = files && files.length > 0 && files[0].name === fileName;
-
-		if (fileExists) {
-			console.log("[uploadAvatar] ✅ File exists, skipping upload");
-			const {
-				data: { publicUrl },
-			} = supabase.storage.from("avatars").getPublicUrl(fileName);
-			return publicUrl;
-		}
-
-		// Only upload if it doesn't exist
-		console.log(`[uploadAvatar] Uploading new file: ${fileName}`);
-		const response = await fetch(asset.uri);
-		const arrayBuffer = await response.arrayBuffer();
+		const pickedFile = new ExpoFile(asset.uri);
+		const arrayBuffer = await pickedFile.arrayBuffer();
 
 		const { error } = await supabase.storage
 			.from("avatars")
 			.upload(fileName, arrayBuffer, {
 				upsert: true,
-				contentType: asset.mimeType || `image/${fileExt}`,
+				contentType: mimeType,
 			});
 
 		if (error) throw error;
 
-		const {
-			data: { publicUrl },
-		} = supabase.storage.from("avatars").getPublicUrl(fileName);
+		const { data: urlData } = supabase.storage
+			.from("avatars")
+			.getPublicUrl(fileName);
 
-		console.log(`[uploadAvatar] ✅ Uploaded new: ${publicUrl}`);
-		return publicUrl;
+		if (!urlData?.publicUrl) throw new Error("Failed to create public URL");
+
+		console.log("[uploadAvatar] ✅ SUCCESS:", urlData.publicUrl);
+		return urlData.publicUrl;
 	} catch (err: any) {
-		console.error("[uploadAvatar] ❌", err.message || err);
+		console.error("[uploadAvatar] ❌", err);
 		throw err;
 	}
 };

@@ -1,4 +1,5 @@
 import { getSupabase } from "@/lib/supabase";
+import { uploadAvatar as uploadAvatarFromQueries } from "@/lib/supabaseQueries";
 import { Session, User } from "@supabase/supabase-js";
 import {
 	createContext,
@@ -96,6 +97,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	}, []);
 
 	// ─────────────────────────────────────────────────────────────
+	// LOAD PROFILE WHEN USER IS AVAILABLE
+	// ─────────────────────────────────────────────────────────────
+	useEffect(() => {
+		if (!user?.id) {
+			setProfile(null);
+			return;
+		}
+
+		const loadProfile = async () => {
+			try {
+				console.log(`[AuthProvider] 📂 Loading profile for user: ${user.id}`);
+
+				const { data, error } = await getSupabase()
+					.from("profiles")
+					.select("*")
+					.eq("id", user.id)
+					.single();
+
+				if (error) {
+					console.error("[AuthProvider] Profile load error:", error);
+
+					// Auto-create profile if it doesn't exist yet
+					if (error.code === "PGRST116") {
+						console.log("[AuthProvider] Creating new profile...");
+						await updateProfile({
+							username: user.email?.split("@")[0] || "User",
+						});
+					}
+					return;
+				}
+
+				console.log("[AuthProvider] ✅ Profile loaded successfully:", data);
+				setProfile(data);
+			} catch (err) {
+				console.error("[AuthProvider] Failed to load profile:", err);
+			}
+		};
+
+		loadProfile();
+	}, [user?.id]);
+
+	// ─────────────────────────────────────────────────────────────
 	// AUTH METHODS
 	// ─────────────────────────────────────────────────────────────
 
@@ -168,16 +211,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 	const updateProfile = async (updates: any) => {
 		if (!user?.id) throw new Error("No user logged in");
-		throw new Error("Not implemented yet");
+
+		try {
+			const { error } = await getSupabase()
+				.from("profiles")
+				.upsert({
+					id: user.id,
+					...updates,
+					updated_at: new Date().toISOString(),
+				})
+				.select()
+				.single();
+
+			if (error) throw error;
+
+			// Instantly update local state
+			setProfile((prev: any) => ({
+				...prev,
+				...updates,
+			}));
+		} catch (err: any) {
+			console.error("Update profile error:", err);
+			throw err;
+		}
 	};
 
-	const uploadAvatar = async (file: any) => {
+	const uploadAvatar = async (asset: any): Promise<string> => {
 		if (!user?.id) throw new Error("No user logged in");
-		throw new Error("Not implemented yet");
+
+		try {
+			const publicUrl = await uploadAvatarFromQueries(user.id, asset);
+
+			// Store only filename
+			const fileName = publicUrl.split("/").pop() || publicUrl;
+			await updateProfile({ avatar_url: fileName });
+
+			return fileName;
+		} catch (err: any) {
+			console.error("Upload avatar error:", err);
+			throw err;
+		}
 	};
 
 	const refreshWorkouts = async () => {
-		throw new Error("Not implemented yet");
+		if (!user?.id) return;
+
+		try {
+			const { data, error } = await getSupabase()
+				.from("workouts")
+				.select("*")
+				.eq("user_id", user.id)
+				.order("date", { ascending: false });
+
+			if (error) throw error;
+
+			setWorkouts(data || []);
+		} catch (err) {
+			console.error("Refresh workouts error:", err);
+			showAlert("Error", "Failed to refresh workouts", "error");
+		}
 	};
 
 	return (
@@ -204,7 +296,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export const useAuth = () => {
 	const context = useContext(AuthContext);
 	if (context === undefined) {
-		console.error("[useAuth] ❌ Used outside AuthProvider!");
 		throw new Error("useAuth must be used within an AuthProvider");
 	}
 	return context;

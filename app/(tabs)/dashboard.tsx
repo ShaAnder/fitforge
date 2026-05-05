@@ -24,8 +24,15 @@ export default function Dashboard() {
 	const router = useRouter();
 
 	const currentStreak = calculateStreak(workouts);
-	const { daysTrained, daysInMonth, totalVolume, progress } =
-		getThisMonthStats(workouts);
+	const {
+		daysTrained,
+		daysInMonth,
+		totalVolume,
+		totalSets,
+		workoutsThisMonth,
+		estCalories,
+		progress,
+	} = getThisMonthStats(workouts);
 	const weeklyData = getWeeklyVolumeData(workouts);
 
 	const chartData = weeklyData.map((item) => ({
@@ -67,24 +74,50 @@ export default function Dashboard() {
 						<StreakCard streak={currentStreak} />
 
 						<View className="mb-10 mt-10">
-							<View className="flex-row justify-between items-baseline mb-5">
-								<Text className="text-zinc-400 text-lg font-semibold">
-									This Month
-								</Text>
-							</View>
+							<Text className="text-zinc-400 text-lg font-semibold mb-6">
+								This Month Overview
+							</Text>
 
-							<View className="flex-row gap-4">
+							{/* Row 1: Days Trained + Workouts Logged */}
+							<View className="flex-row gap-2 mb-2">
 								<StatCard
 									title="DAYS TRAINED"
 									value={daysTrained}
 									subtitle={`/ ${daysInMonth}`}
 									progress={progress}
+									className="flex-1"
 								/>
+								<StatCard
+									title="WORKOUTS"
+									value={workoutsThisMonth}
+									subtitle="logged"
+									className="flex-1"
+								/>
+							</View>
+
+							{/* Row 2: Calories + Total Sets (side by side) */}
+							<View className="flex-row gap-2 mb-2 ">
+								<StatCard
+									title="EST. CALORIES"
+									value={estCalories.toLocaleString()}
+									subtitle="burned"
+									className="flex-1"
+								/>
+								<StatCard
+									title="TOTAL SETS"
+									value={totalSets}
+									subtitle="completed"
+									className="flex-1"
+								/>
+							</View>
+							{/* Row 3: Total Volume (full width, most important) */}
+							<View className=" gap-4">
 								<StatCard
 									title="TOTAL VOLUME"
 									value={`${totalVolume.toLocaleString()} kg`}
+									subtitle="lifted"
+									className="w-full"
 								/>
-								<StatCard title="TOTAL MINUTES" value="1,240" />
 							</View>
 						</View>
 
