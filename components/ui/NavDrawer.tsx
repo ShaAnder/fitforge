@@ -22,6 +22,7 @@ export default function NavDrawer({ isOpen, onClose }: NavDrawerProps) {
 		},
 		{ title: "Community", icon: "people-outline", route: "/(tabs)/community" },
 		{ title: "Privacy", icon: "shield-outline", route: "/privacy" },
+		{ title: "Terms", icon: "document-text-outline", route: "/terms" },
 	];
 
 	const handleMenuPress = (route: string) => {

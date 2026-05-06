@@ -14,7 +14,7 @@ interface StreakCardProps {
  */
 export default function StreakCard({ streak }: StreakCardProps) {
 	return (
-		<Card className="p-10 items-center">
+		<Card className="p-8 items-center">
 			{/* Streak Label */}
 			<Text className="text-emerald-400 uppercase tracking-widest text-sm font-medium">
 				Current Streak

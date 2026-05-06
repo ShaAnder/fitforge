@@ -59,7 +59,10 @@ export default function TabScreen({
 
 			{/* Fixed footer (e.g. Save Workout button) */}
 			{footer && (
-				<View className="px-5 pb-8 bg-zinc-950" style={{ paddingBottom: 50 }}>
+				<View
+					className="px-5 mt-5 pb-8 bg-zinc-950"
+					style={{ paddingBottom: 50 }}
+				>
 					{footer}
 				</View>
 			)}

@@ -4,6 +4,7 @@ import { Session, User } from "@supabase/supabase-js";
 import {
 	createContext,
 	ReactNode,
+	useCallback,
 	useContext,
 	useEffect,
 	useRef,
@@ -253,7 +254,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		}
 	};
 
-	const refreshWorkouts = async () => {
+	const refreshWorkouts = useCallback(async () => {
 		if (!user?.id) return;
 
 		try {
@@ -270,7 +271,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			console.error("Refresh workouts error:", err);
 			showAlert("Error", "Failed to refresh workouts", "error");
 		}
-	};
+	}, [user?.id, showAlert]);
+
+	useEffect(() => {
+		if (!user?.id) {
+			setWorkouts([]);
+			return;
+		}
+		refreshWorkouts();
+	}, [user?.id, refreshWorkouts]);
 
 	return (
 		<AuthContext.Provider

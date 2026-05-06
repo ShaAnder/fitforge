@@ -123,15 +123,6 @@ export default function Library() {
 									</TouchableOpacity>
 								);
 							})}
-
-						{selectedMuscle !== "All" && (
-							<View className="px-4 py-2.5 flex-row items-center">
-								<Text className="text-emerald-400 text-sm font-medium">
-									Filtered by:{" "}
-									<Text className="text-white">{selectedMuscle}</Text>
-								</Text>
-							</View>
-						)}
 					</View>
 				</View>
 			)}

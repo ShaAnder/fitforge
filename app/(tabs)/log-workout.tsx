@@ -70,12 +70,12 @@ export default function LogWorkout() {
 		setNextSetId((prev) => prev + 1); // ← Now safe
 
 		setExercises((prev) => [
-			...prev,
 			{
 				localId,
 				...exercise,
 				sets: [{ id: nextSetId, reps: "", weight: "" }],
 			},
+			...prev,
 		]);
 
 		setSearchQuery("");

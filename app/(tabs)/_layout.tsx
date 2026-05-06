@@ -92,6 +92,8 @@ export default function TabLayout() {
 				{/* Hidden screens */}
 				<Tabs.Screen name="index" options={{ href: null }} />
 				<Tabs.Screen name="profile" options={{ href: null }} />
+				<Tabs.Screen name="achievements" options={{ href: null }} />
+				<Tabs.Screen name="community" options={{ href: null }} />
 			</Tabs>
 
 			{/* Clean Modal Drawer with Click Outside to Close */}

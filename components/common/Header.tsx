@@ -8,12 +8,14 @@ interface HeaderProps {
 	title?: string;
 	subtitle?: string;
 	flameIcon?: boolean;
+	onProfilePress: () => void;
 }
 
 export default function Header({
 	title = "FitForge",
 	subtitle,
 	flameIcon = true,
+	onProfilePress,
 }: HeaderProps) {
 	const router = useRouter();
 
@@ -35,7 +37,10 @@ export default function Header({
 				</View>
 
 				{/* RIGHT: Reusable Avatar */}
-				<Avatar size={56} onPress={() => router.push("/(tabs)/profile")} />
+				<Avatar
+					size={56}
+					onPress={onProfilePress ?? (() => router.push("/(tabs)/profile"))}
+				/>
 			</View>
 		</View>
 	);

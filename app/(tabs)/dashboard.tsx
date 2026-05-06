@@ -73,7 +73,7 @@ export default function Dashboard() {
 					<>
 						<StreakCard streak={currentStreak} />
 
-						<View className="mb-10 mt-10">
+						<View className="my-8">
 							<Text className="text-zinc-400 text-lg font-semibold mb-6">
 								This Month Overview
 							</Text>
