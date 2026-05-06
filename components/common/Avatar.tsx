@@ -89,7 +89,7 @@ export default function Avatar({
 				<Image
 					key={avatarKey}
 					source={{ uri: avatarUrl }}
-					style={{ width: size, height: size }}
+					style={{ width: size, height: size, marginLeft: -3 }}
 					resizeMode="cover"
 					onError={(e) => console.log("❌ Load Error:", e.nativeEvent)}
 				/>

@@ -27,26 +27,11 @@ You are close. The app reads as “real product” once these are addressed:
 
 ### MVP blockers / polish gaps
 
-3. **Dead-end navigation in Nav Drawer**
-   - Drawer contains routes like `/(tabs)/settings`, `/(tabs)/achievements`,
-     `/(tabs)/community`, `/privacy` which don’t exist yet.
-
 4. **Alert UX inconsistency**
    - `AlertContext` exists and is used in auth screens.
    - Profile and Log Workout still use local state / native alerts in places.
 
 ## By-Friday Plan (High ROI)
-
-This is the shortest path to “portfolio-ready MVP”.
-
-### 1) Make workouts a single source of truth (AuthContext)
-
-**Goal:** Dashboard, History, and other screens can all read the same `workouts`
-state.
-
-- Update: `context/AuthContext.tsx`
-  - Call `refreshWorkouts()` automatically when `user.id` becomes available.
-  - Clear workouts on logout / when `user` becomes null.
 
 ### 2) Refresh workouts after saving
 

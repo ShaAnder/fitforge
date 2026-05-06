@@ -92,6 +92,9 @@ export default function TabLayout() {
 				{/* Hidden screens */}
 				<Tabs.Screen name="index" options={{ href: null }} />
 				<Tabs.Screen name="profile" options={{ href: null }} />
+				<Tabs.Screen name="privacy" options={{ href: null }} />
+				<Tabs.Screen name="terms" options={{ href: null }} />
+				<Tabs.Screen name="settings" options={{ href: null }} />
 				<Tabs.Screen name="achievements" options={{ href: null }} />
 				<Tabs.Screen name="community" options={{ href: null }} />
 			</Tabs>
@@ -103,23 +106,23 @@ export default function TabLayout() {
 				transparent
 				onRequestClose={() => setDrawerVisible(false)}
 			>
-				<View
+				{/* Tap outside closes */}
+				<Pressable
 					className="flex-1 bg-black/70 justify-end"
-					onStartShouldSetResponder={() => true} // Enables touch handling
-					onResponderRelease={(e) => {
-						// If user taps on the overlay (not on the drawer content), close it
-						if (e.target === e.currentTarget) {
-							setDrawerVisible(false);
-						}
-					}}
+					onPress={() => setDrawerVisible(false)}
 				>
-					<View className="bg-zinc-900 rounded-t-3xl min-h-[65%] p-6">
+					{/* Sheet: fixed height, bottom-aligned */}
+					<Pressable
+						onPress={(e) => e.stopPropagation()}
+						style={{ height: "70%" }}
+						className="w-full"
+					>
 						<NavDrawer
 							isOpen={drawerVisible}
 							onClose={() => setDrawerVisible(false)}
 						/>
-					</View>
-				</View>
+					</Pressable>
+				</Pressable>
 			</Modal>
 		</>
 	);
