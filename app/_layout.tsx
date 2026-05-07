@@ -3,6 +3,7 @@ import { AccentProvider } from "@/context/AccentContext";
 import { AlertProvider } from "@/context/AlertContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import "@/global.css";
+import { useInitNotifications } from "@/handlers/notificationHandler";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
 
@@ -10,7 +11,7 @@ function RootLayoutNav() {
 	const { user, loading } = useAuth();
 	const segments = useSegments();
 	const router = useRouter();
-
+	useInitNotifications();
 	useEffect(() => {
 		if (loading) return;
 

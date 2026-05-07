@@ -1,7 +1,8 @@
 // app/(tabs)/profile.tsx
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { useEffect, useState } from "react";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import {
 	ActivityIndicator,
 	Alert,
@@ -23,8 +24,10 @@ import { uploadAvatar } from "@/lib/supabaseQueries";
  * Profile Screen - Batch edit mode (avatar preview + save together)
  */
 export default function Profile() {
+	const params = useLocalSearchParams<{ edit?: string }>();
 	const { user, profile, updateProfile, signOut } = useAuth();
 	const accent = useAccent();
+	const router = useRouter();
 
 	const [isEditing, setIsEditing] = useState(false);
 	const [uploading, setUploading] = useState(false);
@@ -33,6 +36,17 @@ export default function Profile() {
 	const [avatarKey, setAvatarKey] = useState(0);
 
 	const displayName = profile?.username || user?.email?.split("@")[0] || "User";
+
+	useFocusEffect(
+		useCallback(() => {
+			const editParam = params?.edit;
+			if (editParam === "1") {
+				setIsEditing(true);
+				// Optional: clear the param so it doesn't stick on refresh
+				router.setParams({ edit: undefined });
+			}
+		}, [params?.edit]),
+	);
 
 	useEffect(() => {
 		if (!isEditing) {
@@ -174,20 +188,9 @@ export default function Profile() {
 				<Text className="text-zinc-400 text-lg font-semibold mb-5">
 					Achievements
 				</Text>
-				<View className="flex-row flex-wrap gap-4">
-					<View className="bg-zinc-900 rounded-3xl p-6 items-center flex-1">
-						<Ionicons name="flame" size={48} color="#eab308" />
-						<Text className="text-white text-xl font-bold mt-3">
-							12 Day Streak
-						</Text>
-					</View>
-					<View className="bg-zinc-900 rounded-3xl p-6 items-center flex-1">
-						<Ionicons name="barbell" size={48} color={accent.hex500} />
-						<Text className="text-white text-xl font-bold mt-3">
-							First Lift
-						</Text>
-					</View>
-				</View>
+				<Text className="text-zinc-500 text-center py-8">
+					Achievements coming soon...
+				</Text>
 			</View>
 
 			{/* Lifetime Totals */}
@@ -197,16 +200,6 @@ export default function Profile() {
 				</Text>
 				<Text className="text-zinc-500 text-center py-8">
 					Lifetime totals builder coming soon...
-				</Text>
-			</View>
-
-			{/* Recent Workouts */}
-			<View className="mb-10">
-				<Text className="text-zinc-400 text-lg font-semibold mb-5">
-					Recent Workouts
-				</Text>
-				<Text className="text-zinc-500 text-center py-8">
-					Recent workout history coming soon...
 				</Text>
 			</View>
 

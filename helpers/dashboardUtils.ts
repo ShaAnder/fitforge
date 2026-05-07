@@ -138,29 +138,46 @@ export const calculateStreak = (workouts: any[]): number => {
 };
 
 /**
- * Weekly Volume (This week only - Mon to Sun)
+ * Get weekly volume data respecting user's week start preference
  */
-export const getWeeklyVolumeData = (workouts: any[]) => {
-	const dayOrder = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-	const data = dayOrder.map((label) => ({ value: 0, label }));
-
+export const getWeeklyVolumeData = (
+	workouts: any[],
+	weekStart: "mon" | "sun" = "mon",
+) => {
 	const now = new Date();
+	const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, ...
+
+	// Calculate start of week
+	const startOffset = weekStart === "mon" ? 1 : 0;
+	const diff = (dayOfWeek + 7 - startOffset) % 7;
 	const startOfWeek = new Date(now);
-	startOfWeek.setDate(now.getDate() - ((now.getDay() + 6) % 7)); // Monday start
+	startOfWeek.setDate(now.getDate() - diff);
 	startOfWeek.setHours(0, 0, 0, 0);
 
-	(workouts || []).forEach((workout) => {
-		const workoutDate = getWorkoutDate(workout);
-		if (!workoutDate) return;
+	const labels =
+		weekStart === "mon"
+			? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+			: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-		const diffTime = workoutDate.getTime() - startOfWeek.getTime();
-		const diffDays = Math.floor(diffTime / (1000 * 3600 * 24));
+	const data = [];
 
-		if (diffDays >= 0 && diffDays < 7) {
-			const dayIndex = (workoutDate.getDay() + 6) % 7; // Mon=0
-			data[dayIndex].value += getWorkoutVolume(workout);
-		}
-	});
+	for (let i = 0; i < 7; i++) {
+		const currentDay = new Date(startOfWeek);
+		currentDay.setDate(startOfWeek.getDate() + i);
+
+		const dayStr = currentDay.toISOString().split("T")[0];
+
+		const dayWorkouts = workouts.filter((w: any) => w.date?.startsWith(dayStr));
+
+		const volume = dayWorkouts.reduce((sum: number, w: any) => {
+			return sum + (w.total_volume || 0);
+		}, 0);
+
+		data.push({
+			value: volume,
+			label: labels[i],
+		});
+	}
 
 	return data;
 };

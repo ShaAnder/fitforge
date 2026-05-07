@@ -13,7 +13,8 @@
 			"@/hooks/*": ["./hooks/*"],
 			"@/lib/*": ["./lib/*"],
 			"@/utils/*": ["./utils/*"],
-			"@/helpers/*": ["./helpers/*"]
+			"@/helpers/*": ["./helpers/*"],
+			"@/handlers/*": ["./handlers/*"]
 		},
 		// Silence the baseUrl deprecation warning
 		"ignoreDeprecations": "5.0"

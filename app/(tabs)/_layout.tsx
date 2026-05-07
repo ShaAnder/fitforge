@@ -99,6 +99,7 @@ export default function TabLayout() {
 				<Tabs.Screen name="privacy" options={{ href: null }} />
 				<Tabs.Screen name="terms" options={{ href: null }} />
 				<Tabs.Screen name="settings" options={{ href: null }} />
+				<Tabs.Screen name="report-bug" options={{ href: null }} />
 				<Tabs.Screen name="achievements" options={{ href: null }} />
 				<Tabs.Screen name="community" options={{ href: null }} />
 			</Tabs>

@@ -1,8 +1,3 @@
-// app/(tabs)/dashboard.tsx
-import { useRouter } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import { Text, View } from "react-native";
-
 import StatCard from "@/components/common/StatCard";
 import StreakCard from "@/components/common/StreakCard";
 import WeeklyVolumeChart from "@/components/dashboard/WeeklyVolumeChart";
@@ -15,29 +10,36 @@ import {
 	getThisMonthStats,
 	getWeeklyVolumeData,
 } from "@/helpers/dashboardUtils";
+import {
+	convertVolumeData,
+	convertWeight,
+	getUnitLabel,
+} from "@/helpers/unitConverter";
 import { useAccent } from "@/hooks/useAccent";
+import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { Text, View } from "react-native";
 
 /**
- * Dashboard Screen - Uses global data from AuthContext (no local loading/fetch)
+ * Dashboard Screen
  */
 export default function Dashboard() {
 	const { user, profile, workouts, loading } = useAuth();
 	const router = useRouter();
 	const accent = useAccent();
 
-	const currentStreak = calculateStreak(workouts);
-	const {
-		daysTrained,
-		daysInMonth,
-		totalVolume,
-		totalSets,
-		workoutsThisMonth,
-		estCalories,
-		progress,
-	} = getThisMonthStats(workouts);
-	const weeklyData = getWeeklyVolumeData(workouts);
+	const userUnit = (profile?.units as "kg" | "lb") ?? "kg";
+	const userWeekStart = (profile?.week_start as "mon" | "sun") ?? "mon";
 
-	const chartData = weeklyData.map((item) => ({
+	const currentStreak = calculateStreak(workouts);
+	const monthStats = getThisMonthStats(workouts);
+
+	const weeklyData = getWeeklyVolumeData(workouts, userWeekStart);
+
+	// Convert everything based on user preference
+	const convertedWeeklyData = convertVolumeData(weeklyData, userUnit);
+
+	const chartData = convertedWeeklyData.map((item) => ({
 		...item,
 		topLabelComponent: () => (
 			<Text
@@ -52,6 +54,9 @@ export default function Dashboard() {
 			</Text>
 		),
 	}));
+
+	const totalVolumeConverted = convertWeight(monthStats.totalVolume, userUnit);
+	const unitLabel = getUnitLabel(userUnit);
 
 	return (
 		<View className="flex-1 bg-zinc-950">
@@ -80,52 +85,51 @@ export default function Dashboard() {
 								This Month Overview
 							</Text>
 
-							{/* Row 1: Days Trained + Workouts Logged */}
+							{/* Row 1 */}
 							<View className="flex-row gap-2 mb-2">
 								<StatCard
 									title="DAYS TRAINED"
-									value={daysTrained}
-									subtitle={`/ ${daysInMonth}`}
-									progress={progress}
+									value={monthStats.daysTrained}
+									subtitle={`/ ${monthStats.daysInMonth}`}
+									progress={monthStats.progress}
 									className="flex-1"
 								/>
 								<StatCard
 									title="WORKOUTS"
-									value={workoutsThisMonth}
+									value={monthStats.workoutsThisMonth}
 									subtitle="logged"
 									className="flex-1"
 								/>
 							</View>
 
-							{/* Row 2: Calories + Total Sets (side by side) */}
-							<View className="flex-row gap-2 mb-2 ">
+							{/* Row 2 */}
+							<View className="flex-row gap-2 mb-2">
 								<StatCard
 									title="EST. CALORIES"
-									value={estCalories.toLocaleString()}
+									value={monthStats.estCalories.toLocaleString()}
 									subtitle="burned"
 									className="flex-1"
 								/>
 								<StatCard
 									title="TOTAL SETS"
-									value={totalSets}
+									value={monthStats.totalSets}
 									subtitle="completed"
 									className="flex-1"
 								/>
 							</View>
-							{/* Row 3: Total Volume (full width, most important) */}
-							<View className=" gap-4">
-								<StatCard
-									title="TOTAL VOLUME"
-									value={`${totalVolume.toLocaleString()} kg`}
-									subtitle="lifted"
-									className="w-full"
-								/>
-							</View>
+
+							{/* Total Volume - with dynamic unit */}
+							<StatCard
+								title="TOTAL VOLUME"
+								value={`${totalVolumeConverted.toLocaleString()} ${unitLabel}`}
+								subtitle="lifted"
+								className="w-full"
+							/>
 						</View>
 
 						<View className="mb-10">
 							<Text className="text-zinc-400 text-lg font-semibold mb-5">
-								Weekly Volume
+								Weekly Volume ({unitLabel})
 							</Text>
 							<View className="bg-zinc-900 rounded-3xl pt-5 border border-zinc-800 flex items-center justify-center">
 								<WeeklyVolumeChart chartData={chartData} />
