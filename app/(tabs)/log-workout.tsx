@@ -5,6 +5,7 @@ import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import TabScreen from "@/components/layout/TabScreen";
 import Button from "@/components/ui/Button";
 import ExerciseSlot from "@/components/workout/ExerciseSlot";
+import { useAlert } from "@/context/AlertContext";
 import { useAuth } from "@/context/AuthContext";
 import { useAccent } from "@/hooks/useAccent";
 import { getSupabase } from "@/lib/supabase";
@@ -12,10 +13,11 @@ import { getSupabase } from "@/lib/supabase";
 import { Exercise, getAllExercises } from "@/lib/supabaseQueries";
 
 /**
- * Log Workout Screen
+ * Log Workout Screen - Fully updated with custom alerts + dashboard refresh
  */
 export default function LogWorkout() {
-	const { user } = useAuth();
+	const { user, refreshWorkouts } = useAuth();
+	const { showAlert } = useAlert();
 	const accent = useAccent();
 	const supabase = getSupabase();
 
@@ -24,31 +26,19 @@ export default function LogWorkout() {
 	const [loadingLibrary, setLoadingLibrary] = useState(true);
 
 	const [nextExerciseId, setNextExerciseId] = useState(1);
-	const [nextSetId, setNextSetId] = useState(1); // ← Explicit number type
+	const [nextSetId, setNextSetId] = useState(1);
 
 	const [searchQuery, setSearchQuery] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
 
-	const [alert, setAlert] = useState<{
-		visible: boolean;
-		title: string;
-		message: string;
-		type: "success" | "error" | "info";
-	}>({
-		visible: false,
-		title: "",
-		message: "",
-		type: "info",
-	});
-
-	// Load exercises
+	// Load exercises library
 	useEffect(() => {
 		const loadLibrary = async () => {
 			try {
 				const data = await getAllExercises();
 				setAllExercises(data);
 			} catch (err: any) {
-				console.error("[LogWorkout] ❌ Failed to load library:", err.message);
+				console.error("[LogWorkout] Failed to load library:", err);
 			} finally {
 				setLoadingLibrary(false);
 			}
@@ -66,9 +56,8 @@ export default function LogWorkout() {
 
 	const addExercise = (exercise: Exercise) => {
 		const localId = nextExerciseId;
-
 		setNextExerciseId((prev) => prev + 1);
-		setNextSetId((prev) => prev + 1); // ← Now safe
+		setNextSetId((prev) => prev + 1);
 
 		setExercises((prev) => [
 			{
@@ -114,22 +103,20 @@ export default function LogWorkout() {
 
 	const saveWorkout = async () => {
 		if (!user) {
-			setAlert({
-				visible: true,
-				title: "Not Logged In",
-				message: "You must be logged in.",
-				type: "error",
-			});
+			showAlert(
+				"Not Logged In",
+				"You must be logged in to save workouts.",
+				"error",
+			);
 			return;
 		}
 
 		if (!isWorkoutValid()) {
-			setAlert({
-				visible: true,
-				title: "Incomplete Workout",
-				message: "Fill all reps and weights.",
-				type: "error",
-			});
+			showAlert(
+				"Incomplete Workout",
+				"Please fill all reps and weights before saving.",
+				"error",
+			);
 			return;
 		}
 
@@ -142,26 +129,33 @@ export default function LogWorkout() {
 				exercises,
 				total_volume: totalVolume,
 				notes: "",
+				date: new Date().toISOString(),
 			});
 
 			if (error) throw error;
 
-			setAlert({
-				visible: true,
-				title: "Success!",
-				message: `Workout saved! Volume: ${totalVolume} kg`,
-				type: "success",
-			});
+			// === SUCCESS ===
+			showAlert(
+				"Workout Logged! 💪",
+				`Session saved successfully. Total volume: ${totalVolume} kg`,
+				"success",
+			);
 
+			// Clear form
 			setExercises([]);
 			setSearchQuery("");
+
+			// Refresh dashboard data
+			await refreshWorkouts();
+
+			// Optional: Navigate back to dashboard
+			// router.replace("/(tabs)/dashboard");
 		} catch (err: any) {
-			setAlert({
-				visible: true,
-				title: "Save Failed",
-				message: err.message,
-				type: "error",
-			});
+			showAlert(
+				"Save Failed",
+				err.message || "Could not save workout.",
+				"error",
+			);
 		} finally {
 			setIsSaving(false);
 		}
@@ -173,7 +167,7 @@ export default function LogWorkout() {
 			subtitle="Today's Session"
 			footer={
 				<Button
-					title={isSaving ? "Saving..." : "Save Workout"}
+					title={isSaving ? "Saving Workout..." : "Save Workout"}
 					variant="primary"
 					size="large"
 					onPress={saveWorkout}
@@ -214,7 +208,7 @@ export default function LogWorkout() {
 				)}
 			</View>
 
-			{/* Exercise Slots with Images */}
+			{/* Exercise Slots */}
 			{exercises.map((exercise) => (
 				<ExerciseSlot
 					key={exercise.localId}

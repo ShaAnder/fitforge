@@ -4,22 +4,22 @@
 		"slug": "fitforge",
 		"version": "1.0.0",
 		"orientation": "portrait",
-		"icon": "./assets/images/icon.png",
+		"icon": "./assets/images/splash-icon.png",
 		"scheme": "fitforge",
 		"userInterfaceStyle": "automatic",
 		"newArchEnabled": true,
 		"splash": {
 			"image": "./assets/images/splash-icon.png",
 			"resizeMode": "contain",
-			"backgroundColor": "#ffffff"
+			"backgroundColor": "#09090b"
 		},
 		"ios": {
 			"supportsTablet": true
 		},
 		"android": {
 			"adaptiveIcon": {
-				"foregroundImage": "./assets/images/adaptive-icon.png",
-				"backgroundColor": "#ffffff"
+				"foregroundImage": "./assets/images/splash-icon.png",
+				"backgroundColor": "#09090b"
 			},
 			"predictiveBackGestureEnabled": false,
 			"package": "com.anonymous.fitforge"
@@ -27,7 +27,7 @@
 		"web": {
 			"bundler": "metro",
 			"output": "static",
-			"favicon": "./assets/images/favicon.png"
+			"favicon": "./assets/images/splash-icon.png"
 		},
 		"plugins": ["expo-router", "expo-font", "expo-web-browser"],
 		"experiments": {

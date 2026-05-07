@@ -1,3 +1,4 @@
+// context/AuthContext.tsx
 import { normalizeAccentKey, type AccentKey } from "@/constants/accents";
 import { useAccentContext } from "@/context/AccentContext";
 import { getSupabase } from "@/lib/supabase";
@@ -9,7 +10,6 @@ import {
 	useCallback,
 	useContext,
 	useEffect,
-	useRef,
 	useState,
 } from "react";
 import { useAlert } from "./AlertContext";
@@ -46,12 +46,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	const [session, setSession] = useState<Session | null>(null);
 	const [profile, setProfile] = useState<any>(null);
 	const [workouts, setWorkouts] = useState<any[]>([]);
+
+	// "loading" blocks ALL UI at startup until auth + initial data is ready
 	const [loading, setLoading] = useState(true);
+	const [authResolved, setAuthResolved] = useState(false);
 
 	const { showAlert } = useAlert();
 	const { setAccentId } = useAccentContext();
 
-	const mounted = useRef(true);
+	const MIN_SPLASH_MS = 3500;
 
 	// ─────────────────────────────────────────────────────────────
 	// EFFECT 1: Auth Session + Listener
@@ -80,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			} catch (err) {
 				console.error("[AuthProvider] ❌ getSession failed:", err);
 			} finally {
-				setLoading(false);
+				setAuthResolved(true);
 			}
 		};
 
@@ -101,48 +104,98 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	}, []);
 
 	// ─────────────────────────────────────────────────────────────
-	// LOAD PROFILE WHEN USER IS AVAILABLE
+	// EFFECT 2: Bootstrap initial dashboard data
+	// - Blocks UI until: auth resolved AND (if logged in) profile+workouts loaded
 	// ─────────────────────────────────────────────────────────────
 	useEffect(() => {
-		if (!user?.id) {
-			setProfile(null);
-			setAccentId("green");
-			return;
-		}
+		if (!authResolved) return;
 
-		const loadProfile = async () => {
+		let cancelled = false;
+
+		const bootstrap = async () => {
+			if (!user?.id) {
+				setProfile(null);
+				setWorkouts([]);
+				setAccentId("green");
+				setLoading(false);
+				return;
+			}
+
+			setLoading(true);
+
 			try {
-				console.log(`[AuthProvider] 📂 Loading profile for user: ${user.id}`);
+				const supabase = getSupabase();
 
-				const { data, error } = await getSupabase()
+				// Load or create profile
+				const { data: existingProfile, error: profileErr } = await supabase
 					.from("profiles")
 					.select("*")
 					.eq("id", user.id)
-					.single();
+					.maybeSingle();
 
-				if (error) {
-					console.error("[AuthProvider] Profile load error:", error);
+				if (profileErr) throw profileErr;
 
-					// Auto-create profile if it doesn't exist yet
-					if (error.code === "PGRST116") {
-						console.log("[AuthProvider] Creating new profile...");
-						await updateProfile({
-							username: user.email?.split("@")[0] || "User",
-						});
-					}
-					return;
+				let resolvedProfile = existingProfile;
+
+				if (!resolvedProfile) {
+					const defaultUsername = user.email?.split("@")[0]?.trim() || "User";
+
+					const { error: upsertErr } = await supabase.from("profiles").upsert({
+						id: user.id,
+						username: defaultUsername,
+						updated_at: new Date().toISOString(),
+					});
+
+					if (upsertErr) throw upsertErr;
+
+					const { data: createdProfile, error: createdErr } = await supabase
+						.from("profiles")
+						.select("*")
+						.eq("id", user.id)
+						.single();
+
+					if (createdErr) throw createdErr;
+
+					resolvedProfile = createdProfile;
 				}
 
-				console.log("[AuthProvider] ✅ Profile loaded successfully:", data);
-				setProfile(data);
-				setAccentId(normalizeAccentKey(data?.accent) as AccentKey);
-			} catch (err) {
-				console.error("[AuthProvider] Failed to load profile:", err);
+				// Load workouts
+				const { data: workoutsData, error: workoutsErr } = await supabase
+					.from("workouts")
+					.select("*")
+					.eq("user_id", user.id)
+					.order("date", { ascending: false });
+
+				if (workoutsErr) throw workoutsErr;
+
+				if (cancelled) return;
+
+				setProfile(resolvedProfile);
+				setAccentId(normalizeAccentKey(resolvedProfile?.accent) as AccentKey);
+				setWorkouts(workoutsData || []);
+			} catch (err: any) {
+				console.error("[AuthProvider] ❌ Bootstrap failed:", err);
+
+				if (!cancelled) {
+					showAlert(
+						"Loading Error",
+						"Failed to load your dashboard data. Please try again.",
+						"error",
+					);
+					setAccentId("green");
+				}
+				await new Promise((r) => setTimeout(r, MIN_SPLASH_MS));
+			} finally {
+				if (!cancelled) setLoading(false);
 			}
 		};
 
-		loadProfile();
-	}, [user?.id]);
+		bootstrap();
+
+		return () => {
+			cancelled = true;
+		};
+	}, [authResolved, user?.id, setAccentId, showAlert]);
 
 	// ─────────────────────────────────────────────────────────────
 	// AUTH METHODS
@@ -179,10 +232,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			"success",
 		);
 
-		// Run the callback (redirect) after showing alert
-		if (onSuccess) {
-			onSuccess();
-		}
+		if (onSuccess) onSuccess();
 	};
 
 	const signIn = async (email: string, password: string) => {
@@ -219,7 +269,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		if (!user?.id) throw new Error("No user logged in");
 
 		try {
-			const { error } = await getSupabase()
+			const { data, error } = await getSupabase()
 				.from("profiles")
 				.upsert({
 					id: user.id,
@@ -231,9 +281,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 			if (error) throw error;
 
-			// Instantly update local state
 			setProfile((prev: any) => ({
-				...prev,
+				...(prev ?? {}),
+				...(data ?? {}),
 				...updates,
 			}));
 
@@ -252,7 +302,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		try {
 			const publicUrl = await uploadAvatarFromQueries(user.id, asset);
 
-			// Store only filename
 			const fileName = publicUrl.split("/").pop() || publicUrl;
 			await updateProfile({ avatar_url: fileName });
 
@@ -281,14 +330,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			showAlert("Error", "Failed to refresh workouts", "error");
 		}
 	}, [user?.id, showAlert]);
-
-	useEffect(() => {
-		if (!user?.id) {
-			setWorkouts([]);
-			return;
-		}
-		refreshWorkouts();
-	}, [user?.id, refreshWorkouts]);
 
 	return (
 		<AuthContext.Provider
