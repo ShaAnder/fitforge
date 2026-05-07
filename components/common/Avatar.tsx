@@ -1,10 +1,18 @@
-import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import { Image, TouchableOpacity, View } from "react-native";
 
+import { useAuth } from "@/context/AuthContext";
 import { useAccent } from "@/hooks/useAccent";
 
+/**
+ * Converts any stored avatar path into a reliable public Supabase Storage URL.
+ *
+ * Handles multiple possible formats users might have stored:
+ * - Just filename (e.g. "user123.jpg")
+ * - "avatars/..." path
+ * - Full storage URL
+ */
 export function resolveAvatarUrl(
 	avatarUrl: string | null | undefined,
 ): string | null {
@@ -13,7 +21,7 @@ export function resolveAvatarUrl(
 	const trimmed = avatarUrl.trim();
 	if (!trimmed || trimmed.toLowerCase() === "null") return null;
 
-	// Already a usable remote URL (public or signed)
+	// Already a full remote URL
 	if (/^https?:\/\//i.test(trimmed)) return trimmed;
 
 	const supabaseUrl = (process.env.EXPO_PUBLIC_SUPABASE_URL ?? "").replace(
@@ -22,10 +30,7 @@ export function resolveAvatarUrl(
 	);
 	if (!supabaseUrl) return null;
 
-	// Accept a few common stored shapes:
-	// - "userId-123.jpeg"
-	// - "avatars/userId-123.jpeg"
-	// - "storage/v1/object/public/avatars/userId-123.jpeg"
+	// Normalize different possible stored paths
 	let objectPath = trimmed.replace(/^\/+/, "");
 	objectPath = objectPath.replace(
 		/^storage\/v1\/object\/public\/avatars\//i,
@@ -53,6 +58,12 @@ interface AvatarProps {
 	localUri?: string | null;
 }
 
+/**
+ * Reusable Avatar Component.
+ *
+ * Displays user profile picture with fallback to default icon.
+ * Supports local preview (during upload) and live refresh when profile updates.
+ */
 export default function Avatar({
 	size = 56,
 	borderColor,
@@ -63,18 +74,16 @@ export default function Avatar({
 }: AvatarProps) {
 	const accent = useAccent();
 	const { profile } = useAuth();
+
+	// Force Image re-render when avatar URL changes
 	const [avatarKey, setAvatarKey] = useState(0);
 
 	useEffect(() => {
 		setAvatarKey((prev) => prev + 1);
 	}, [profile?.avatar_url]);
 
+	// Prefer local preview (during upload) over stored URL
 	const avatarUrl = localUri ? localUri : resolveAvatarUrl(profile?.avatar_url);
-
-	if (__DEV__) {
-		// Helps debug “filename vs url” issues without spamming prod logs
-		console.log("🔍 Final Avatar URL:", avatarUrl);
-	}
 
 	const Inner = (
 		<View
@@ -94,9 +103,9 @@ export default function Avatar({
 					source={{ uri: avatarUrl }}
 					style={{ width: size, height: size, marginLeft: -3 }}
 					resizeMode="cover"
-					onError={(e) => console.log("❌ Load Error:", e.nativeEvent)}
 				/>
 			) : (
+				/* Default avatar icon */
 				<View className="flex-1 items-center justify-center bg-zinc-800">
 					<Ionicons
 						name="person-circle-outline"
@@ -108,6 +117,7 @@ export default function Avatar({
 		</View>
 	);
 
+	// Make avatar tappable when onPress is provided
 	if (onPress) {
 		return (
 			<TouchableOpacity onPress={onPress} className="active:opacity-80">

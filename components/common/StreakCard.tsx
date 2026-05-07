@@ -9,12 +9,14 @@ interface StreakCardProps {
 }
 
 /**
- * StreakCard component to prominently display the user's current streak.
+ * StreakCard Component.
  *
- * @param streak - Number of consecutive days trained
+ * Prominently displays the user's current training streak with a large number
+ * and flame icon. Used on the Dashboard to motivate consistent training.
  */
 export default function StreakCard({ streak }: StreakCardProps) {
 	const accent = useAccent();
+
 	return (
 		<Card className="p-8 items-center">
 			{/* Streak Label */}
@@ -24,7 +26,7 @@ export default function StreakCard({ streak }: StreakCardProps) {
 				Current Streak
 			</Text>
 
-			{/* Streak Number + Flame Icon */}
+			{/* Large Streak Number + Flame Icon */}
 			<View className="flex-row items-center mt-6">
 				<Text className="text-8xl font-bold text-white">{streak}</Text>
 				<Ionicons

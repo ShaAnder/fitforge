@@ -7,9 +7,15 @@ interface HeaderProps {
 	title?: string;
 	subtitle?: string;
 	flameIcon?: boolean;
-	onProfilePress: () => void;
+	onProfilePress?: () => void;
 }
 
+/**
+ * Reusable App Header Component.
+ *
+ * Used across tab screens to provide consistent branding,
+ * dynamic subtitle, and quick access to the profile.
+ */
 export default function Header({
 	title = "FitForge",
 	subtitle,
@@ -21,8 +27,9 @@ export default function Header({
 	return (
 		<View className="mb-6 px-5">
 			<View className="flex-row justify-between items-center">
-				{/* LEFT: Flame + Title + Subtitle */}
+				{/* LEFT SIDE: Logo / Title + Subtitle */}
 				<View className="flex-row items-center gap-3">
+					{/* Flame icon - optional branding element */}
 					{flameIcon && <Ionicons name="flame" size={36} color="#eab308" />}
 
 					<View>
@@ -35,7 +42,7 @@ export default function Header({
 					</View>
 				</View>
 
-				{/* RIGHT: Reusable Avatar */}
+				{/* RIGHT SIDE: Profile Avatar */}
 				<Avatar
 					size={56}
 					onPress={onProfilePress ?? (() => router.push("/(tabs)/profile"))}

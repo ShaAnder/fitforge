@@ -17,16 +17,8 @@ interface TabScreenProps {
 /**
  * TabScreen - Reusable wrapper for all tab-based screens in FitForge.
  *
- * Provides:
- * - Consistent top padding for devices with notches/dynamic islands
- * - Standardized Header with profile icon
- * - ScrollView for content with proper bottom padding
- * - Optional fixed footer that stays at the bottom (does not scroll)
- *
- * Usage:
- * <TabScreen title="Log Workout" subtitle="Today's Session" footer={<SaveButton />}>
- *   ... content ...
- * </TabScreen>
+ * Provides consistent layout, safe area handling, branded header,
+ * scrollable content area, and optional fixed footer across the app.
  */
 export default function TabScreen({
 	title,
@@ -38,10 +30,10 @@ export default function TabScreen({
 
 	return (
 		<View className="flex-1 bg-zinc-950">
-			{/* Safe top padding for all devices (notch, dynamic island, etc.) */}
+			{/* Safe top padding for devices with notches, dynamic islands, or status bar */}
 			<View className="pt-12" />
 
-			{/* Consistent branded header across all tab screens */}
+			{/* Consistent branded header with profile avatar across all tabs */}
 			<Header
 				title={title}
 				subtitle={subtitle}
@@ -57,7 +49,7 @@ export default function TabScreen({
 				{children}
 			</ScrollView>
 
-			{/* Fixed footer (e.g. Save Workout button) */}
+			{/* Fixed footer section (does not scroll with content) */}
 			{footer && (
 				<View
 					className="px-5 mt-5 pb-8 bg-zinc-950"

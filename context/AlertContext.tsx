@@ -1,9 +1,12 @@
+// contexts/AlertContext.tsx
 import CustomAlert from "@/components/ui/CustomAlert";
 import {
 	createContext,
 	ReactNode,
+	useCallback,
 	useContext,
 	useEffect,
+	useMemo,
 	useState,
 } from "react";
 
@@ -14,7 +17,7 @@ type AlertContextType = {
 		title: string,
 		message: string,
 		type?: AlertType,
-		onClose?: () => void, // ← NEW: optional callback
+		onClose?: () => void,
 	) => void;
 	hideAlert: () => void;
 	alert: {
@@ -39,26 +42,35 @@ export function AlertProvider({ children }: { children: ReactNode }) {
 		onClose?: () => void;
 	} | null>(null);
 
-	const showAlert = (
-		title: string,
-		message: string,
-		type: AlertType = "info",
-		onClose?: () => void,
-	) => {
-		console.log(`[AlertProvider] 📢 SHOW ALERT: ${type} | ${title}`);
-		setAlert({ visible: true, title, message, type, onClose });
-	};
+	const showAlert = useCallback(
+		(
+			title: string,
+			message: string,
+			type: AlertType = "info",
+			onClose?: () => void,
+		) => {
+			console.log(`[AlertProvider] 📢 SHOW ALERT: ${type} | ${title}`);
+			setAlert({ visible: true, title, message, type, onClose });
+		},
+		[],
+	);
 
-	const hideAlert = () => {
+	const hideAlert = useCallback(() => {
 		console.log("[AlertProvider] 🙈 HIDE ALERT called");
 		const currentOnClose = alert?.onClose;
 		setAlert(null);
 
-		// Run custom onClose if provided
+		// Run callback AFTER state update
 		if (currentOnClose) {
-			currentOnClose();
+			setTimeout(currentOnClose, 0); // prevent any sync issues
 		}
-	};
+	}, [alert?.onClose]);
+
+	// Stable context value (prevents child re-renders when nothing changed)
+	const contextValue = useMemo(
+		() => ({ showAlert, hideAlert, alert }),
+		[showAlert, hideAlert, alert],
+	);
 
 	useEffect(() => {
 		if (alert) {
@@ -69,7 +81,7 @@ export function AlertProvider({ children }: { children: ReactNode }) {
 	}, [alert]);
 
 	return (
-		<AlertContext.Provider value={{ showAlert, hideAlert, alert }}>
+		<AlertContext.Provider value={contextValue}>
 			{children}
 
 			{alert && (
