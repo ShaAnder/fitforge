@@ -112,6 +112,13 @@
 		</div>
 
 		<script>
+			/**
+			 * Web Redirect Handler for Supabase Email Verification.
+			 *
+			 * This page is the `emailRedirectTo` target for verification emails.
+			 * It extracts the tokens from the URL hash and forwards them to the
+			 * native app via a custom deep link scheme (`fitforge://`).
+			 */
 			window.onload = function () {
 				const hash = window.location.hash.substring(1);
 				const params = new URLSearchParams(hash);
@@ -123,9 +130,10 @@
 				const errorDiv = document.getElementById("error");
 
 				if (access_token && refresh_token) {
-					// Redirect to verify-email screen
+					// Deep link to native VerifyEmail screen with tokens
 					window.location.href = `fitforge://verify-email?access_token=${encodeURIComponent(access_token)}&refresh_token=${encodeURIComponent(refresh_token)}`;
 				} else {
+					// Fallback for invalid or missing tokens
 					errorDiv.textContent =
 						"Missing tokens. Please try again or contact support.";
 					manualBtn.style.display = "block";

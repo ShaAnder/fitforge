@@ -5,10 +5,8 @@ let supabaseInstance: SupabaseClient | null = null;
 
 const FETCH_TIMEOUT_MS = 10_000;
 
-const SUPABASE_DEBUG = typeof __DEV__ !== "undefined" ? __DEV__ : false;
-
 /**
- * Formats a request URL for clean logging.
+ * Formats a request URL for clean logging (if debugging is enabled).
  *
  * - Removes query strings and noise while keeping origin + pathname.
  * - Handles string, URL, and Request-like inputs gracefully.

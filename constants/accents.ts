@@ -22,6 +22,13 @@ export type AccentPreset = {
 	border500_20: string;
 };
 
+/**
+ * Complete accent color definitions used throughout the app.
+ *
+ * Each preset contains:
+ * - Hex colors for UI elements
+ * - Tailwind class strings for text, background, and border
+ */
 export const ACCENTS: Record<AccentKey, AccentPreset> = {
 	green: {
 		key: "green",
@@ -120,6 +127,9 @@ export const ACCENT_LIST: readonly AccentPreset[] = [
 	ACCENTS.teal,
 ] as const;
 
+/**
+ * Type guard to check if a value is a valid AccentKey.
+ */
 export function isAccentKey(value: unknown): value is AccentKey {
 	return (
 		value === "green" ||
@@ -132,13 +142,19 @@ export function isAccentKey(value: unknown): value is AccentKey {
 	);
 }
 
-// Backwards compatibility: older profiles used "green".
+/**
+ * Normalizes any incoming accent value to a valid AccentKey.
+ * Falls back to "green" for unknown or legacy values.
+ */
 export function normalizeAccentKey(value: unknown): AccentKey {
 	if (value === "green") return "green";
 	if (isAccentKey(value)) return value;
 	return "green";
 }
 
+/**
+ * Returns the full AccentPreset for a given key (or normalized fallback).
+ */
 export function getAccentPreset(value: unknown): AccentPreset {
 	const key = normalizeAccentKey(value);
 	return ACCENTS[key];

@@ -1,21 +1,36 @@
 /**
- * Unit Converter - Handles kg ↔ lb based on user preference
+ * Unit Converter Utilities.
+ *
+ * Handles weight conversion (kg ↔ lb) and volume data transformation
+ * based on the user's preferred unit setting.
  */
 
+/**
+ * Converts weight from kilograms to the user's preferred unit.
+ *
+ * @param kg - Weight in kilograms
+ * @param toUnit - Target unit ("kg" or "lb")
+ * @returns Rounded weight in the requested unit
+ */
 export const convertWeight = (
 	kg: number,
 	toUnit: "kg" | "lb" = "kg",
 ): number => {
 	if (toUnit === "kg") return Math.round(kg);
-	return Math.round(kg * 2.20462);
+	return Math.round(kg * 2.20462); // Standard kg to lb conversion factor
 };
 
+/**
+ * Returns the correct unit label for display.
+ */
 export const getUnitLabel = (unit: "kg" | "lb" = "kg"): string => {
 	return unit === "kg" ? "kg" : "lb";
 };
 
 /**
- * Convert volume array for charts
+ * Converts an entire weekly volume dataset to the user's preferred unit.
+ *
+ * Used by WeeklyVolumeChart to ensure all values match user settings.
  */
 export const convertVolumeData = (
 	data: { value: number; label: string }[],

@@ -1,5 +1,17 @@
+/**
+ * Helper utilities for dashboard calculations.
+ *
+ * Contains pure functions to compute streaks, monthly stats,
+ * and weekly volume data from raw workout records.
+ */
+
 const isString = (v: unknown): v is string => typeof v === "string";
 
+/**
+ * Safely extracts and parses a workout date.
+ *
+ * Accepts multiple possible date fields and formats.
+ */
 const getWorkoutDate = (workout: any): Date | null => {
 	const raw: unknown = workout?.date ?? workout?.created_at;
 	if (
@@ -15,6 +27,9 @@ const getWorkoutDate = (workout: any): Date | null => {
 	return Number.isNaN(d.getTime()) ? null : d;
 };
 
+/**
+ * Extracts total volume from a workout record safely.
+ */
 const getWorkoutVolume = (workout: any): number => {
 	const v = workout?.total_volume;
 
@@ -27,6 +42,9 @@ const getWorkoutVolume = (workout: any): number => {
 	return 0;
 };
 
+/**
+ * Counts total number of sets across all exercises in a workout.
+ */
 const countWorkoutSets = (workout: any): number => {
 	const exercises = Array.isArray(workout?.exercises) ? workout.exercises : [];
 
@@ -35,19 +53,24 @@ const countWorkoutSets = (workout: any): number => {
 	}, 0);
 };
 
+/**
+ * Calculates key statistics for the current month.
+ *
+ * Returns training days, total volume, sets, estimated calories, etc.
+ */
 export const getThisMonthStats = (workouts: any[]) => {
 	const now = new Date();
 	const year = now.getFullYear();
 	const month = now.getMonth();
 
-	// Filter workouts for this month
+	// Filter workouts for current month
 	const thisMonthWorkouts = (workouts || []).filter((w) => {
 		const d = getWorkoutDate(w);
 		if (!d) return false;
 		return d.getFullYear() === year && d.getMonth() === month;
 	});
 
-	// Unique training days (multiple workouts same day = 1)
+	// Unique training days (multiple workouts on same day count as 1)
 	const uniqueDays = new Set(
 		thisMonthWorkouts
 			.map((w) => {
@@ -65,7 +88,6 @@ export const getThisMonthStats = (workouts: any[]) => {
 		0,
 	);
 
-	// sets are nested under exercises[].sets (not workout.sets)
 	const totalSets = thisMonthWorkouts.reduce(
 		(sum, w) => sum + countWorkoutSets(w),
 		0,
@@ -73,7 +95,7 @@ export const getThisMonthStats = (workouts: any[]) => {
 
 	const workoutsThisMonth = thisMonthWorkouts.length;
 
-	// Rough but realistic calorie estimate for lifting
+	// Rough but realistic calorie estimate based on sets
 	const estCalories = Math.round(totalSets * 65);
 
 	const progress =
@@ -91,8 +113,10 @@ export const getThisMonthStats = (workouts: any[]) => {
 };
 
 /**
- * Calculate current training streak
- * (Multiple workouts same day still count as 1)
+ * Calculate current training streak.
+ *
+ * Multiple workouts on the same day still count as only 1 day.
+ * Returns 0 if no workouts exist.
  */
 export const calculateStreak = (workouts: any[]): number => {
 	if (!workouts?.length) return 0;
@@ -136,7 +160,9 @@ export const calculateStreak = (workouts: any[]): number => {
 };
 
 /**
- * Get weekly volume data respecting user's week start preference
+ * Get weekly volume data respecting user's preferred week start (Monday or Sunday).
+ *
+ * Returns array of { value, label } for use in WeeklyVolumeChart.
  */
 export const getWeeklyVolumeData = (
 	workouts: any[],
@@ -145,7 +171,7 @@ export const getWeeklyVolumeData = (
 	const now = new Date();
 	const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, ...
 
-	// Calculate start of week
+	// Calculate start of week based on user preference
 	const startOffset = weekStart === "mon" ? 1 : 0;
 	const diff = (dayOfWeek + 7 - startOffset) % 7;
 	const startOfWeek = new Date(now);

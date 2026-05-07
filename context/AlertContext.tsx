@@ -1,4 +1,3 @@
-// contexts/AlertContext.tsx
 import CustomAlert from "@/components/ui/CustomAlert";
 import {
 	createContext,

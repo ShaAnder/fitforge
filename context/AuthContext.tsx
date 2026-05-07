@@ -1,4 +1,3 @@
-// context/AuthContext.tsx
 import { normalizeAccentKey, type AccentKey } from "@/constants/accents";
 import { useAccentContext } from "@/context/AccentContext";
 import { getSupabase } from "@/lib/supabase";
@@ -15,9 +14,14 @@ import {
 import { useAlert } from "./AlertContext";
 
 /**
- * AuthContext - Handles all authentication logic.
+ * AuthContext - Central authentication and user data management.
+ *
+ * Handles:
+ * - Session & user state
+ * - Profile & workouts loading
+ * - Accent synchronization
+ * - All auth actions (sign up, sign in, sign out, profile updates)
  */
-
 type AuthContextType = {
 	user: User | null;
 	session: Session | null;
@@ -40,14 +44,12 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-	console.log("[AuthProvider] 🔄 Mounted");
-
 	const [user, setUser] = useState<User | null>(null);
 	const [session, setSession] = useState<Session | null>(null);
 	const [profile, setProfile] = useState<any>(null);
 	const [workouts, setWorkouts] = useState<any[]>([]);
 
-	// "loading" blocks ALL UI at startup until auth + initial data is ready
+	// Global loading state - blocks UI until auth + initial data is ready
 	const [loading, setLoading] = useState(true);
 	const [authResolved, setAuthResolved] = useState(false);
 
@@ -57,31 +59,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	const MIN_SPLASH_MS = 3500;
 
 	// ─────────────────────────────────────────────────────────────
-	// EFFECT 1: Auth Session + Listener
+	// EFFECT 1: Auth Session + Real-time Listener
 	// ─────────────────────────────────────────────────────────────
 	useEffect(() => {
 		const supabase = getSupabase();
-		console.log("[AuthProvider] 🔄 Mounting auth listener");
 
 		const initializeAuth = async () => {
 			try {
-				console.log("[AuthProvider] 📡 getSession() called");
 				const {
 					data: { session },
 					error,
 				} = await supabase.auth.getSession();
 
-				if (error) console.error("[AuthProvider] getSession error:", error);
-
-				console.log(
-					"[AuthProvider] ✅ Initial session:",
-					session ? `user: ${session.user.id}` : "null",
-				);
+				if (error) {
+					// Non-critical - we can still proceed
+				}
 
 				setSession(session);
 				setUser(session?.user ?? null);
 			} catch (err) {
-				console.error("[AuthProvider] ❌ getSession failed:", err);
+				// getSession error is non-critical
 			} finally {
 				setAuthResolved(true);
 			}
@@ -89,23 +86,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 		initializeAuth();
 
+		// Real-time auth state listener
 		const {
 			data: { subscription },
 		} = supabase.auth.onAuthStateChange((event, currentSession) => {
-			console.log(`[AuthProvider] 🔥 AUTH EVENT: ${event}`);
 			setSession(currentSession);
 			setUser(currentSession?.user ?? null);
 		});
 
 		return () => {
-			console.log("[AuthProvider] 🧹 Unsubscribing auth listener");
 			subscription.unsubscribe();
 		};
 	}, []);
 
 	// ─────────────────────────────────────────────────────────────
 	// EFFECT 2: Bootstrap initial dashboard data
-	// - Blocks UI until: auth resolved AND (if logged in) profile+workouts loaded
 	// ─────────────────────────────────────────────────────────────
 	useEffect(() => {
 		if (!authResolved) return;
@@ -126,7 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			try {
 				const supabase = getSupabase();
 
-				// Load or create profile
+				// Load or create user profile
 				const { data: existingProfile, error: profileErr } = await supabase
 					.from("profiles")
 					.select("*")
@@ -148,18 +143,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 					if (upsertErr) throw upsertErr;
 
-					const { data: createdProfile, error: createdErr } = await supabase
+					const { data: createdProfile } = await supabase
 						.from("profiles")
 						.select("*")
 						.eq("id", user.id)
 						.single();
 
-					if (createdErr) throw createdErr;
-
 					resolvedProfile = createdProfile;
 				}
 
-				// Load workouts
+				// Load user's workouts (newest first)
 				const { data: workoutsData, error: workoutsErr } = await supabase
 					.from("workouts")
 					.select("*")
@@ -174,17 +167,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				setAccentId(normalizeAccentKey(resolvedProfile?.accent) as AccentKey);
 				setWorkouts(workoutsData || []);
 			} catch (err: any) {
-				console.error("[AuthProvider] ❌ Bootstrap failed:", err);
-
-				if (!cancelled) {
-					showAlert(
-						"Loading Error",
-						"Failed to load your dashboard data. Please try again.",
-						"error",
-					);
-					setAccentId("green");
-				}
-				await new Promise((r) => setTimeout(r, MIN_SPLASH_MS));
+				showAlert(
+					"Loading Error",
+					"Failed to load your dashboard data. Please try again.",
+					"error",
+				);
+				setAccentId("green");
 			} finally {
 				if (!cancelled) setLoading(false);
 			}
@@ -198,33 +186,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	}, [authResolved, user?.id, setAccentId, showAlert]);
 
 	// ─────────────────────────────────────────────────────────────
-	// AUTH METHODS
+	// AUTH ACTION METHODS
 	// ─────────────────────────────────────────────────────────────
 
 	const signup = async (
 		email: string,
 		password: string,
-		onSuccess?: () => void, // ← Callback for redirect after alert
+		onSuccess?: () => void,
 	) => {
-		console.log(`[AuthProvider] 📝 signup() called for ${email}`);
-
 		const { error } = await getSupabase().auth.signUp({
 			email,
 			password,
 			options: {
-				// Use static web redirect for reliability
 				emailRedirectTo:
 					"https://shaander.github.io/fitforge/web-redirect-verify.html",
 			},
 		});
 
 		if (error) {
-			console.log("[AuthProvider] ❌ Signup error:", error.message);
 			showAlert("Signup Failed", error.message, "error");
 			throw error;
 		}
-
-		console.log("[AuthProvider] ✅ Signup successful");
 
 		showAlert(
 			"Account Created",
@@ -236,11 +218,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	};
 
 	const signIn = async (email: string, password: string) => {
-		console.log(`[AuthProvider] 🔑 signIn() called for ${email}`);
 		const { error } = await getSupabase().auth.signInWithPassword({
 			email,
 			password,
 		});
+
 		if (error) {
 			showAlert("Login Failed", error.message, "error");
 			throw error;
@@ -248,7 +230,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	};
 
 	const signOut = async () => {
-		console.log("[AuthProvider] 🔴 signOut() started");
 		try {
 			const supabase = getSupabase();
 			const { error } = await supabase.auth.signOut({ scope: "local" });
@@ -291,7 +272,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				setAccentId(normalizeAccentKey(updates.accent) as AccentKey);
 			}
 		} catch (err: any) {
-			console.error("Update profile error:", err);
 			throw err;
 		}
 	};
@@ -302,12 +282,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		try {
 			const publicUrl = await uploadAvatarFromQueries(user.id, asset);
 
+			// Store just the filename in the profile (Supabase public URL is derived)
 			const fileName = publicUrl.split("/").pop() || publicUrl;
 			await updateProfile({ avatar_url: fileName });
 
 			return fileName;
 		} catch (err: any) {
-			console.error("Upload avatar error:", err);
 			throw err;
 		}
 	};
@@ -326,7 +306,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 			setWorkouts(data || []);
 		} catch (err) {
-			console.error("Refresh workouts error:", err);
 			showAlert("Error", "Failed to refresh workouts", "error");
 		}
 	}, [user?.id, showAlert]);

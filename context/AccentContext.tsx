@@ -8,9 +8,16 @@ type AccentContextValue = {
 
 const AccentContext = createContext<AccentContextValue | undefined>(undefined);
 
+/**
+ * AccentProvider - Global accent color context.
+ *
+ * Manages the currently selected theme accent across the entire app.
+ * Persisted via user profile (updated through updateProfile).
+ */
 export function AccentProvider({ children }: { children: ReactNode }) {
 	const [accentId, setAccentId] = useState<AccentKey>("green");
 
+	// Memoized value to prevent unnecessary re-renders of consumers
 	const value = useMemo(
 		() => ({
 			accentId,
@@ -24,6 +31,11 @@ export function AccentProvider({ children }: { children: ReactNode }) {
 	);
 }
 
+/**
+ * Custom hook to access the raw accent context.
+ *
+ * Throws if used outside of AccentProvider (standard context safety pattern).
+ */
 export function useAccentContext() {
 	const context = useContext(AccentContext);
 	if (context === undefined) {
@@ -32,7 +44,13 @@ export function useAccentContext() {
 	return context;
 }
 
+/**
+ * Custom hook to get the full accent preset (colors, classes, etc.).
+ *
+ * Most components should use this hook instead of useAccentContext().
+ */
 export function useAccentPreset() {
 	const { accentId } = useAccentContext();
+
 	return useMemo(() => getAccentPreset(accentId), [accentId]);
 }

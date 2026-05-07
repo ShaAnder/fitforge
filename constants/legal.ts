@@ -10,6 +10,12 @@ export type LegalDoc = {
 	sections: readonly LegalSection[];
 };
 
+/**
+ * Privacy Policy Content.
+ *
+ * Static legal document displayed in the Privacy screen.
+ * Marked as MVP/Portfolio to set realistic user expectations.
+ */
 export const PRIVACY = {
 	title: "Privacy Policy (MVP / Portfolio)",
 	updated: "May 6, 2026",
@@ -62,6 +68,12 @@ export const PRIVACY = {
 	],
 } satisfies LegalDoc;
 
+/**
+ * Terms of Service Content.
+ *
+ * Static legal document displayed in the Terms screen.
+ * Marked as MVP/Portfolio to set realistic user expectations.
+ */
 export const TERMS = {
 	title: "Terms of Service (MVP / Portfolio)",
 	updated: "May 6, 2026",

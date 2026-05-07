@@ -110,6 +110,16 @@
 		</div>
 
 		<script>
+			/**
+			 * Web Redirect Handler for Supabase Auth Flows.
+			 *
+			 * This page is used as the `redirectTo` target for:
+			 * - Password reset links
+			 * - Email verification links
+			 *
+			 * It extracts tokens from the URL hash and redirects to the native app
+			 * using a custom scheme (fitforge://).
+			 */
 			window.onload = function () {
 				const hash = window.location.hash.substring(1);
 				const params = new URLSearchParams(hash);
@@ -118,8 +128,10 @@
 				const refresh_token = params.get("refresh_token");
 
 				if (access_token && refresh_token) {
+					// Deep link to native app with tokens
 					window.location.href = `fitforge://reset-password?access_token=${encodeURIComponent(access_token)}&refresh_token=${encodeURIComponent(refresh_token)}`;
 				} else {
+					// Fallback for invalid/missing tokens
 					document.getElementById("error").textContent =
 						"Missing tokens. Please try again.";
 					document.getElementById("manual-redirect").style.display = "block";
