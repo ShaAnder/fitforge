@@ -10,22 +10,32 @@ interface NavDrawerProps {
 	onClose: () => void;
 }
 
+/**
+ * Normalizes route paths by removing route groups (e.g. /(tabs)) and trailing slashes.
+ * Used to determine which menu item is currently active.
+ */
 function normalizeRoutePath(path: string) {
-	// Route groups like /(tabs) aren't in the actual URL pathname.
 	return (
 		(path || "/")
-			.replace(/\/\([^)]*\)/g, "")
-			.replace(/\/+$/, "")
+			.replace(/\/\([^)]*\)/g, "") // remove route groups like /(tabs)
+			.replace(/\/+$/, "") // remove trailing slashes
 			.trim() || "/"
 	);
 }
 
+/**
+ * NavDrawer Component - Slide-up menu for "More" tab.
+ *
+ * Provides quick navigation to all major sections and account actions.
+ * Includes user info at the top and a clean scrollable menu.
+ */
 export default function NavDrawer({ isOpen, onClose }: NavDrawerProps) {
 	const router = useRouter();
 	const pathname = usePathname();
 	const { user, profile, signOut } = useAuth();
 	const accent = useAccent();
 
+	// Menu configuration
 	const menuItems = [
 		{ title: "Dashboard", icon: "home-outline", route: "/(tabs)/dashboard" },
 		{ title: "Community", icon: "people-outline", route: "/(tabs)/community" },
@@ -45,8 +55,12 @@ export default function NavDrawer({ isOpen, onClose }: NavDrawerProps) {
 		},
 	];
 
+	// Current active route for highlighting
 	const currentPath = normalizeRoutePath(pathname);
 
+	/**
+	 * Get display name: prefers username, falls back to email prefix.
+	 */
 	const getDisplayName = () => {
 		const username = (profile?.username as string | undefined | null) ?? null;
 		if (username && username.trim()) return username.trim();
@@ -67,15 +81,16 @@ export default function NavDrawer({ isOpen, onClose }: NavDrawerProps) {
 			await signOut();
 			onClose();
 		} catch (error) {
-			console.error("Sign out failed:", error);
+			// Error handled globally via AlertContext
 		}
 	};
 
+	// Don't render anything if drawer is closed
 	if (!isOpen) return null;
 
 	return (
 		<View className="bg-zinc-900 rounded-t-3xl flex-1 p-6">
-			{/* Header: user avatar + name + close */}
+			{/* Header: User info + Close button */}
 			<View className="flex-row items-center justify-between mb-8">
 				<View className="flex-row items-center gap-4">
 					<Avatar size={56} />
@@ -95,11 +110,12 @@ export default function NavDrawer({ isOpen, onClose }: NavDrawerProps) {
 				</TouchableOpacity>
 			</View>
 
-			{/* Menu */}
+			{/* Scrollable Menu Items */}
 			<ScrollView className="flex-1">
 				{menuItems.map((item) => {
 					const active =
 						!item.isSignOut && normalizeRoutePath(item.route) === currentPath;
+
 					const iconColor = item.isSignOut
 						? "#ef4444"
 						: active

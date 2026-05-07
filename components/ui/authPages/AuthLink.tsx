@@ -15,6 +15,12 @@ type AuthLinkProps = {
 	className?: string;
 };
 
+/**
+ * AuthLink Component.
+ *
+ * Reusable styled link for authentication screens.
+ * Provides consistent "Back to..." navigation with accent color.
+ */
 export default function AuthLink({
 	to,
 	children,
@@ -26,8 +32,10 @@ export default function AuthLink({
 
 	return (
 		<View className={`${className} flex-row justify-center items-center gap-1`}>
+			{/* Optional prefix text (e.g. "Already have an account?") */}
 			{prefix && <Text className="text-zinc-400">{prefix}</Text>}
 
+			{/* Clickable link text */}
 			<TouchableOpacity
 				onPress={() => router.replace(to as any)}
 				className="active:opacity-70"

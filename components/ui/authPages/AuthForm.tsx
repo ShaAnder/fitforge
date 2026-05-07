@@ -21,13 +21,14 @@ interface AuthFormProps {
 }
 
 /**
- * AuthForm - Specialized form component for authentication screens
+ * AuthForm - Reusable form component for all authentication screens.
  *
  * Features:
- *   - Dynamic field rendering from a declarative array
- *   - Automatic password visibility toggle
- *   - Uses our custom Button component
- *   - Resets password visibility when form unmounts or after submit
+ * - Dynamic field rendering from a declarative array
+ * - Built-in password visibility toggle with eye icon
+ * - Consistent styling with our design system
+ * - Uses custom Button component
+ * - Automatic cleanup of password visibility on unmount
  */
 export default function AuthForm({
 	fields,
@@ -36,22 +37,25 @@ export default function AuthForm({
 	loading = false,
 	error,
 }: AuthFormProps) {
-	// state to track which password fields are visible
-	// key = field.name, value = bool (true = visible)
+	// Track visibility state for each password field
+	// Key = field.name, Value = boolean (true = visible)
 	const [visiblePasswords, setVisiblePasswords] = useState<
 		Record<string, boolean>
 	>({});
 
-	// Reset visibility when the form unmounts (user leaves the screen)
-	// different from successful submit catches fringe cases like failed
-	// login / refresh
+	/**
+	 * Reset password visibility when the form unmounts.
+	 * Prevents stale state if user navigates away and comes back.
+	 */
 	useEffect(() => {
 		return () => {
 			setVisiblePasswords({});
 		};
 	}, []);
 
-	// Toggle eye icon for password fields
+	/**
+	 * Toggle password visibility for a specific field.
+	 */
 	const togglePasswordVisibility = (fieldName: string) => {
 		setVisiblePasswords((prev) => ({
 			...prev,
@@ -59,9 +63,11 @@ export default function AuthForm({
 		}));
 	};
 
-	// Wrapper around onSubmit so we can reset visibility on successful submit
+	/**
+	 * Wrapper around onSubmit that resets password visibility first.
+	 * Improves UX by hiding passwords after submission.
+	 */
 	const handleSubmit = () => {
-		// Reset visibility before submitting (good UX + prevents stale state)
 		setVisiblePasswords({});
 		onSubmit();
 	};
@@ -74,6 +80,7 @@ export default function AuthForm({
 
 				return (
 					<View key={field.name} className="mb-6">
+						{/* Optional field label */}
 						{field.label && (
 							<Text className="text-zinc-400 text-sm mb-2 ml-1">
 								{field.label}
@@ -94,7 +101,7 @@ export default function AuthForm({
 								autoCapitalize="none"
 							/>
 
-							{/* Eye toggle - only for password fields */}
+							{/* Eye icon toggle - only shown for password fields */}
 							{isPassword && (
 								<TouchableOpacity
 									onPress={() => togglePasswordVisibility(field.name)}
@@ -112,9 +119,10 @@ export default function AuthForm({
 				);
 			})}
 
+			{/* Global error message (if provided) */}
 			{error && <Text className="text-red-500 text-center mb-6">{error}</Text>}
 
-			{/* Use our custom Button component */}
+			{/* Submit Button */}
 			<Button
 				title={buttonText}
 				variant="primary"

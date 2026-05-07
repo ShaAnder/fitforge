@@ -12,6 +12,15 @@ interface ModalViewProps {
 	height?: DimensionValue;
 }
 
+/**
+ * ModalView Component.
+ *
+ * Reusable custom modal with:
+ * - Dark overlay that closes on outside tap
+ * - Centered content card with safe stopPropagation
+ * - Configurable width, height, and overlay opacity
+ * - Consistent styling across the app (used for workout details, alerts, etc.)
+ */
 export default function ModalView({
 	visible,
 	onRequestClose,
@@ -28,6 +37,7 @@ export default function ModalView({
 			statusBarTranslucent
 			onRequestClose={onRequestClose}
 		>
+			{/* Dark backdrop - tapping outside closes the modal */}
 			<Pressable
 				style={[
 					styles.overlay,
@@ -35,6 +45,7 @@ export default function ModalView({
 				]}
 				onPress={onRequestClose}
 			>
+				{/* Content container - prevents closing when tapping inside */}
 				<Pressable
 					onPress={(e) => e.stopPropagation()}
 					style={[styles.content, { width, height, maxWidth: 420 }]}

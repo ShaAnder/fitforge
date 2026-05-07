@@ -11,6 +11,13 @@ type LoadingScreenProps = {
 	fullScreen?: boolean;
 };
 
+/**
+ * LoadingScreen Component.
+ *
+ * Reusable full-screen or inline loading state with branding,
+ * spinner, and customizable messages. Used during auth, data fetching,
+ * and initial app load.
+ */
 export default function LoadingScreen({
 	message = "Loading exercises...",
 	subMessage = "Please wait",
@@ -19,19 +26,20 @@ export default function LoadingScreen({
 	fullScreen = true,
 }: LoadingScreenProps) {
 	const accent = useAccent();
+
 	return (
 		<View
 			className={`items-center justify-center ${fullScreen ? "flex-1 bg-zinc-950" : ""}`}
 		>
 			<View className="items-center">
-				{/* Brand Logo */}
+				{/* Brand Logo - Optional */}
 				{showBrand && (
 					<View className="mb-8">
 						<Ionicons name="barbell" size={72} color={accent.hex500} />
 					</View>
 				)}
 
-				{/* Main Title (only on full screen) */}
+				{/* App Name + Tagline - Only on full screen loading */}
 				{showBrand && fullScreen && (
 					<>
 						<Text className="text-white text-4xl font-bold tracking-tighter mb-1">
@@ -43,14 +51,15 @@ export default function LoadingScreen({
 					</>
 				)}
 
-				{/* Spinner */}
+				{/* Loading Spinner */}
 				<ActivityIndicator size={size} color={accent.hex500} />
 
-				{/* Messages */}
+				{/* Main Message */}
 				<Text className="text-zinc-400 text-base font-medium mt-6 text-center">
 					{message}
 				</Text>
 
+				{/* Optional Sub Message */}
 				{subMessage && (
 					<Text className="text-zinc-500 text-sm mt-2">{subMessage}</Text>
 				)}

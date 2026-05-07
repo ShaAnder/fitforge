@@ -10,12 +10,10 @@ interface CardProps extends ViewProps {
 }
 
 /**
- * Reusable Card component for wrapping content with consistent styling.
+ * Reusable Card Component.
  *
- * @param children   - Content to display inside the card
- * @param variant    - Visual elevation style ("default" or "elevated")
-   - Additional Tailwind/NativeWind classes for customization
- * @param ...props   - All other props passed down to the View component
+ * Provides consistent elevated container styling used throughout the app
+ * for grouping related content (stats, forms, settings sections, etc.).
  */
 export default function Card({
 	children,
@@ -23,7 +21,7 @@ export default function Card({
 	className = "",
 	...props
 }: CardProps) {
-	// Base card styles
+	// Base card styles - dark theme with rounded corners and subtle border
 	const baseStyles = "bg-zinc-900 rounded-3xl border border-zinc-800";
 
 	// Variant-specific styles

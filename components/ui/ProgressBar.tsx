@@ -3,22 +3,22 @@ import { View } from "react-native";
 import { useAccent } from "@/hooks/useAccent";
 
 interface ProgressBarProps {
-	progress: number; // 0 to 100
-	height?: number; // optional custom height (default: 8)
-	color?: string; // optional custom fill color class (default: accent)
-	backgroundColor?: string; // optional custom background color
+	// 0 to 100
+	progress: number;
+	// optional custom height (default: 8)
+	height?: number;
+	// optional custom fill color class (default: accent)
+	color?: string;
+	backgroundColor?: string;
+	// optional custom background color
 	className?: string;
 }
 
 /**
- * Reusable ProgressBar component.
- * Shows a horizontal progress bar with customizable height and colors.
+ * Reusable ProgressBar Component.
  *
- * @param progress         - Progress percentage (0-100)
- * @param height           - Height of the progress bar in pixels
- * @param color            - Color of the filled progress
- * @param backgroundColor  - Color of the unfilled background
- * @param className        - Additional Tailwind/NativeWind classes
+ * Displays a horizontal progress bar used in stats cards
+ * (e.g. "Days Trained" progress).
  */
 export default function ProgressBar({
 	progress,
@@ -28,16 +28,20 @@ export default function ProgressBar({
 	className = "",
 }: ProgressBarProps) {
 	const accent = useAccent();
+
+	// Use accent color by default, otherwise use provided color
 	const resolvedColor = color ?? accent.bg500;
-	// Ensure progress stays between 0 and 100
+
+	// Clamp progress between 0 and 100 to prevent invalid widths
 	const clampedProgress = Math.max(0, Math.min(100, progress));
 
 	return (
 		<View
 			className={`${backgroundColor} rounded-full overflow-hidden ${className}`}
-			// we use style for dynamic height instead of className to prevent it hardlocking
+			// We use inline style for dynamic height to avoid Tailwind limitations
 			style={{ height }}
 		>
+			{/* Filled progress bar with smooth width transition */}
 			<View
 				className={`${resolvedColor} h-full rounded-full transition-all`}
 				style={{ width: `${clampedProgress}%` }}

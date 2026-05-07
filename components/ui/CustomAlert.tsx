@@ -13,10 +13,11 @@ interface CustomAlertProps {
 }
 
 /**
- * CustomAlert - Branded modal alert for FitForge.
+ * CustomAlert Component.
  *
- * Replaces the native Alert.alert() with a dark, gym-themed modal.
- * Supports success (green), error (red), and info states.
+ * Branded, dark-themed modal alert used throughout FitForge.
+ * Replaces the native Alert.alert() with a consistent gym-style UI.
+ * Supports success (green), error (red), and info (yellow) states.
  */
 export default function CustomAlert({
 	visible,
@@ -26,12 +27,18 @@ export default function CustomAlert({
 	type = "info",
 }: CustomAlertProps) {
 	const accent = useAccent();
+
+	// Local visibility state to allow smooth close animation
 	const [show, setShow] = useState(visible);
 
+	/**
+	 * Sync local visibility with the parent-controlled `visible` prop.
+	 */
 	useEffect(() => {
 		setShow(visible);
 	}, [visible]);
 
+	// Color and icon configuration per alert type
 	const colors = {
 		success: { bg: accent.hex500, icon: "checkmark-circle" },
 		error: { bg: "#ef4444", icon: "alert-circle" },
@@ -40,15 +47,19 @@ export default function CustomAlert({
 
 	const currentColor = colors[type];
 
+	/**
+	 * Handle modal close with a small delay so the fade-out animation can complete.
+	 */
 	const handleClose = () => {
 		setShow(false);
-		// Small delay so animation can finish
 		setTimeout(onClose, 200);
 	};
 
 	return (
 		<Modal transparent visible={show} animationType="fade" statusBarTranslucent>
+			{/* Dark overlay */}
 			<View className="flex-1 bg-black/70 justify-center items-center px-6">
+				{/* Alert Card */}
 				<View className="bg-zinc-900 w-full max-w-[340px] rounded-3xl p-8 border border-zinc-700">
 					{/* Icon */}
 					<View className="items-center mb-6">

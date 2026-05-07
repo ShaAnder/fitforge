@@ -13,15 +13,10 @@ interface ButtonProps extends TouchableOpacityProps {
 }
 
 /**
- * Reusable Button component with support for different variants, sizes, and optional icons.
+ * Reusable Button Component.
  *
- * @param title        - Text displayed on the button
- * @param variant      - Visual style of the button
- * @param icon         - Optional icon from Ionicons
- * @param iconPosition - Position of the icon relative to the text
- * @param size         - Size of the button (small / medium / large)
- * @param className    - Additional Tailwind/NativeWind classes
- * @param ...props     - All standard TouchableOpacity props
+ * Supports multiple variants, sizes, optional icons, and full TouchableOpacity props.
+ * Uses the current accent color for primary buttons.
  */
 export default function Button({
 	title,
@@ -34,25 +29,25 @@ export default function Button({
 }: ButtonProps) {
 	const accent = useAccent();
 
-	// Base styles common to all buttons
+	// Base styles shared by all button variants
 	const baseStyle =
 		"flex-row items-center justify-center rounded-3xl active:opacity-90";
 
-	// Variant styles
+	// Visual style per variant
 	const variantStyles = {
 		primary: `${accent.bg500} ${accent.bg600Active}`,
 		secondary: "bg-zinc-800 active:bg-zinc-700",
 		outline: "border border-zinc-700 bg-transparent active:bg-zinc-900",
 	};
 
-	// Size-specific padding and text sizing
+	// Size-specific padding
 	const sizeStyles = {
 		small: "py-3 px-5",
 		medium: "py-4 px-6",
 		large: "py-6 px-8",
 	};
 
-	// Text size based on button size
+	// Text sizing based on button size
 	const textSize = {
 		small: "text-sm",
 		medium: "text-base",
@@ -68,7 +63,7 @@ export default function Button({
 			className={`${baseStyle} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
 			{...props}
 		>
-			{/* Icon - Left */}
+			{/* Left Icon (if provided) */}
 			{icon && iconPosition === "left" && (
 				<Ionicons
 					name={icon}
@@ -78,10 +73,10 @@ export default function Button({
 				/>
 			)}
 
-			{/* Button Title */}
+			{/* Button Text */}
 			<Text className={`font-semibold ${textColor} ${textSize}`}>{title}</Text>
 
-			{/* Icon - Right */}
+			{/* Right Icon (if provided) */}
 			{icon && iconPosition === "right" && (
 				<Ionicons
 					name={icon}
