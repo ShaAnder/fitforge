@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Text, TouchableOpacity, TouchableOpacityProps } from "react-native";
 
+import { useAccent } from "@/hooks/useAccent";
+
 interface ButtonProps extends TouchableOpacityProps {
 	title: string;
 	variant?: "primary" | "secondary" | "outline";
@@ -30,13 +32,15 @@ export default function Button({
 	className = "",
 	...props
 }: ButtonProps) {
+	const accent = useAccent();
+
 	// Base styles common to all buttons
 	const baseStyle =
 		"flex-row items-center justify-center rounded-3xl active:opacity-90";
 
 	// Variant styles
 	const variantStyles = {
-		primary: "bg-emerald-500 active:bg-emerald-600",
+		primary: `${accent.bg500} ${accent.bg600Active}`,
 		secondary: "bg-zinc-800 active:bg-zinc-700",
 		outline: "border border-zinc-700 bg-transparent active:bg-zinc-900",
 	};

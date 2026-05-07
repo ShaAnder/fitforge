@@ -16,6 +16,7 @@ import { resolveAvatarUrl } from "@/components/common/Avatar";
 import TabScreen from "@/components/layout/TabScreen";
 import Button from "@/components/ui/Button";
 import { useAuth } from "@/context/AuthContext";
+import { useAccent } from "@/hooks/useAccent";
 import { uploadAvatar } from "@/lib/supabaseQueries";
 
 /**
@@ -23,6 +24,7 @@ import { uploadAvatar } from "@/lib/supabaseQueries";
  */
 export default function Profile() {
 	const { user, profile, updateProfile, signOut } = useAuth();
+	const accent = useAccent();
 
 	const [isEditing, setIsEditing] = useState(false);
 	const [uploading, setUploading] = useState(false);
@@ -99,7 +101,9 @@ export default function Profile() {
 					onPress={isEditing ? handlePickImage : undefined}
 					disabled={!isEditing || uploading}
 				>
-					<View className="w-36 h-36 rounded-full border-4 border-emerald-500 overflow-hidden bg-zinc-800 relative">
+					<View
+						className={`w-36 h-36 rounded-full border-4 ${accent.border500} overflow-hidden bg-zinc-800 relative`}
+					>
 						{displayedAvatarUrl ? (
 							<Image
 								key={avatarKey}
@@ -109,13 +113,13 @@ export default function Profile() {
 							/>
 						) : (
 							<View className="flex-1 items-center justify-center">
-								<Ionicons name="person" size={80} color="#22c55e" />
+								<Ionicons name="person" size={80} color={accent.hex500} />
 							</View>
 						)}
 
 						{uploading && (
 							<View className="absolute inset-0 bg-black/60 items-center justify-center">
-								<ActivityIndicator size="large" color="#22c55e" />
+								<ActivityIndicator size="large" color={accent.hex500} />
 							</View>
 						)}
 					</View>
@@ -127,7 +131,7 @@ export default function Profile() {
 						className="mt-4"
 						disabled={uploading}
 					>
-						<Text className="text-emerald-400 font-medium">
+						<Text className={`${accent.text400} font-medium`}>
 							Change Profile Picture
 						</Text>
 					</TouchableOpacity>
@@ -178,7 +182,7 @@ export default function Profile() {
 						</Text>
 					</View>
 					<View className="bg-zinc-900 rounded-3xl p-6 items-center flex-1">
-						<Ionicons name="barbell" size={48} color="#22c55e" />
+						<Ionicons name="barbell" size={48} color={accent.hex500} />
 						<Text className="text-white text-xl font-bold mt-3">
 							First Lift
 						</Text>

@@ -1,4 +1,5 @@
 import LoadingScreen from "@/components/ui/LoadingScreen";
+import { AccentProvider } from "@/context/AccentContext";
 import { AlertProvider } from "@/context/AlertContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import "@/global.css";
@@ -49,10 +50,12 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
 	return (
-		<AlertProvider>
-			<AuthProvider>
-				<RootLayoutNav />
-			</AuthProvider>
-		</AlertProvider>
+		<AccentProvider>
+			<AlertProvider>
+				<AuthProvider>
+					<RootLayoutNav />
+				</AuthProvider>
+			</AlertProvider>
+		</AccentProvider>
 	);
 }

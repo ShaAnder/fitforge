@@ -37,7 +37,7 @@ function AccentRow({
 			</View>
 
 			{selected ? (
-				<Ionicons name="checkmark-circle" size={24} color="#22c55e" />
+				<Ionicons name="checkmark-circle" size={24} color={hex} />
 			) : (
 				<Ionicons name="ellipse-outline" size={22} color="#52525b" />
 			)}

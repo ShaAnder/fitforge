@@ -7,6 +7,7 @@ import TabScreen from "@/components/layout/TabScreen";
 import Button from "@/components/ui/Button";
 import ExerciseSlot from "@/components/workout/ExerciseSlot";
 import { useAuth } from "@/context/AuthContext";
+import { useAccent } from "@/hooks/useAccent";
 import { getSupabase } from "@/lib/supabase";
 
 import { Exercise, getAllExercises } from "@/lib/supabaseQueries";
@@ -16,6 +17,7 @@ import { Exercise, getAllExercises } from "@/lib/supabaseQueries";
  */
 export default function LogWorkout() {
 	const { user } = useAuth();
+	const accent = useAccent();
 	const supabase = getSupabase();
 
 	const [exercises, setExercises] = useState<any[]>([]);
@@ -204,7 +206,7 @@ export default function LogWorkout() {
 								<Text className="text-white text-base font-medium">
 									{ex.name}
 								</Text>
-								<Text className="text-emerald-400 text-xs capitalize">
+								<Text className={`${accent.text400} text-xs capitalize`}>
 									{ex.muscle} • {ex.difficulty}
 								</Text>
 							</TouchableOpacity>

@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { View } from "react-native";
 import { BarChart } from "react-native-gifted-charts";
 
+import { useAccent } from "@/hooks/useAccent";
+
 interface WeeklyVolumeChartProps {
 	chartData: { value: number; label: string }[];
 }
@@ -13,6 +15,7 @@ export default function WeeklyVolumeChart({
 	chartData,
 }: WeeklyVolumeChartProps) {
 	const [containerWidth, setContainerWidth] = useState<number>(0);
+	const accent = useAccent();
 
 	if (containerWidth === 0) {
 		return (
@@ -45,7 +48,7 @@ export default function WeeklyVolumeChart({
 				barWidth={barWidth}
 				spacing={spacing}
 				height={300}
-				frontColor="#22c55e"
+				frontColor={accent.hex500}
 				noOfSections={3}
 				maxValue={roundedMax}
 				stepValue={roundedMax / 3}

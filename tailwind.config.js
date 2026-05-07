@@ -3,7 +3,13 @@
 // tailwind module exporter to tell tailwind where we look for className="..."
 // In this case we will be building everything in components and app
 module.exports = {
-	content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}"],
+	content: [
+		"./app/**/*.{js,jsx,ts,tsx}",
+		"./components/**/*.{js,jsx,ts,tsx}",
+		"./constants/**/*.{js,jsx,ts,tsx}",
+		"./hooks/**/*.{js,jsx,ts,tsx}",
+		"./context/**/*.{js,jsx,ts,tsx}",
+	],
 
 	// tells tailwind to use nativewind RN compatible preset
 	presets: [require("nativewind/preset")],

@@ -1,9 +1,11 @@
 import { View } from "react-native";
 
+import { useAccent } from "@/hooks/useAccent";
+
 interface ProgressBarProps {
 	progress: number; // 0 to 100
 	height?: number; // optional custom height (default: 8)
-	color?: string; // optional custom color (default: emerald-500)
+	color?: string; // optional custom fill color class (default: accent)
 	backgroundColor?: string; // optional custom background color
 	className?: string;
 }
@@ -21,10 +23,12 @@ interface ProgressBarProps {
 export default function ProgressBar({
 	progress,
 	height = 8,
-	color = "bg-emerald-500",
+	color,
 	backgroundColor = "bg-zinc-800",
 	className = "",
 }: ProgressBarProps) {
+	const accent = useAccent();
+	const resolvedColor = color ?? accent.bg500;
 	// Ensure progress stays between 0 and 100
 	const clampedProgress = Math.max(0, Math.min(100, progress));
 
@@ -35,7 +39,7 @@ export default function ProgressBar({
 			style={{ height }}
 		>
 			<View
-				className={`${color} h-full rounded-full transition-all`}
+				className={`${resolvedColor} h-full rounded-full transition-all`}
 				style={{ width: `${clampedProgress}%` }}
 			/>
 		</View>

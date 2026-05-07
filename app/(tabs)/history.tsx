@@ -9,6 +9,7 @@ import CustomAlert from "@/components/ui/CustomAlert";
 import ModalView from "@/components/ui/ModalView";
 import { useAuth } from "@/context/AuthContext";
 import { debugLoad } from "@/helpers/debugLoad";
+import { useAccent } from "@/hooks/useAccent";
 import { fetchWorkouts } from "@/lib/supabaseQueries";
 
 /**
@@ -19,6 +20,7 @@ import { fetchWorkouts } from "@/lib/supabaseQueries";
  */
 export default function History() {
 	const { user } = useAuth();
+	const accent = useAccent();
 
 	const [workouts, setWorkouts] = useState<any[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -116,7 +118,7 @@ export default function History() {
 								</View>
 
 								<View className="items-end">
-									<Text className="text-emerald-400 font-bold text-xl">
+									<Text className={`${accent.text400} font-bold text-xl`}>
 										{workout.total_volume || 0} kg
 									</Text>
 									<Text className="text-zinc-500 text-xs">total volume</Text>
@@ -155,7 +157,9 @@ export default function History() {
 					selectedWorkout.exercises.length > 0 ? (
 						selectedWorkout.exercises.map((ex: any, idx: number) => (
 							<View key={idx} className="mb-6 bg-zinc-800 rounded-2xl p-5">
-								<Text className="text-emerald-400 font-semibold text-lg mb-3">
+								<Text
+									className={`${accent.text400} font-semibold text-lg mb-3`}
+								>
 									{ex?.name || "Unnamed Exercise"}
 								</Text>
 								{Array.isArray(ex?.sets) && ex.sets.length > 0 ? (

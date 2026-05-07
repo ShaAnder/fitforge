@@ -1,3 +1,4 @@
+import { useAccent } from "@/hooks/useAccent";
 import { Ionicons } from "@expo/vector-icons";
 import { Text, View } from "react-native";
 import Card from "../ui/Card";
@@ -13,10 +14,13 @@ interface StreakCardProps {
  * @param streak - Number of consecutive days trained
  */
 export default function StreakCard({ streak }: StreakCardProps) {
+	const accent = useAccent();
 	return (
 		<Card className="p-8 items-center">
 			{/* Streak Label */}
-			<Text className="text-emerald-400 uppercase tracking-widest text-sm font-medium">
+			<Text
+				className={`${accent.text400} uppercase tracking-widest text-sm font-medium`}
+			>
 				Current Streak
 			</Text>
 

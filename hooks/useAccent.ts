@@ -1,7 +1,7 @@
 import { getAccentPreset } from "@/constants/accents";
-import { useAuth } from "@/context/AuthContext";
+import { useAccentContext } from "@/context/AccentContext";
 
 export function useAccent() {
-	const { profile } = useAuth();
-	return getAccentPreset(profile?.accent);
+	const { accentId } = useAccentContext();
+	return getAccentPreset(accentId);
 }

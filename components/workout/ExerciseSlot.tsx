@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 
+import { useAccent } from "@/hooks/useAccent";
+
 interface Set {
 	id: number;
 	reps: string;
@@ -35,6 +37,7 @@ export default function ExerciseSlot({
 	nextSetId,
 	setNextSetId,
 }: ExerciseSlotProps) {
+	const accent = useAccent();
 	const isFirstExercise = exercise.id === 1;
 
 	const addSet = () => {
@@ -120,8 +123,8 @@ export default function ExerciseSlot({
 				onPress={addSet}
 				className="flex-row items-center justify-center py-3 border border-dashed border-zinc-600 rounded-2xl mt-2"
 			>
-				<Ionicons name="add-circle-outline" size={20} color="#22c55e" />
-				<Text className="text-emerald-400 ml-2 font-medium">Add Set</Text>
+				<Ionicons name="add-circle-outline" size={20} color={accent.hex500} />
+				<Text className={`${accent.text400} ml-2 font-medium`}>Add Set</Text>
 			</TouchableOpacity>
 		</View>
 	);

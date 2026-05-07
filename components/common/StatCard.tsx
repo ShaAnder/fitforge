@@ -1,3 +1,4 @@
+import { useAccent } from "@/hooks/useAccent";
 import { Text, View } from "react-native";
 import Card from "../ui/Card";
 import ProgressBar from "../ui/ProgressBar";
@@ -31,10 +32,13 @@ export default function StatCard({
 	progress,
 	className = "",
 }: StatCardProps) {
+	const accent = useAccent();
 	return (
 		<Card className={`p-6 ${className}`}>
 			{/* Stat Title */}
-			<Text className="text-emerald-400 text-sm font-medium tracking-widest text-center">
+			<Text
+				className={`${accent.text400} text-sm font-medium tracking-widest text-center`}
+			>
 				{title}
 			</Text>
 

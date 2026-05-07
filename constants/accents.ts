@@ -1,5 +1,5 @@
 export type AccentKey =
-	| "green"
+	| "emerald"
 	| "blue"
 	| "purple"
 	| "orange"
@@ -15,21 +15,25 @@ export type AccentPreset = {
 	hex600: string;
 
 	text400: string;
+	text500: string;
 	bg500: string;
 	bg600Active: string;
 	border500: string;
+	border500_20: string;
 };
 
 export const ACCENTS: Record<AccentKey, AccentPreset> = {
-	green: {
-		key: "green",
-		label: "Green",
+	emerald: {
+		key: "emerald",
+		label: "Emerald",
 		hex500: "#22c55e",
 		hex600: "#16a34a",
 		text400: "text-emerald-400",
+		text500: "text-emerald-500",
 		bg500: "bg-emerald-500",
 		bg600Active: "active:bg-emerald-600",
 		border500: "border-emerald-500",
+		border500_20: "border-emerald-500/20",
 	},
 	blue: {
 		key: "blue",
@@ -37,9 +41,11 @@ export const ACCENTS: Record<AccentKey, AccentPreset> = {
 		hex500: "#3b82f6",
 		hex600: "#2563eb",
 		text400: "text-blue-400",
+		text500: "text-blue-500",
 		bg500: "bg-blue-500",
 		bg600Active: "active:bg-blue-600",
 		border500: "border-blue-500",
+		border500_20: "border-blue-500/20",
 	},
 	purple: {
 		key: "purple",
@@ -47,9 +53,11 @@ export const ACCENTS: Record<AccentKey, AccentPreset> = {
 		hex500: "#a855f7",
 		hex600: "#9333ea",
 		text400: "text-purple-400",
+		text500: "text-purple-500",
 		bg500: "bg-purple-500",
 		bg600Active: "active:bg-purple-600",
 		border500: "border-purple-500",
+		border500_20: "border-purple-500/20",
 	},
 	orange: {
 		key: "orange",
@@ -57,9 +65,11 @@ export const ACCENTS: Record<AccentKey, AccentPreset> = {
 		hex500: "#f97316",
 		hex600: "#ea580c",
 		text400: "text-orange-400",
+		text500: "text-orange-500",
 		bg500: "bg-orange-500",
 		bg600Active: "active:bg-orange-600",
 		border500: "border-orange-500",
+		border500_20: "border-orange-500/20",
 	},
 	red: {
 		key: "red",
@@ -67,9 +77,11 @@ export const ACCENTS: Record<AccentKey, AccentPreset> = {
 		hex500: "#ef4444",
 		hex600: "#dc2626",
 		text400: "text-red-400",
+		text500: "text-red-500",
 		bg500: "bg-red-500",
 		bg600Active: "active:bg-red-600",
 		border500: "border-red-500",
+		border500_20: "border-red-500/20",
 	},
 	pink: {
 		key: "pink",
@@ -77,9 +89,11 @@ export const ACCENTS: Record<AccentKey, AccentPreset> = {
 		hex500: "#ec4899",
 		hex600: "#db2777",
 		text400: "text-pink-400",
+		text500: "text-pink-500",
 		bg500: "bg-pink-500",
 		bg600Active: "active:bg-pink-600",
 		border500: "border-pink-500",
+		border500_20: "border-pink-500/20",
 	},
 	teal: {
 		key: "teal",
@@ -87,15 +101,17 @@ export const ACCENTS: Record<AccentKey, AccentPreset> = {
 		hex500: "#14b8a6",
 		hex600: "#0d9488",
 		text400: "text-teal-400",
+		text500: "text-teal-500",
 		bg500: "bg-teal-500",
 		bg600Active: "active:bg-teal-600",
 		border500: "border-teal-500",
+		border500_20: "border-teal-500/20",
 	},
 };
 
 // Stable list so screens can map without Object.values typing weirdness
 export const ACCENT_LIST: readonly AccentPreset[] = [
-	ACCENTS.green,
+	ACCENTS.emerald,
 	ACCENTS.blue,
 	ACCENTS.purple,
 	ACCENTS.orange,
@@ -106,7 +122,7 @@ export const ACCENT_LIST: readonly AccentPreset[] = [
 
 export function isAccentKey(value: unknown): value is AccentKey {
 	return (
-		value === "green" ||
+		value === "emerald" ||
 		value === "blue" ||
 		value === "purple" ||
 		value === "orange" ||
@@ -116,7 +132,14 @@ export function isAccentKey(value: unknown): value is AccentKey {
 	);
 }
 
+// Backwards compatibility: older profiles used "green".
+export function normalizeAccentKey(value: unknown): AccentKey {
+	if (value === "green") return "emerald";
+	if (isAccentKey(value)) return value;
+	return "emerald";
+}
+
 export function getAccentPreset(value: unknown): AccentPreset {
-	if (isAccentKey(value)) return ACCENTS[value];
-	return ACCENTS.green;
+	const key = normalizeAccentKey(value);
+	return ACCENTS[key];
 }

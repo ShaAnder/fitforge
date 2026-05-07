@@ -2,6 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import { Modal, Text, TouchableOpacity, View } from "react-native";
 
+import { useAccent } from "@/hooks/useAccent";
+
 interface CustomAlertProps {
 	visible: boolean;
 	title: string;
@@ -23,6 +25,7 @@ export default function CustomAlert({
 	onClose,
 	type = "info",
 }: CustomAlertProps) {
+	const accent = useAccent();
 	const [show, setShow] = useState(visible);
 
 	useEffect(() => {
@@ -30,7 +33,7 @@ export default function CustomAlert({
 	}, [visible]);
 
 	const colors = {
-		success: { bg: "#22c55e", icon: "checkmark-circle" },
+		success: { bg: accent.hex500, icon: "checkmark-circle" },
 		error: { bg: "#ef4444", icon: "alert-circle" },
 		info: { bg: "#eab308", icon: "information-circle" },
 	};
@@ -69,7 +72,7 @@ export default function CustomAlert({
 					{/* Action Button */}
 					<TouchableOpacity
 						onPress={handleClose}
-						className="bg-emerald-500 py-4 rounded-2xl"
+						className={`${accent.bg500} py-4 rounded-2xl`}
 					>
 						<Text className="text-black font-semibold text-lg text-center">
 							Got it

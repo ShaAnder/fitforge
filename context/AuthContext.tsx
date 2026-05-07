@@ -1,3 +1,5 @@
+import { normalizeAccentKey, type AccentKey } from "@/constants/accents";
+import { useAccentContext } from "@/context/AccentContext";
 import { getSupabase } from "@/lib/supabase";
 import { uploadAvatar as uploadAvatarFromQueries } from "@/lib/supabaseQueries";
 import { Session, User } from "@supabase/supabase-js";
@@ -47,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	const [loading, setLoading] = useState(true);
 
 	const { showAlert } = useAlert();
+	const { setAccentId } = useAccentContext();
 
 	const mounted = useRef(true);
 
@@ -103,6 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	useEffect(() => {
 		if (!user?.id) {
 			setProfile(null);
+			setAccentId("emerald");
 			return;
 		}
 
@@ -131,6 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 				console.log("[AuthProvider] ✅ Profile loaded successfully:", data);
 				setProfile(data);
+				setAccentId(normalizeAccentKey(data?.accent) as AccentKey);
 			} catch (err) {
 				console.error("[AuthProvider] Failed to load profile:", err);
 			}
@@ -231,6 +236,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				...prev,
 				...updates,
 			}));
+
+			if (updates?.accent) {
+				setAccentId(normalizeAccentKey(updates.accent) as AccentKey);
+			}
 		} catch (err: any) {
 			console.error("Update profile error:", err);
 			throw err;

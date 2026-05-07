@@ -3,6 +3,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import { Image, TouchableOpacity, View } from "react-native";
 
+import { useAccent } from "@/hooks/useAccent";
+
 export function resolveAvatarUrl(
 	avatarUrl: string | null | undefined,
 ): string | null {
@@ -53,12 +55,13 @@ interface AvatarProps {
 
 export default function Avatar({
 	size = 56,
-	borderColor = "#10b981",
+	borderColor,
 	borderWidth = 2,
 	showBorder = true,
 	onPress,
 	localUri,
 }: AvatarProps) {
+	const accent = useAccent();
 	const { profile } = useAuth();
 	const [avatarKey, setAvatarKey] = useState(0);
 
@@ -81,7 +84,7 @@ export default function Avatar({
 				borderRadius: 999,
 				overflow: "hidden",
 				borderWidth: showBorder ? borderWidth : 0,
-				borderColor,
+				borderColor: borderColor ?? accent.hex500,
 				backgroundColor: "#18181b",
 			}}
 		>
@@ -98,7 +101,7 @@ export default function Avatar({
 					<Ionicons
 						name="person-circle-outline"
 						size={size * 0.7}
-						color="#22c55e"
+						color={accent.hex500}
 					/>
 				</View>
 			)}

@@ -15,6 +15,7 @@ import {
 	getThisMonthStats,
 	getWeeklyVolumeData,
 } from "@/helpers/dashboardUtils";
+import { useAccent } from "@/hooks/useAccent";
 
 /**
  * Dashboard Screen - Uses global data from AuthContext (no local loading/fetch)
@@ -22,6 +23,7 @@ import {
 export default function Dashboard() {
 	const { user, profile, workouts, loading } = useAuth();
 	const router = useRouter();
+	const accent = useAccent();
 
 	const currentStreak = calculateStreak(workouts);
 	const {
@@ -40,7 +42,7 @@ export default function Dashboard() {
 		topLabelComponent: () => (
 			<Text
 				style={{
-					color: "#22c55e",
+					color: accent.hex500,
 					fontSize: 13,
 					fontWeight: "600",
 					textAlign: "center",

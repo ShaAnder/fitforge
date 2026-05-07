@@ -1,5 +1,6 @@
 import Avatar from "@/components/common/Avatar";
 import { useAuth } from "@/context/AuthContext";
+import { useAccent } from "@/hooks/useAccent";
 import { Ionicons } from "@expo/vector-icons";
 import { usePathname, useRouter } from "expo-router";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
@@ -23,6 +24,7 @@ export default function NavDrawer({ isOpen, onClose }: NavDrawerProps) {
 	const router = useRouter();
 	const pathname = usePathname();
 	const { user, profile, signOut } = useAuth();
+	const accent = useAccent();
 
 	const menuItems = [
 		{ title: "Dashboard", icon: "home-outline", route: "/(tabs)/dashboard" },
@@ -91,9 +93,9 @@ export default function NavDrawer({ isOpen, onClose }: NavDrawerProps) {
 			<ScrollView className="flex-1">
 				{menuItems.map((item) => {
 					const active = normalizeRoutePath(item.route) === currentPath;
-					const iconColor = active ? "#22c55e" : "#a1a1aa";
+					const iconColor = active ? accent.hex500 : "#a1a1aa";
 					const textClass = active
-						? "text-emerald-400 text-xl ml-5 font-semibold"
+						? `${accent.text400} text-xl ml-5 font-semibold`
 						: "text-white text-xl ml-5 font-medium";
 
 					return (

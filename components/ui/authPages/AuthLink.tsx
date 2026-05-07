@@ -1,6 +1,8 @@
 import { useRouter } from "expo-router";
 import { Text, TouchableOpacity, View } from "react-native";
 
+import { useAccent } from "@/hooks/useAccent";
+
 type AuthLinkProps = {
 	to:
 		| "/login"
@@ -20,6 +22,7 @@ export default function AuthLink({
 	className = "mt-8",
 }: AuthLinkProps) {
 	const router = useRouter();
+	const accent = useAccent();
 
 	return (
 		<View className={`${className} flex-row justify-center items-center gap-1`}>
@@ -29,7 +32,7 @@ export default function AuthLink({
 				onPress={() => router.replace(to as any)}
 				className="active:opacity-70"
 			>
-				<Text className="text-emerald-500 font-medium">{children}</Text>
+				<Text className={`${accent.text500} font-medium`}>{children}</Text>
 			</TouchableOpacity>
 		</View>
 	);

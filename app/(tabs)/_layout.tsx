@@ -4,9 +4,11 @@ import { useState } from "react";
 import { Modal, Pressable, View } from "react-native";
 
 import NavDrawer from "@/components/ui/NavDrawer";
+import { useAccent } from "@/hooks/useAccent";
 
 export default function TabLayout() {
 	const [drawerVisible, setDrawerVisible] = useState(false);
+	const accent = useAccent();
 
 	return (
 		<>
@@ -51,11 +53,13 @@ export default function TabLayout() {
 						tabBarIcon: () => (
 							<View className="-mt-11 items-center">
 								<View className="bg-[#18181b] w-[88px] h-[88px] rounded-full items-center justify-center -mb-8 shadow-2xl">
-									<View className="bg-zinc-900 w-[72px] h-[72px] rounded-full items-center justify-center border border-emerald-500/20">
+									<View
+										className={`bg-zinc-900 w-[72px] h-[72px] rounded-full items-center justify-center border ${accent.border500_20}`}
+									>
 										<Ionicons
 											name="add-circle-outline"
 											size={48}
-											color="#22c55e"
+											color={accent.hex500}
 										/>
 									</View>
 								</View>

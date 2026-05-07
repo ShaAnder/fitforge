@@ -13,6 +13,8 @@ import TabScreen from "@/components/layout/TabScreen";
 import LoadingScreen from "@/components/ui/LoadingScreen";
 import ModalView from "@/components/ui/ModalView";
 
+import { useAccent } from "@/hooks/useAccent";
+
 import {
 	Exercise,
 	getAllExercises,
@@ -23,6 +25,7 @@ import {
  * Exercise Library Screen
  */
 export default function Library() {
+	const accent = useAccent();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedMuscle, setSelectedMuscle] = useState<string>("All");
 	const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(
@@ -109,7 +112,7 @@ export default function Library() {
 										}}
 										className={`px-5 py-2.5 rounded-full border text-sm ${
 											isActive
-												? "bg-emerald-500 border-emerald-500"
+												? `${accent.bg500} ${accent.border500}`
 												: "bg-zinc-900 border-zinc-800"
 										}`}
 									>
@@ -165,7 +168,7 @@ export default function Library() {
 									<Text className="text-white text-lg font-semibold">
 										{item.name}
 									</Text>
-									<Text className="text-emerald-400 text-sm mt-1 capitalize">
+									<Text className={`${accent.text400} text-sm mt-1 capitalize`}>
 										{item.muscle} • {item.difficulty}
 									</Text>
 									<Text className="text-zinc-400 text-sm mt-3 line-clamp-2">
@@ -211,18 +214,18 @@ export default function Library() {
 								{selectedExercise.muscle} • {selectedExercise.difficulty}
 							</Text>
 
-							<Text className="text-emerald-500 text-lg font-semibold mb-8">
+							<Text className={`${accent.text500} text-lg font-semibold mb-8`}>
 								{selectedExercise.estimated_calories_per_set} ~ calories per set
 							</Text>
 
-							<Text className="text-emerald-400 text-xl font-semibold mb-3">
+							<Text className={`${accent.text400} text-xl font-semibold mb-3`}>
 								About this exercise
 							</Text>
 							<Text className="text-zinc-300 leading-6 text-base mb-8">
 								{selectedExercise.description}
 							</Text>
 
-							<Text className="text-emerald-400 text-xl font-semibold mb-3">
+							<Text className={`${accent.text400} text-xl font-semibold mb-3`}>
 								How to perform
 							</Text>
 

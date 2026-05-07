@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ActivityIndicator, Text, View } from "react-native";
 
+import { useAccent } from "@/hooks/useAccent";
+
 type LoadingScreenProps = {
 	message?: string;
 	subMessage?: string;
@@ -16,6 +18,7 @@ export default function LoadingScreen({
 	size = "large",
 	fullScreen = true,
 }: LoadingScreenProps) {
+	const accent = useAccent();
 	return (
 		<View
 			className={`items-center justify-center ${fullScreen ? "flex-1 bg-zinc-950" : ""}`}
@@ -24,7 +27,7 @@ export default function LoadingScreen({
 				{/* Brand Logo */}
 				{showBrand && (
 					<View className="mb-8">
-						<Ionicons name="barbell" size={72} color="#22c55e" />
+						<Ionicons name="barbell" size={72} color={accent.hex500} />
 					</View>
 				)}
 
@@ -41,7 +44,7 @@ export default function LoadingScreen({
 				)}
 
 				{/* Spinner */}
-				<ActivityIndicator size={size} color="#22c55e" />
+				<ActivityIndicator size={size} color={accent.hex500} />
 
 				{/* Messages */}
 				<Text className="text-zinc-400 text-base font-medium mt-6 text-center">

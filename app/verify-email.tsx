@@ -1,4 +1,5 @@
 import { useAlert } from "@/context/AlertContext";
+import { useAccent } from "@/hooks/useAccent";
 import { getSupabase } from "@/lib/supabase";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -9,6 +10,7 @@ export default function VerifyEmail() {
 	const router = useRouter();
 	const { showAlert } = useAlert();
 	const { access_token, refresh_token } = useLocalSearchParams();
+	const accent = useAccent();
 
 	useEffect(() => {
 		const verifyAccount = async () => {
@@ -45,11 +47,15 @@ export default function VerifyEmail() {
 	return (
 		<View className="flex-1 bg-zinc-950 justify-center items-center px-6">
 			<View className="items-center">
-				<Ionicons name="checkmark-circle" size={100} color="#22c55e" />
+				<Ionicons name="checkmark-circle" size={100} color={accent.hex500} />
 				<Text className="text-white text-3xl font-bold mt-8">
 					Verifying Account
 				</Text>
-				<ActivityIndicator size="large" color="#22c55e" className="mt-6" />
+				<ActivityIndicator
+					size="large"
+					color={accent.hex500}
+					className="mt-6"
+				/>
 			</View>
 		</View>
 	);
