@@ -1,5 +1,3 @@
-// helpers/dashboardUtils.ts
-
 const isString = (v: unknown): v is string => typeof v === "string";
 
 const getWorkoutDate = (workout: any): Date | null => {

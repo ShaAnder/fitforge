@@ -1,4 +1,3 @@
-// components/layout/Header.tsx
 import Avatar from "@/components/common/Avatar";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";

@@ -1,4 +1,3 @@
-// app/(tabs)/history.tsx
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";

@@ -37,6 +37,12 @@ export default function NavDrawer({ isOpen, onClose }: NavDrawerProps) {
 		{ title: "Settings", icon: "settings-outline", route: "/(tabs)/settings" },
 		{ title: "Privacy", icon: "shield-outline", route: "/privacy" },
 		{ title: "Terms", icon: "document-text-outline", route: "/terms" },
+		{
+			title: "Sign Out",
+			icon: "log-out-outline",
+			route: "signout", // special flag
+			isSignOut: true,
+		},
 	];
 
 	const currentPath = normalizeRoutePath(pathname);
@@ -92,16 +98,30 @@ export default function NavDrawer({ isOpen, onClose }: NavDrawerProps) {
 			{/* Menu */}
 			<ScrollView className="flex-1">
 				{menuItems.map((item) => {
-					const active = normalizeRoutePath(item.route) === currentPath;
-					const iconColor = active ? accent.hex500 : "#a1a1aa";
-					const textClass = active
-						? `${accent.text400} text-xl ml-5 font-semibold`
-						: "text-white text-xl ml-5 font-medium";
+					const active =
+						!item.isSignOut && normalizeRoutePath(item.route) === currentPath;
+					const iconColor = item.isSignOut
+						? "#ef4444"
+						: active
+							? accent.hex500
+							: "#a1a1aa";
+
+					const textClass = item.isSignOut
+						? "text-red-500 text-xl ml-5 font-medium"
+						: active
+							? `${accent.text400} text-xl ml-5 font-semibold`
+							: "text-white text-xl ml-5 font-medium";
 
 					return (
 						<TouchableOpacity
 							key={item.title}
-							onPress={() => handleMenuPress(item.route)}
+							onPress={() => {
+								if (item.isSignOut) {
+									handleSignOut();
+								} else {
+									handleMenuPress(item.route);
+								}
+							}}
 							className="flex-row items-center py-5 border-b border-zinc-800"
 						>
 							<Ionicons name={item.icon as any} size={26} color={iconColor} />
@@ -110,15 +130,6 @@ export default function NavDrawer({ isOpen, onClose }: NavDrawerProps) {
 					);
 				})}
 			</ScrollView>
-
-			{/* Sign Out */}
-			<TouchableOpacity
-				onPress={handleSignOut}
-				className="flex-row items-center py-5 mt-8 border-t border-zinc-800"
-			>
-				<Ionicons name="log-out-outline" size={26} color="#ef4444" />
-				<Text className="text-red-500 text-xl ml-5 font-medium">Sign Out</Text>
-			</TouchableOpacity>
 		</View>
 	);
 }

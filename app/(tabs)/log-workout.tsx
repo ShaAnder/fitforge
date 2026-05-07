@@ -1,4 +1,3 @@
-// app/(tabs)/log-workout.tsx
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";

@@ -1,11 +1,9 @@
-// app/(tabs)/profile.tsx
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
 	ActivityIndicator,
-	Alert,
 	Image,
 	Text,
 	TextInput,
@@ -16,18 +14,21 @@ import {
 import { resolveAvatarUrl } from "@/components/common/Avatar";
 import TabScreen from "@/components/layout/TabScreen";
 import Button from "@/components/ui/Button";
+import { useAlert } from "@/context/AlertContext"; // ← New
 import { useAuth } from "@/context/AuthContext";
 import { useAccent } from "@/hooks/useAccent";
 import { uploadAvatar } from "@/lib/supabaseQueries";
 
 /**
- * Profile Screen - Batch edit mode (avatar preview + save together)
+ * Profile Screen - Batch edit mode
  */
 export default function Profile() {
 	const params = useLocalSearchParams<{ edit?: string }>();
-	const { user, profile, updateProfile, signOut } = useAuth();
-	const accent = useAccent();
 	const router = useRouter();
+
+	const { user, profile, updateProfile } = useAuth();
+	const { showAlert } = useAlert(); // ← New
+	const accent = useAccent();
 
 	const [isEditing, setIsEditing] = useState(false);
 	const [uploading, setUploading] = useState(false);
@@ -39,10 +40,8 @@ export default function Profile() {
 
 	useFocusEffect(
 		useCallback(() => {
-			const editParam = params?.edit;
-			if (editParam === "1") {
+			if (params?.edit === "1") {
 				setIsEditing(true);
-				// Optional: clear the param so it doesn't stick on refresh
 				router.setParams({ edit: undefined });
 			}
 		}, [params?.edit]),
@@ -89,9 +88,13 @@ export default function Profile() {
 			setSelectedAvatarAsset(null);
 			setAvatarKey((prev) => prev + 1);
 
-			Alert.alert("Success", "Profile updated!");
+			showAlert("Profile Updated", "Your changes have been saved.", "success");
 		} catch (err: any) {
-			Alert.alert("Error", err.message || "Failed to update profile");
+			showAlert(
+				"Update Failed",
+				err.message || "Could not save profile.",
+				"error",
+			);
 		} finally {
 			setUploading(false);
 		}
@@ -101,6 +104,7 @@ export default function Profile() {
 		setUsername(profile?.username || "");
 		setSelectedAvatarAsset(null);
 		setIsEditing(false);
+		showAlert("Changes Discarded", "", "info");
 	};
 
 	const displayedAvatarUrl = selectedAvatarAsset
@@ -183,7 +187,7 @@ export default function Profile() {
 				</Text>
 			</View>
 
-			{/* Achievements */}
+			{/* Achievements & Lifetime Totals */}
 			<View className="mb-10">
 				<Text className="text-zinc-400 text-lg font-semibold mb-5">
 					Achievements
@@ -193,7 +197,6 @@ export default function Profile() {
 				</Text>
 			</View>
 
-			{/* Lifetime Totals */}
 			<View className="mb-10">
 				<Text className="text-zinc-400 text-lg font-semibold mb-5">
 					Lifetime Totals
@@ -229,12 +232,6 @@ export default function Profile() {
 							variant="secondary"
 							size="large"
 							onPress={() => setIsEditing(true)}
-						/>
-						<Button
-							title="Sign Out"
-							variant="outline"
-							size="large"
-							onPress={signOut}
 						/>
 					</>
 				)}
