@@ -7,6 +7,7 @@ import {
 	useEffect,
 	useMemo,
 	useState,
+	useRef,
 } from "react";
 
 type AlertType = "success" | "error" | "info";
@@ -31,7 +32,9 @@ type AlertContextType = {
 const AlertContext = createContext<AlertContextType | undefined>(undefined);
 
 export function AlertProvider({ children }: { children: ReactNode }) {
-	console.log("[AlertProvider] 🔄 Mounted");
+	if (process.env.NODE_ENV !== "test") {
+		console.log("[AlertProvider] 🔄 Mounted");
+	}
 
 	const [alert, setAlert] = useState<{
 		visible: boolean;
@@ -54,16 +57,23 @@ export function AlertProvider({ children }: { children: ReactNode }) {
 		[],
 	);
 
+	// make hideAlert stable and avoid depending on `alert` identity
+	const onCloseRef = useRef<(() => void) | undefined>(undefined);
+
+	useEffect(() => {
+		onCloseRef.current = alert?.onClose;
+	}, [alert?.onClose]);
+
 	const hideAlert = useCallback(() => {
 		console.log("[AlertProvider] 🙈 HIDE ALERT called");
-		const currentOnClose = alert?.onClose;
 		setAlert(null);
 
 		// Run callback AFTER state update
+		const currentOnClose = onCloseRef.current;
 		if (currentOnClose) {
 			setTimeout(currentOnClose, 0); // prevent any sync issues
 		}
-	}, [alert?.onClose]);
+	}, []);
 
 	// Stable context value (prevents child re-renders when nothing changed)
 	const contextValue = useMemo(

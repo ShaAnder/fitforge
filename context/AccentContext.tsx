@@ -1,5 +1,12 @@
 import { getAccentPreset, type AccentKey } from "@/constants/accents";
-import { createContext, ReactNode, useContext, useMemo, useState } from "react";
+import {
+	createContext,
+	ReactNode,
+	useCallback,
+	useContext,
+	useMemo,
+	useState,
+} from "react";
 
 type AccentContextValue = {
 	accentId: AccentKey;
@@ -15,7 +22,13 @@ const AccentContext = createContext<AccentContextValue | undefined>(undefined);
  * Persisted via user profile (updated through updateProfile).
  */
 export function AccentProvider({ children }: { children: ReactNode }) {
-	const [accentId, setAccentId] = useState<AccentKey>("green");
+	const [accentId, setAccentIdState] = useState<AccentKey>("green");
+
+	// Explicitly memoize setter to guarantee stable reference
+	// (even though React useState setters are stable, this makes it crystal clear for consumers)
+	const setAccentId = useCallback((newAccent: AccentKey) => {
+		setAccentIdState(newAccent);
+	}, []);
 
 	// Memoized value to prevent unnecessary re-renders of consumers
 	const value = useMemo(
@@ -23,7 +36,7 @@ export function AccentProvider({ children }: { children: ReactNode }) {
 			accentId,
 			setAccentId,
 		}),
-		[accentId],
+		[accentId, setAccentId],
 	);
 
 	return (

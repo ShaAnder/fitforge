@@ -9,6 +9,7 @@ import {
 	useCallback,
 	useContext,
 	useEffect,
+	useRef,
 	useState,
 } from "react";
 import { useAlert } from "./AlertContext";
@@ -55,6 +56,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 	const { showAlert } = useAlert();
 	const { setAccentId } = useAccentContext();
+
+	// Keep a stable ref to showAlert so long-running effects don't re-run
+	const showAlertRef = useRef<typeof showAlert | null>(null);
+	useEffect(() => {
+		showAlertRef.current = showAlert;
+	}, [showAlert]);
+
+	// Prevent repeated bootstraps for the same user id
+	const lastUserIdRef = useRef<string | null>(null);
 
 	const MIN_SPLASH_MS = 3500;
 
@@ -108,7 +118,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		let cancelled = false;
 
 		const bootstrap = async () => {
-			if (!user?.id) {
+			const currentUserId = user?.id ?? null;
+
+			// avoid re-running bootstrap for the same user id
+			if (lastUserIdRef.current === currentUserId) return;
+			lastUserIdRef.current = currentUserId;
+
+			if (!currentUserId) {
 				setProfile(null);
 				setWorkouts([]);
 				setAccentId("green");
@@ -167,7 +183,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				setAccentId(normalizeAccentKey(resolvedProfile?.accent) as AccentKey);
 				setWorkouts(workoutsData || []);
 			} catch (err: any) {
-				showAlert(
+				// use the ref to call showAlert to avoid making it a dependency
+				showAlertRef.current?.(
 					"Loading Error",
 					"Failed to load your dashboard data. Please try again.",
 					"error",
@@ -183,7 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		return () => {
 			cancelled = true;
 		};
-	}, [authResolved, user?.id, setAccentId, showAlert]);
+	}, [authResolved, user?.id, setAccentId]);
 
 	// ─────────────────────────────────────────────────────────────
 	// AUTH ACTION METHODS
@@ -306,9 +323,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 			setWorkouts(data || []);
 		} catch (err) {
-			showAlert("Error", "Failed to refresh workouts", "error");
+			showAlertRef.current?.("Error", "Failed to refresh workouts", "error");
 		}
-	}, [user?.id, showAlert]);
+	}, [user?.id]);
 
 	return (
 		<AuthContext.Provider
