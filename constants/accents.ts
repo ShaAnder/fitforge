@@ -1,5 +1,5 @@
 export type AccentKey =
-	| "emerald"
+	| "green"
 	| "blue"
 	| "purple"
 	| "orange"
@@ -23,17 +23,17 @@ export type AccentPreset = {
 };
 
 export const ACCENTS: Record<AccentKey, AccentPreset> = {
-	emerald: {
-		key: "emerald",
-		label: "Emerald",
+	green: {
+		key: "green",
+		label: "green",
 		hex500: "#22c55e",
 		hex600: "#16a34a",
-		text400: "text-emerald-400",
-		text500: "text-emerald-500",
-		bg500: "bg-emerald-500",
-		bg600Active: "active:bg-emerald-600",
-		border500: "border-emerald-500",
-		border500_20: "border-emerald-500/20",
+		text400: "text-green-400",
+		text500: "text-green-500",
+		bg500: "bg-green-500",
+		bg600Active: "active:bg-green-600",
+		border500: "border-green-500",
+		border500_20: "border-green-500/20",
 	},
 	blue: {
 		key: "blue",
@@ -111,7 +111,7 @@ export const ACCENTS: Record<AccentKey, AccentPreset> = {
 
 // Stable list so screens can map without Object.values typing weirdness
 export const ACCENT_LIST: readonly AccentPreset[] = [
-	ACCENTS.emerald,
+	ACCENTS.green,
 	ACCENTS.blue,
 	ACCENTS.purple,
 	ACCENTS.orange,
@@ -122,7 +122,7 @@ export const ACCENT_LIST: readonly AccentPreset[] = [
 
 export function isAccentKey(value: unknown): value is AccentKey {
 	return (
-		value === "emerald" ||
+		value === "green" ||
 		value === "blue" ||
 		value === "purple" ||
 		value === "orange" ||
@@ -134,9 +134,9 @@ export function isAccentKey(value: unknown): value is AccentKey {
 
 // Backwards compatibility: older profiles used "green".
 export function normalizeAccentKey(value: unknown): AccentKey {
-	if (value === "green") return "emerald";
+	if (value === "green") return "green";
 	if (isAccentKey(value)) return value;
-	return "emerald";
+	return "green";
 }
 
 export function getAccentPreset(value: unknown): AccentPreset {

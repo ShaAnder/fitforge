@@ -16,7 +16,7 @@ interface CustomAlertProps {
  * CustomAlert - Branded modal alert for FitForge.
  *
  * Replaces the native Alert.alert() with a dark, gym-themed modal.
- * Supports success (emerald), error (red), and info states.
+ * Supports success (green), error (red), and info states.
  */
 export default function CustomAlert({
 	visible,

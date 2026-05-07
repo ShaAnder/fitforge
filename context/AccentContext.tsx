@@ -9,7 +9,7 @@ type AccentContextValue = {
 const AccentContext = createContext<AccentContextValue | undefined>(undefined);
 
 export function AccentProvider({ children }: { children: ReactNode }) {
-	const [accentId, setAccentId] = useState<AccentKey>("emerald");
+	const [accentId, setAccentId] = useState<AccentKey>("green");
 
 	const value = useMemo(
 		() => ({
