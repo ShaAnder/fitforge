@@ -21,26 +21,34 @@ import { StatusBar } from "expo-status-bar";
 import { Text, View } from "react-native";
 
 /**
- * Dashboard Screen
+ * Dashboard Screen - Main home screen of FitForge.
+ *
+ * Displays user progress overview including:
+ * - Current streak
+ * - Monthly statistics
+ * - Weekly volume chart
+ * - Quick actions
  */
 export default function Dashboard() {
 	const { user, profile, workouts, loading } = useAuth();
 	const router = useRouter();
 	const accent = useAccent();
 
+	// User preferences from profile
 	const userUnit = (profile?.units as "kg" | "lb") ?? "kg";
 	const userWeekStart = (profile?.week_start as "mon" | "sun") ?? "mon";
 
+	// Calculate derived stats
 	const currentStreak = calculateStreak(workouts);
 	const monthStats = getThisMonthStats(workouts);
-
 	const weeklyData = getWeeklyVolumeData(workouts, userWeekStart);
 
-	// Convert everything based on user preference
+	// Convert volume data based on user's preferred unit (kg/lb)
 	const convertedWeeklyData = convertVolumeData(weeklyData, userUnit);
 
 	const chartData = convertedWeeklyData.map((item) => ({
 		...item,
+		// Custom label component for chart bars
 		topLabelComponent: () => (
 			<Text
 				style={{
@@ -85,7 +93,7 @@ export default function Dashboard() {
 								This Month Overview
 							</Text>
 
-							{/* Row 1 */}
+							{/* Monthly Stats Row 1 */}
 							<View className="flex-row gap-2 mb-2">
 								<StatCard
 									title="DAYS TRAINED"
@@ -102,7 +110,7 @@ export default function Dashboard() {
 								/>
 							</View>
 
-							{/* Row 2 */}
+							{/* Monthly Stats Row 2 */}
 							<View className="flex-row gap-2 mb-2">
 								<StatCard
 									title="EST. CALORIES"
@@ -118,7 +126,7 @@ export default function Dashboard() {
 								/>
 							</View>
 
-							{/* Total Volume - with dynamic unit */}
+							{/* Total Volume with dynamic unit */}
 							<StatCard
 								title="TOTAL VOLUME"
 								value={`${totalVolumeConverted.toLocaleString()} ${unitLabel}`}
@@ -147,6 +155,7 @@ export default function Dashboard() {
 				)}
 			</TabScreen>
 
+			{/* Placeholder drawer (hidden by default) */}
 			<NavDrawer isOpen={false} onClose={() => {}} />
 		</View>
 	);

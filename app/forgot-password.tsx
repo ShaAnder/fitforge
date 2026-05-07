@@ -8,7 +8,10 @@ import { useState } from "react";
 import { View } from "react-native";
 
 /**
- * ForgotPassword Screen - Allows users to request a password reset link.
+ * Forgot Password Screen.
+ *
+ * Allows users to request a password reset link via email.
+ * Uses Supabase Auth's built-in reset flow with a custom redirect URL.
  */
 export default function ForgotPassword() {
 	const [email, setEmail] = useState("");
@@ -18,6 +21,9 @@ export default function ForgotPassword() {
 	const supabase = getSupabase();
 	const router = useRouter();
 
+	/**
+	 * Send password reset email through Supabase.
+	 */
 	const handleReset = async () => {
 		if (!email) {
 			showAlert("Error", "Please enter your email", "error");
@@ -28,6 +34,7 @@ export default function ForgotPassword() {
 
 		try {
 			const { error } = await supabase.auth.resetPasswordForEmail(email, {
+				// Custom redirect URL for web-based password reset flow
 				redirectTo:
 					"https://shaander.github.io/fitforge/web-redirect-reset.html",
 			});
@@ -46,6 +53,7 @@ export default function ForgotPassword() {
 		}
 	};
 
+	// Form configuration for reusable AuthForm component
 	const forgotFields = [
 		{
 			name: "email",

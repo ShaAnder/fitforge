@@ -21,10 +21,14 @@ import {
 } from "@/lib/supabaseQueries";
 
 /**
- * Exercise Library Screen
+ * Exercise Library Screen.
+ *
+ * Allows users to browse, search, and filter the full list of exercises.
+ * Supports muscle group filtering and detailed modal view.
  */
 export default function Library() {
 	const accent = useAccent();
+
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedMuscle, setSelectedMuscle] = useState<string>("All");
 	const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(
@@ -35,14 +39,16 @@ export default function Library() {
 	const [exercises, setExercises] = useState<Exercise[]>([]);
 	const [loading, setLoading] = useState(true);
 
-	// Fetch exercises from Supabase
+	/**
+	 * Load all exercises on screen mount.
+	 */
 	useEffect(() => {
 		const loadExercises = async () => {
 			try {
 				const data = await getAllExercises();
 				setExercises(data);
 			} catch (err: any) {
-				console.error("[Library] ❌ Failed to load exercises:", err.message);
+				// Error handled silently - UI will show empty state
 			} finally {
 				setLoading(false);
 			}
@@ -51,6 +57,9 @@ export default function Library() {
 		loadExercises();
 	}, []);
 
+	/**
+	 * Filter exercises based on search query and selected muscle group.
+	 */
 	const filteredExercises = useMemo(() => {
 		return exercises.filter((exercise: Exercise) => {
 			const matchesSearch = exercise.name
@@ -62,6 +71,9 @@ export default function Library() {
 		});
 	}, [exercises, searchQuery, selectedMuscle]);
 
+	/**
+	 * Get unique muscle groups for filter chips.
+	 */
 	const muscleGroups = useMemo(() => {
 		const unique = getUniqueMuscles(exercises);
 		return ["All", ...unique];
@@ -91,7 +103,7 @@ export default function Library() {
 				</View>
 			</View>
 
-			{/* Muscle Group Filters - Hidden while loading */}
+			{/* Muscle Group Filters */}
 			{!loading && (
 				<View className="px-5 mb-8">
 					<View className="flex-row flex-wrap gap-2">
@@ -204,7 +216,7 @@ export default function Library() {
 								</Text>
 							</View>
 
-							{/* NAME */}
+							{/* Exercise Info */}
 							<Text className="text-white text-4xl font-bold mb-1">
 								{selectedExercise.name}
 							</Text>

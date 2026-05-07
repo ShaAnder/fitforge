@@ -14,20 +14,27 @@ import {
 import { resolveAvatarUrl } from "@/components/common/Avatar";
 import TabScreen from "@/components/layout/TabScreen";
 import Button from "@/components/ui/Button";
-import { useAlert } from "@/context/AlertContext"; // ← New
+import { useAlert } from "@/context/AlertContext";
 import { useAuth } from "@/context/AuthContext";
 import { useAccent } from "@/hooks/useAccent";
 import { uploadAvatar } from "@/lib/supabaseQueries";
 
 /**
- * Profile Screen - Batch edit mode
+ * Profile Screen - Full editable profile view.
+ *
+ * Supports:
+ * - View mode with current profile info
+ * - Edit mode (triggered via deep link or button)
+ * - Avatar upload with live preview
+ * - Username editing
+ * - Success/error alerts
  */
 export default function Profile() {
 	const params = useLocalSearchParams<{ edit?: string }>();
 	const router = useRouter();
 
 	const { user, profile, updateProfile } = useAuth();
-	const { showAlert } = useAlert(); // ← New
+	const { showAlert } = useAlert();
 	const accent = useAccent();
 
 	const [isEditing, setIsEditing] = useState(false);
@@ -38,6 +45,9 @@ export default function Profile() {
 
 	const displayName = profile?.username || user?.email?.split("@")[0] || "User";
 
+	/**
+	 * Handle deep link edit mode (e.g. from other screens).
+	 */
 	useFocusEffect(
 		useCallback(() => {
 			if (params?.edit === "1") {
@@ -47,6 +57,9 @@ export default function Profile() {
 		}, [params?.edit]),
 	);
 
+	/**
+	 * Reset form when exiting edit mode or profile updates.
+	 */
 	useEffect(() => {
 		if (!isEditing) {
 			setUsername(profile?.username || "");
@@ -54,6 +67,9 @@ export default function Profile() {
 		}
 	}, [profile?.username, isEditing]);
 
+	/**
+	 * Pick and preview new avatar.
+	 */
 	const handlePickImage = async () => {
 		const result = await ImagePicker.launchImageLibraryAsync({
 			mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -68,6 +84,9 @@ export default function Profile() {
 		setAvatarKey((prev) => prev + 1);
 	};
 
+	/**
+	 * Save username and/or avatar changes.
+	 */
 	const saveChanges = async () => {
 		if (!user?.id) return;
 
@@ -100,6 +119,9 @@ export default function Profile() {
 		}
 	};
 
+	/**
+	 * Cancel editing and reset form.
+	 */
 	const discardChanges = () => {
 		setUsername(profile?.username || "");
 		setSelectedAvatarAsset(null);
@@ -107,6 +129,9 @@ export default function Profile() {
 		showAlert("Changes Discarded", "", "info");
 	};
 
+	/**
+	 * Display either selected preview or current avatar.
+	 */
 	const displayedAvatarUrl = selectedAvatarAsset
 		? selectedAvatarAsset.uri
 		: resolveAvatarUrl(profile?.avatar_url);
@@ -187,7 +212,7 @@ export default function Profile() {
 				</Text>
 			</View>
 
-			{/* Achievements & Lifetime Totals */}
+			{/* Placeholder sections */}
 			<View className="mb-10">
 				<Text className="text-zinc-400 text-lg font-semibold mb-5">
 					Achievements

@@ -8,7 +8,10 @@ import { useState } from "react";
 import { View } from "react-native";
 
 /**
- * Resend Verification Screen
+ * Resend Verification Screen.
+ *
+ * Allows users who haven't verified their email to request a new verification link.
+ * Uses Supabase Auth's resend functionality with a custom redirect URL.
  */
 export default function ResendVerification() {
 	const [email, setEmail] = useState("");
@@ -18,6 +21,9 @@ export default function ResendVerification() {
 	const supabase = getSupabase();
 	const router = useRouter();
 
+	/**
+	 * Send a new verification email to the user.
+	 */
 	const handleResend = async () => {
 		if (!email) {
 			showAlert("Error", "Please enter your email", "error");
@@ -31,6 +37,7 @@ export default function ResendVerification() {
 				type: "signup",
 				email: email.trim(),
 				options: {
+					// Custom redirect URL for email verification on web
 					emailRedirectTo:
 						"https://shaander.github.io/fitforge/web-redirect-verify.html",
 				},
@@ -43,6 +50,8 @@ export default function ResendVerification() {
 				"Please check your inbox (and spam folder).",
 				"success",
 			);
+
+			// Return user to login after successful resend
 			router.replace("/login");
 		} catch (err: any) {
 			showAlert(
@@ -55,6 +64,7 @@ export default function ResendVerification() {
 		}
 	};
 
+	// Form configuration for the reusable AuthForm component
 	const fields = [
 		{
 			name: "email",
@@ -78,6 +88,7 @@ export default function ResendVerification() {
 				onSubmit={handleResend}
 				loading={loading}
 			/>
+
 			<AuthLink to="/login">Login</AuthLink>
 		</View>
 	);

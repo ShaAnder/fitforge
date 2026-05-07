@@ -9,7 +9,10 @@ import { useState } from "react";
 import { View } from "react-native";
 
 /**
- * ResetPassword Screen
+ * Reset Password Screen.
+ *
+ * Called after user clicks the password reset link from their email.
+ * Handles token exchange and password update via Supabase Auth.
  */
 export default function ResetPassword() {
 	const [password, setPassword] = useState("");
@@ -19,8 +22,18 @@ export default function ResetPassword() {
 	const { showAlert } = useAlert();
 	const supabase = getSupabase();
 	const router = useRouter();
+
+	// Tokens passed via deep link / URL params from Supabase email
 	const { access_token, refresh_token } = useLocalSearchParams();
 
+	/**
+	 * Handle password reset submission.
+	 *
+	 * 1. Validates passwords match and meet minimum length.
+	 * 2. Sets the session using tokens from the reset link.
+	 * 3. Updates the user's password.
+	 * 4. Signs out and redirects to login.
+	 */
 	const handleReset = async () => {
 		if (
 			!password ||
@@ -35,6 +48,7 @@ export default function ResetPassword() {
 		setIsProcessing(true);
 
 		try {
+			// Exchange reset tokens for a valid session
 			if (access_token && refresh_token) {
 				await supabase.auth.setSession({
 					access_token: access_token as string,
@@ -45,8 +59,10 @@ export default function ResetPassword() {
 			const { error } = await supabase.auth.updateUser({ password });
 			if (error) throw error;
 
+			// Sign out so user must log in with new password
 			await supabase.auth.signOut();
 
+			// Small delay for better UX before redirect
 			await new Promise((resolve) => setTimeout(resolve, 400));
 
 			showAlert(
@@ -63,10 +79,12 @@ export default function ResetPassword() {
 		}
 	};
 
+	// Show full-screen loader during processing
 	if (isProcessing) {
 		return <LoadingScreen />;
 	}
 
+	// Form fields for reusable AuthForm component
 	const resetFields = [
 		{
 			name: "password",

@@ -1,4 +1,3 @@
-// app/(tabs)/history.tsx
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
@@ -6,21 +5,27 @@ import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 import TabScreen from "@/components/layout/TabScreen";
 import ModalView from "@/components/ui/ModalView";
-import { useAlert } from "@/context/AlertContext"; // ← New
+import { useAlert } from "@/context/AlertContext";
 import { useAuth } from "@/context/AuthContext";
-import { debugLoad } from "@/helpers/debugLoad";
 import { convertWeight, getUnitLabel } from "@/helpers/unitConverter";
 import { useAccent } from "@/hooks/useAccent";
 import { fetchWorkouts } from "@/lib/supabaseQueries";
 
 /**
- * History Screen - Polished + Consistent
+ * History Screen - Displays past workouts with details.
+ *
+ * Features:
+ * - List of past workouts with date, time, and total volume
+ * - Pull-to-refresh via useFocusEffect
+ * - Modal detail view showing individual exercises and sets
+ * - Unit conversion based on user preference (kg/lb)
  */
 export default function History() {
 	const { user, profile } = useAuth();
 	const { showAlert } = useAlert();
 	const accent = useAccent();
 
+	// User preferences
 	const userUnit = (profile?.units as "kg" | "lb") ?? "kg";
 	const unitLabel = getUnitLabel(userUnit);
 
@@ -28,21 +33,24 @@ export default function History() {
 	const [loading, setLoading] = useState(true);
 	const [selectedWorkout, setSelectedWorkout] = useState<any>(null);
 
+	/**
+	 * Reload workouts every time the screen comes into focus.
+	 */
 	useFocusEffect(
 		useCallback(() => {
 			if (user?.id) loadWorkouts();
 		}, [user]),
 	);
 
+	/**
+	 * Load all workouts for the current user.
+	 */
 	const loadWorkouts = async () => {
-		const load = debugLoad("History.loadWorkouts", { userId: user?.id });
 		try {
 			setLoading(true);
 			const data = await fetchWorkouts(user!.id);
 			setWorkouts(data || []);
-			load.success({ count: data?.length ?? 0 });
 		} catch (err: any) {
-			load.error(err);
 			showAlert(
 				"Failed to Load",
 				err.message || "Could not load history.",
@@ -150,6 +158,7 @@ export default function History() {
 							hour12: true,
 						})}
 				</Text>
+
 				<ScrollView
 					className="flex-1 -mx-1 px-1"
 					showsVerticalScrollIndicator={false}

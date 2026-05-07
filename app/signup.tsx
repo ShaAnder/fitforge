@@ -8,6 +8,9 @@ import { View } from "react-native";
 
 /**
  * Signup Screen - Allows new users to create an account with email and password.
+ *
+ * Includes basic client-side validation and uses the shared AuthContext
+ * for actual registration logic.
  */
 export default function Signup() {
 	const [email, setEmail] = useState("");
@@ -18,6 +21,13 @@ export default function Signup() {
 	const { signup } = useAuth();
 	const router = useRouter();
 
+	/**
+	 * Handle signup form submission.
+	 *
+	 * Performs basic validation before calling the AuthContext signup method.
+	 * On success, the context will show a success alert and the callback will
+	 * redirect the user to the login screen.
+	 */
 	const handleSignup = async () => {
 		if (!email || !password || !confirmPassword) return;
 		if (password !== confirmPassword) return;
@@ -27,16 +37,17 @@ export default function Signup() {
 
 		try {
 			await signup(email, password, () => {
-				// This runs AFTER the success alert is closed
+				// This callback runs AFTER the success alert is closed
 				router.replace("/login");
 			});
 		} catch (err) {
-			// Error is handled inside AuthContext
+			// All errors are handled globally inside AuthContext + AlertContext
 		} finally {
 			setLoading(false);
 		}
 	};
 
+	// Form fields configuration for the reusable AuthForm component
 	const signupFields = [
 		{
 			name: "email",

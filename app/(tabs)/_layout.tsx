@@ -6,6 +6,12 @@ import { Modal, Pressable, View } from "react-native";
 import NavDrawer from "@/components/ui/NavDrawer";
 import { useAccent } from "@/hooks/useAccent";
 
+/**
+ * Main Tab Layout for the app.
+ *
+ * Configures bottom tab navigation with 5 tabs + custom center "Log Workout" button.
+ * Includes a slide-up modal drawer for "More" options.
+ */
 export default function TabLayout() {
 	const [drawerVisible, setDrawerVisible] = useState(false);
 	const accent = useAccent();
@@ -47,6 +53,7 @@ export default function TabLayout() {
 					}}
 				/>
 
+				{/* Custom floating "Log Workout" button */}
 				<Tabs.Screen
 					name="log-workout"
 					options={{
@@ -77,14 +84,14 @@ export default function TabLayout() {
 					}}
 				/>
 
-				{/* 3-Dot More - Pure custom button, NO route */}
+				{/* More button - triggers custom drawer instead of normal tab */}
 				<Tabs.Screen
-					// Leading underscore tells Expo Router to ignore this as a real route
 					name="more"
 					options={{
 						tabBarIcon: ({ color }) => (
 							<Ionicons name="ellipsis-horizontal" size={28} color={color} />
 						),
+						// Custom press handler to open drawer instead of navigating
 						tabBarButton: ({ children, style }) => (
 							<Pressable style={style} onPress={() => setDrawerVisible(true)}>
 								{children}
@@ -93,7 +100,7 @@ export default function TabLayout() {
 					}}
 				/>
 
-				{/* Hidden screens */}
+				{/* Hidden screens - not shown in tab bar */}
 				<Tabs.Screen name="index" options={{ href: null }} />
 				<Tabs.Screen name="profile" options={{ href: null }} />
 				<Tabs.Screen name="privacy" options={{ href: null }} />
@@ -104,19 +111,19 @@ export default function TabLayout() {
 				<Tabs.Screen name="community" options={{ href: null }} />
 			</Tabs>
 
-			{/* Clean Modal Drawer with Click Outside to Close */}
+			{/* Slide-up Modal Drawer */}
 			<Modal
 				visible={drawerVisible}
 				animationType="slide"
 				transparent
 				onRequestClose={() => setDrawerVisible(false)}
 			>
-				{/* Tap outside closes */}
+				{/* Background overlay - tap to close */}
 				<Pressable
 					className="flex-1 bg-black/70 justify-end"
 					onPress={() => setDrawerVisible(false)}
 				>
-					{/* Sheet: fixed height, bottom-aligned */}
+					{/* Drawer content container - prevents closing when tapping inside */}
 					<Pressable
 						onPress={(e) => e.stopPropagation()}
 						style={{ height: "70%" }}
