@@ -1,4 +1,4 @@
-import { getAccentPreset } from "@/constants/accent";
+import { getAccentPreset } from "@/constants/accents";
 import { useAuth } from "@/context/AuthContext";
 
 export function useAccent() {
