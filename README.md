@@ -154,13 +154,26 @@ npm test -- tests/context/AuthContext.test.tsx   # Single file
 
 ## Project Structure
 
-fitforge/ ├── app/ # Expo Router routes + layouts │ ├── (tabs)/ # Main
-authenticated tab shell │ ├── auth flows... # login, signup, verify, reset, etc.
-│ └── \_layout.tsx ├── components/ # Reusable UI pieces │ ├── common/, ui/,
-dashboard/, workout/, layout/ │ └── **tests**/ ├── context/ # Global state
-providers ├── helpers/ # Pure business logic ├── lib/ # Supabase client + query
-layer ├── hooks/ # Custom hooks ├── constants/ # Colors, accents, legal text ├──
-tests/ # Jest test files ├── assets/ # Images, fonts, splash └── jest.setup.js
+```js
+
+fitforge/
+├── app/                  # Expo Router routes + layouts
+│   ├── (tabs)/           # Main authenticated tab shell
+│   ├── auth flows...     # login, signup, verify, reset, etc.
+│   └── _layout.tsx
+├── components/           # Reusable UI pieces
+│   ├── common/, ui/, dashboard/, workout/, layout/
+│   └── __tests__/
+├── context/              # Global state providers
+├── helpers/              # Pure business logic
+├── lib/                  # Supabase client + query layer
+├── hooks/                # Custom hooks
+├── constants/            # Colors, accents, legal text
+├── tests/                # Jest test files
+├── assets/               # Images, fonts, splash
+└── jest.setup.js
+
+```
 
 ## Technologies Used
 
@@ -192,6 +205,7 @@ npm install
 ```
 
 ## Environment Variables
+
 Create a .env file in the root (or use Expo EAS secrets for production):
 
 ```env
@@ -217,7 +231,6 @@ npm test               # Run full test suite
 - Use environment-specific Supabase keys in production
 - Web version is functional but the app is mobile-first
 
-
 ## Future Enhancements
 
 - Advanced analytics & trend charts
@@ -227,11 +240,10 @@ npm test               # Run full test suite
 - Apple Health / Google Fit integration
 - Full dark/light mode toggle (beyond current accent system)
 
-
 ## Credits
 
-Built as a focused portfolio project to demonstrate real-world React Native + Supabase skills.
-Special thanks to:
+Built as a focused portfolio project to demonstrate real-world React Native +
+Supabase skills. Special thanks to:
 
 - The Expo team for excellent tooling and documentation
 - Supabase for making auth and backend simple and powerful
