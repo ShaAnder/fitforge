@@ -6,8 +6,8 @@ import {
 	useContext,
 	useEffect,
 	useMemo,
-	useState,
 	useRef,
+	useState,
 } from "react";
 
 type AlertType = "success" | "error" | "info";
@@ -32,10 +32,6 @@ type AlertContextType = {
 const AlertContext = createContext<AlertContextType | undefined>(undefined);
 
 export function AlertProvider({ children }: { children: ReactNode }) {
-	if (process.env.NODE_ENV !== "test") {
-		console.log("[AlertProvider] 🔄 Mounted");
-	}
-
 	const [alert, setAlert] = useState<{
 		visible: boolean;
 		title: string;
@@ -65,7 +61,6 @@ export function AlertProvider({ children }: { children: ReactNode }) {
 	}, [alert?.onClose]);
 
 	const hideAlert = useCallback(() => {
-		console.log("[AlertProvider] 🙈 HIDE ALERT called");
 		setAlert(null);
 
 		// Run callback AFTER state update

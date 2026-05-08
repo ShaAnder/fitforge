@@ -12,49 +12,61 @@ import { ACCENT_LIST, AccentKey, getAccentPreset } from "@/constants/accents";
 import {
 	cancelDailyReminder,
 	ensureNotificationsPermission,
-	getScheduledReminderId,
 	scheduleDailyReminder,
 } from "@/helpers/notifications";
 
 import ModalView from "@/components/ui/ModalView";
 import { getSupabase } from "@/lib/supabase";
 
-function AccentRow({
-	label,
-	hex,
-	selected,
-	onPress,
-}: {
-	label: string;
-	hex: string;
-	selected: boolean;
-	onPress: () => void;
-}) {
-	return (
-		<TouchableOpacity
-			onPress={onPress}
-			className="flex-row items-center justify-between py-4"
-			activeOpacity={0.85}
-		>
-			<View className="flex-row items-center gap-3">
-				<View
-					style={{
-						width: 14,
-						height: 14,
-						borderRadius: 999,
-						backgroundColor: hex,
-					}}
-				/>
-				<Text className="text-white text-lg font-semibold">{label}</Text>
-			</View>
+type ReminderKey = "workout" | "streak";
 
-			{selected ? (
-				<Ionicons name="checkmark-circle" size={24} color={hex} />
-			) : (
-				<Ionicons name="ellipse-outline" size={22} color="#52525b" />
-			)}
-		</TouchableOpacity>
-	);
+const REMINDER_CONFIG = {
+	workout: {
+		storageKey: "notif_workout_daily_id",
+		enabledField: "workout_reminder_enabled",
+		timeField: "workout_reminder_time",
+		title: "Workout reminder",
+		body: "Time to train — log your workout in FitForge.",
+		label: "Workout reminder",
+		description: "Daily nudge to log your training.",
+		defaultTime: "18:00",
+	},
+	streak: {
+		storageKey: "notif_streak_daily_id",
+		enabledField: "streak_reminder_enabled",
+		timeField: "streak_reminder_time",
+		title: "Streak reminder",
+		body: "Keep the streak alive — log something today.",
+		label: "Streak reminder",
+		description: "Keep your weekly momentum going.",
+		defaultTime: "20:00",
+	},
+} as const;
+
+function parseReminderTime(timeString: string) {
+	const [hourPart = "0", minutePart = "0"] = timeString.split(":");
+	const hour = Number(hourPart);
+	const minute = Number(minutePart);
+	return {
+		hour: Number.isFinite(hour) ? hour : 0,
+		minute: Number.isFinite(minute) ? minute : 0,
+	};
+}
+
+function formatReminderTime(timeString: string) {
+	const { hour, minute } = parseReminderTime(timeString);
+	const ampm = hour >= 12 ? "PM" : "AM";
+	const hour12 = hour % 12 || 12;
+	return `${hour12}:${String(minute).padStart(2, "0")} ${ampm}`;
+}
+
+function getReminderTime(profile: any, reminderKey: ReminderKey) {
+	const config = REMINDER_CONFIG[reminderKey];
+	const rawTime = profile?.[config.timeField];
+	if (typeof rawTime === "string" && /^\d{2}:\d{2}(:\d{2})?$/.test(rawTime)) {
+		return rawTime.slice(0, 5);
+	}
+	return config.defaultTime;
 }
 
 export default function SettingsScreen() {
@@ -62,12 +74,18 @@ export default function SettingsScreen() {
 	const { user, profile, updateProfile, signOut } = useAuth();
 	const { showAlert } = useAlert();
 
-	const WORKOUT_REMINDER_KEY = "notif_workout_daily_id";
-	const STREAK_REMINDER_KEY = "notif_streak_daily_id";
-
 	const [workoutReminderEnabled, setWorkoutReminderEnabled] = useState(false);
 	const [streakReminderEnabled, setStreakReminderEnabled] = useState(false);
 	const [notificationsLoading, setNotificationsLoading] = useState(true);
+
+	// Custom Time Modal States
+	const [customTimeModalVisible, setCustomTimeModalVisible] = useState(false);
+	const [activeReminderKey, setActiveReminderKey] =
+		useState<ReminderKey | null>(null);
+	const [tempTimeInput, setTempTimeInput] = useState("18:00");
+
+	const [workoutTime, setWorkoutTime] = useState("18:00");
+	const [streakTime, setStreakTime] = useState("20:00");
 
 	const [changePasswordVisible, setChangePasswordVisible] = useState(false);
 	const [newPassword, setNewPassword] = useState("");
@@ -110,33 +128,101 @@ export default function SettingsScreen() {
 		return `${hour12}:${mm} ${ampm}`;
 	};
 
+	// Load both scheduled status and saved times
 	useEffect(() => {
-		let cancelled = false;
-		(async () => {
-			try {
-				const [workoutId, streakId] = await Promise.all([
-					getScheduledReminderId(WORKOUT_REMINDER_KEY),
-					getScheduledReminderId(STREAK_REMINDER_KEY),
-				]);
-				if (cancelled) return;
-				setWorkoutReminderEnabled(Boolean(workoutId));
-				setStreakReminderEnabled(Boolean(streakId));
-			} finally {
-				if (!cancelled) setNotificationsLoading(false);
+		if (!profile) return;
+
+		setWorkoutReminderEnabled(!!profile.workout_reminder_enabled);
+		setStreakReminderEnabled(!!profile.streak_reminder_enabled);
+		setWorkoutTime(getReminderTime(profile, "workout"));
+		setStreakTime(getReminderTime(profile, "streak"));
+		setNotificationsLoading(false);
+	}, [profile]);
+
+	const openCustomTimeModal = (reminderKey: ReminderKey) => {
+		setActiveReminderKey(reminderKey);
+		const currentTime = reminderKey === "workout" ? workoutTime : streakTime;
+		setTempTimeInput(currentTime);
+		setCustomTimeModalVisible(true);
+	};
+
+	const closeCustomTimeModal = () => {
+		setCustomTimeModalVisible(false);
+		setActiveReminderKey(null);
+	};
+
+	const saveCustomTime = async () => {
+		if (!activeReminderKey) return;
+
+		const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+		if (!timeRegex.test(tempTimeInput)) {
+			showAlert(
+				"Invalid time",
+				"Please enter time in 24-hour format (HH:MM)",
+				"info",
+			);
+			return;
+		}
+
+		const config = REMINDER_CONFIG[activeReminderKey];
+		const timeString = tempTimeInput;
+
+		if (activeReminderKey === "workout") setWorkoutTime(timeString);
+		else setStreakTime(timeString);
+
+		try {
+			const isEnabled =
+				activeReminderKey === "workout"
+					? workoutReminderEnabled
+					: streakReminderEnabled;
+
+			if (isEnabled) {
+				const hasPermission = await ensureNotificationsPermission();
+				if (!hasPermission) {
+					showAlert(
+						"Notifications disabled",
+						"Enable in system settings.",
+						"info",
+					);
+					return;
+				}
+
+				await cancelDailyReminder(config.storageKey);
+				const { hour, minute } = parseReminderTime(timeString);
+				await scheduleDailyReminder(
+					config.storageKey,
+					hour,
+					minute,
+					config.title,
+					config.body,
+					"reminders",
+				);
 			}
-		})();
-		return () => {
-			cancelled = true;
-		};
-	}, []);
+
+			await updateProfile({ [config.timeField]: timeString });
+
+			showAlert(
+				"Reminder time saved",
+				`Daily reminder set for ${formatReminderTime(timeString)}.`,
+				"success",
+			);
+		} catch (error) {
+			showAlert("Notification error", "Failed to save reminder time.", "error");
+			if (__DEV__) console.warn(error);
+		} finally {
+			closeCustomTimeModal();
+		}
+	};
 
 	const setDailyReminder = async (
-		storageKey: string,
+		reminderKey: ReminderKey,
 		enabled: boolean,
 		setEnabled: (v: boolean) => void,
-		options: { title: string; body: string },
 	) => {
 		setEnabled(enabled);
+		const config = REMINDER_CONFIG[reminderKey];
+		const timeString = reminderKey === "workout" ? workoutTime : streakTime;
+
 		try {
 			if (enabled) {
 				const hasPermission = await ensureNotificationsPermission();
@@ -150,15 +236,13 @@ export default function SettingsScreen() {
 					return;
 				}
 
-				const hour = __DEV__ ? devNextMinute.hour : 9;
-				const minute = __DEV__ ? devNextMinute.minute : 0;
-
+				const { hour, minute } = parseReminderTime(timeString);
 				const id = await scheduleDailyReminder(
-					storageKey,
+					config.storageKey,
 					hour,
 					minute,
-					options.title,
-					options.body,
+					config.title,
+					config.body,
 					"reminders",
 				);
 
@@ -172,15 +256,19 @@ export default function SettingsScreen() {
 					return;
 				}
 
+				await updateProfile({
+					[config.enabledField]: true,
+					[config.timeField]: timeString,
+				});
+
 				showAlert(
 					"Reminder enabled",
-					`Scheduled daily at ${formatTime(hour, minute)}.${
-						__DEV__ ? " (Dev schedules for next minute.)" : ""
-					}`,
+					`Scheduled at ${formatReminderTime(timeString)}.`,
 					"success",
 				);
 			} else {
-				await cancelDailyReminder(storageKey);
+				await cancelDailyReminder(config.storageKey);
+				await updateProfile({ [config.enabledField]: false });
 				showAlert(
 					"Reminder disabled",
 					"Scheduled reminder removed.",
@@ -332,62 +420,78 @@ export default function SettingsScreen() {
 				<Card className="p-6">
 					<Text className="text-zinc-400 text-sm mb-4">Notifications</Text>
 
-					<View className="flex-row items-center justify-between py-3">
-						<View className="flex-1 pr-4">
-							<Text className="text-white text-base font-semibold">
-								Workout reminder
-							</Text>
-							<Text className="text-zinc-400 text-sm mt-1">
-								Daily nudge to log your training.
-							</Text>
+					{/* Workout Reminder */}
+					<View className="py-3">
+						<View className="flex-row items-start justify-between gap-4">
+							<View className="flex-1 pr-4">
+								<Text className="text-white text-base font-semibold">
+									{REMINDER_CONFIG.workout.label}
+								</Text>
+								<Text className="text-zinc-400 text-sm mt-1">
+									{REMINDER_CONFIG.workout.description}
+								</Text>
+								<Text className="text-zinc-500 text-xs mt-3">
+									Time: {formatReminderTime(workoutTime)}
+								</Text>
+							</View>
+							<View className="items-end gap-3">
+								<TouchableOpacity
+									onPress={() => openCustomTimeModal("workout")}
+									className="px-4 py-2 rounded-2xl border border-zinc-700 bg-zinc-900"
+								>
+									<Text className="text-white font-semibold">Set time</Text>
+								</TouchableOpacity>
+								<Switch
+									value={workoutReminderEnabled}
+									disabled={notificationsLoading}
+									onValueChange={(value) =>
+										setDailyReminder(
+											"workout",
+											value,
+											setWorkoutReminderEnabled,
+										)
+									}
+									trackColor={{ false: "#3f3f46", true: accentPreset.hex500 }}
+									thumbColor="#ffffff"
+								/>
+							</View>
 						</View>
-						<Switch
-							value={workoutReminderEnabled}
-							disabled={notificationsLoading}
-							onValueChange={(value) =>
-								setDailyReminder(
-									WORKOUT_REMINDER_KEY,
-									value,
-									setWorkoutReminderEnabled,
-									{
-										title: "Workout reminder",
-										body: "Time to train — log your workout in FitForge.",
-									},
-								)
-							}
-							trackColor={{ false: "#3f3f46", true: accentPreset.hex500 }}
-							thumbColor="#ffffff"
-						/>
 					</View>
 
 					<View className="h-px bg-zinc-800 my-3" />
 
-					<View className="flex-row items-center justify-between py-3">
-						<View className="flex-1 pr-4">
-							<Text className="text-white text-base font-semibold">
-								Streak reminder
-							</Text>
-							<Text className="text-zinc-400 text-sm mt-1">
-								Keep your weekly momentum going.
-							</Text>
+					{/* Streak Reminder */}
+					<View className="py-3">
+						<View className="flex-row items-start justify-between gap-4">
+							<View className="flex-1 pr-4">
+								<Text className="text-white text-base font-semibold">
+									{REMINDER_CONFIG.streak.label}
+								</Text>
+								<Text className="text-zinc-400 text-sm mt-1">
+									{REMINDER_CONFIG.streak.description}
+								</Text>
+								<Text className="text-zinc-500 text-xs mt-3">
+									Time: {formatReminderTime(streakTime)}
+								</Text>
+							</View>
+							<View className="items-end gap-3">
+								<TouchableOpacity
+									onPress={() => openCustomTimeModal("streak")}
+									className="px-4 py-2 rounded-2xl border border-zinc-700 bg-zinc-900"
+								>
+									<Text className="text-white font-semibold">Set time</Text>
+								</TouchableOpacity>
+								<Switch
+									value={streakReminderEnabled}
+									disabled={notificationsLoading}
+									onValueChange={(value) =>
+										setDailyReminder("streak", value, setStreakReminderEnabled)
+									}
+									trackColor={{ false: "#3f3f46", true: accentPreset.hex500 }}
+									thumbColor="#ffffff"
+								/>
+							</View>
 						</View>
-						<Switch
-							value={streakReminderEnabled}
-							disabled={notificationsLoading}
-							onValueChange={(value) =>
-								setDailyReminder(
-									STREAK_REMINDER_KEY,
-									value,
-									setStreakReminderEnabled,
-									{
-										title: "Streak reminder",
-										body: "Keep the streak alive — log something today.",
-									},
-								)
-							}
-							trackColor={{ false: "#3f3f46", true: accentPreset.hex500 }}
-							thumbColor="#ffffff"
-						/>
 					</View>
 				</Card>
 
@@ -544,6 +648,58 @@ export default function SettingsScreen() {
 						onPress={signOut}
 					/>
 				</View>
+
+				{/* Custom Time Modal */}
+
+				<ModalView
+					visible={customTimeModalVisible}
+					onRequestClose={closeCustomTimeModal}
+					height="35%"
+				>
+					<View className="flex-1">
+						<Text className="text-white text-3xl font-bold mb-2">
+							Set Reminder Time
+						</Text>
+						<Text className="text-zinc-400 text-lg mb-6">
+							Enter time in 24-hour format (HH:MM)
+						</Text>
+
+						<TextInput
+							className="bg-zinc-900 text-white p-5 rounded-2xl text-4xl text-center border border-zinc-700 focus:border-accent-500"
+							value={tempTimeInput}
+							onChangeText={setTempTimeInput}
+							placeholder="18:00"
+							placeholderTextColor="#52525b"
+							keyboardType="numeric"
+							maxLength={5}
+						/>
+
+						<Text className="text-zinc-500 text-xs mt-3 text-center">
+							Example: 09:30 or 17:45
+						</Text>
+
+						<View className="flex-1" />
+
+						<View className="flex-row gap-3">
+							<View className="flex-1">
+								<Button
+									title="Cancel"
+									size="large"
+									variant="outline"
+									onPress={closeCustomTimeModal}
+								/>
+							</View>
+							<View className="flex-1">
+								<Button
+									title="Save Time"
+									size="large"
+									variant="primary"
+									onPress={saveCustomTime}
+								/>
+							</View>
+						</View>
+					</View>
+				</ModalView>
 
 				{/* Change Password Modal */}
 				<ModalView
