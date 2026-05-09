@@ -39,6 +39,14 @@ function RootLayoutNav() {
 		segments[0] === "resend-verification" ||
 		segments[0] === "verify-email";
 
+	useEffect(() => {}, [
+		loading,
+		user,
+		rootNavState?.key,
+		inAuthGroup,
+		segments,
+	]);
+
 	/**
 	 * Control native splash screen visibility.
 	 *
@@ -65,8 +73,12 @@ function RootLayoutNav() {
 
 	// Protected Route Redirects (Render-time)
 	// These ensure the wrong navigation tree never mounts even briefly.
-	if (!user && !inAuthGroup) return <Redirect href="/login" />;
-	if (user && inAuthGroup) return <Redirect href="/(tabs)/dashboard" />;
+	if (!user && !inAuthGroup) {
+		return <Redirect href="/login" />;
+	}
+	if (user && inAuthGroup) {
+		return <Redirect href="/(tabs)/dashboard" />;
+	}
 
 	return (
 		<Stack screenOptions={{ headerShown: false }}>

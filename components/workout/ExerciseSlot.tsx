@@ -15,6 +15,7 @@ interface ExerciseSlotProps {
 		name: string;
 		sets: Set[];
 	};
+	weightUnit?: "kg" | "lb";
 	onUpdate: (newData: any) => void;
 	onRemove: () => void;
 	nextSetId: number;
@@ -32,6 +33,7 @@ interface ExerciseSlotProps {
  */
 export default function ExerciseSlot({
 	exercise,
+	weightUnit = "kg",
 	onUpdate,
 	onRemove,
 	nextSetId,
@@ -50,7 +52,6 @@ export default function ExerciseSlot({
 	};
 
 	const removeSet = (setId: number) => {
-		// Don't allow removing the last set
 		if (exercise.sets.length === 1) return;
 
 		onUpdate({
@@ -60,17 +61,15 @@ export default function ExerciseSlot({
 
 	return (
 		<View className="bg-zinc-900 rounded-3xl p-5 mb-6">
-			{/* Exercise Name Row */}
 			<View className="flex-row items-center justify-between mb-4">
 				<TextInput
-					className="flex-1 text-white text-xl font-semibold bg-transparent"
+					className="flex-1 text-white text-xl font-semibold bg-transparent "
 					placeholder="Exercise name"
 					placeholderTextColor="#71717a"
 					value={exercise.name}
 					onChangeText={(name) => onUpdate({ name })}
 				/>
 
-				{/* Delete Exercise - Hidden for first exercise */}
 				{!isFirstExercise && (
 					<TouchableOpacity onPress={onRemove} className="ml-3">
 						<Ionicons name="trash-outline" size={24} color="#ef4444" />
@@ -78,9 +77,8 @@ export default function ExerciseSlot({
 				)}
 			</View>
 
-			{/* Sets */}
 			{exercise.sets.map((set, index) => (
-				<View key={set.id} className="flex-row gap-3 mb-3 items-center">
+				<View key={set.id} className="flex-row gap-3 mb-3 x items-center">
 					<Text className="text-zinc-400 text-base w-8 self-center font-medium">
 						{index + 1}
 					</Text>
@@ -99,7 +97,7 @@ export default function ExerciseSlot({
 
 					<TextInput
 						className="flex-1 bg-zinc-800 text-white rounded-2xl px-4 py-3"
-						placeholder="Weight (kg)"
+						placeholder={`Weight (${weightUnit})`}
 						keyboardType="number-pad"
 						value={set.weight}
 						onChangeText={(weight) => {
@@ -109,7 +107,6 @@ export default function ExerciseSlot({
 						}}
 					/>
 
-					{/* Delete Set Button - Hidden if it's the only set */}
 					{exercise.sets.length > 1 && (
 						<TouchableOpacity onPress={() => removeSet(set.id)}>
 							<Ionicons name="trash-outline" size={20} color="#ef4444" />
@@ -118,7 +115,6 @@ export default function ExerciseSlot({
 				</View>
 			))}
 
-			{/* Add Set Button */}
 			<TouchableOpacity
 				onPress={addSet}
 				className="flex-row items-center justify-center py-3 border border-dashed border-zinc-600 rounded-2xl mt-2"

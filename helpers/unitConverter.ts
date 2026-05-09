@@ -41,3 +41,15 @@ export const convertVolumeData = (
 		value: convertWeight(item.value, toUnit),
 	}));
 };
+
+/**
+ * Small additional helper to convert labels based on users preference.
+ */
+export const convertInputWeightToKg = (
+	weight: number,
+	fromUnit: "kg" | "lb" = "kg",
+): number => {
+	if (!Number.isFinite(weight) || weight <= 0) return 0;
+	if (fromUnit === "kg") return Number(weight.toFixed(2));
+	return Number((weight / 2.20462).toFixed(2));
+};

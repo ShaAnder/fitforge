@@ -1,3 +1,15 @@
+/**
+ * Log Workout Screen.
+ *
+ * Main screen for recording a new workout session.
+ * Features:
+ * - Real-time exercise search with dropdown suggestions
+ * - Dynamic exercise slots with set management
+ * - Total volume calculation
+ * - Validation before saving
+ * - Refreshes dashboard data on successful save
+ */
+
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
@@ -10,24 +22,17 @@ import { useAuth } from "@/context/AuthContext";
 import { useAccent } from "@/hooks/useAccent";
 import { getSupabase } from "@/lib/supabase";
 
+import { convertInputWeightToKg, getUnitLabel } from "@/helpers/unitConverter";
 import { Exercise, getAllExercises } from "@/lib/supabaseQueries";
 
-/**
- * Log Workout Screen.
- *
- * Main screen for recording a new workout session.
- * Features:
- * - Real-time exercise search with dropdown suggestions
- * - Dynamic exercise slots with set management
- * - Total volume calculation
- * - Validation before saving
- * - Refreshes dashboard data on successful save
- */
 export default function LogWorkout() {
-	const { user, refreshWorkouts } = useAuth();
+	const { user, profile, refreshWorkouts } = useAuth();
 	const { showAlert } = useAlert();
 	const accent = useAccent();
 	const supabase = getSupabase();
+
+	const userUnit = (profile?.units as "kg" | "lb") ?? "kg";
+	const unitLabel = getUnitLabel(userUnit);
 
 	const [exercises, setExercises] = useState<any[]>([]);
 	const [allExercises, setAllExercises] = useState<Exercise[]>([]);
@@ -39,16 +44,13 @@ export default function LogWorkout() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
 
-	/**
-	 * Load full exercise library on mount.
-	 */
 	useEffect(() => {
 		const loadLibrary = async () => {
 			try {
 				const data = await getAllExercises();
 				setAllExercises(data);
 			} catch (err: any) {
-				// Library load failure is non-critical
+				// non-critical
 			} finally {
 				setLoadingLibrary(false);
 			}
@@ -57,9 +59,6 @@ export default function LogWorkout() {
 		loadLibrary();
 	}, []);
 
-	/**
-	 * Filter exercises for search dropdown (max 12 results).
-	 */
 	const filteredExercises = useMemo(() => {
 		if (!searchQuery.trim()) return [];
 		return allExercises
@@ -67,9 +66,6 @@ export default function LogWorkout() {
 			.slice(0, 12);
 	}, [allExercises, searchQuery]);
 
-	/**
-	 * Add selected exercise to current workout.
-	 */
 	const addExercise = (exercise: Exercise) => {
 		const localId = nextExerciseId;
 		setNextExerciseId((prev) => prev + 1);
@@ -97,23 +93,18 @@ export default function LogWorkout() {
 		setExercises((prev) => prev.filter((ex) => ex.localId !== localId));
 	};
 
-	/**
-	 * Calculate total volume lifted in current workout.
-	 */
 	const calculateTotalVolume = (): number => {
 		return exercises.reduce((total, exercise) => {
 			const exerciseVolume = exercise.sets.reduce((sum: number, set: any) => {
 				const weight = parseFloat(set.weight) || 0;
 				const reps = parseFloat(set.reps) || 0;
-				return sum + weight * reps;
+				const kgWeight = convertInputWeightToKg(weight, userUnit);
+				return sum + kgWeight * reps;
 			}, 0);
 			return total + exerciseVolume;
 		}, 0);
 	};
 
-	/**
-	 * Validate that all sets have reps and weight filled.
-	 */
 	const isWorkoutValid = (): boolean => {
 		if (exercises.length === 0) return false;
 		return exercises.every((exercise) =>
@@ -123,9 +114,6 @@ export default function LogWorkout() {
 		);
 	};
 
-	/**
-	 * Save the complete workout to Supabase.
-	 */
 	const saveWorkout = async () => {
 		if (!user) {
 			showAlert(
@@ -146,12 +134,21 @@ export default function LogWorkout() {
 		}
 
 		setIsSaving(true);
+
+		const normalizedExercises = exercises.map((exercise) => ({
+			...exercise,
+			sets: exercise.sets.map((set: any) => ({
+				...set,
+				weight: convertInputWeightToKg(parseFloat(set.weight) || 0, userUnit),
+			})),
+		}));
+
 		const totalVolume = calculateTotalVolume();
 
 		try {
 			const { error } = await supabase.from("workouts").insert({
 				user_id: user.id,
-				exercises,
+				exercises: normalizedExercises,
 				total_volume: totalVolume,
 				notes: "",
 				date: new Date().toISOString(),
@@ -159,18 +156,14 @@ export default function LogWorkout() {
 
 			if (error) throw error;
 
-			// Success flow
 			showAlert(
 				"Workout Logged!",
-				`Session saved successfully. Total volume: ${totalVolume} kg`,
+				`Session saved successfully. Total volume: ${Math.round(totalVolume)} kg`,
 				"success",
 			);
 
-			// Reset form
 			setExercises([]);
 			setSearchQuery("");
-
-			// Refresh dashboard data
 			await refreshWorkouts();
 		} catch (err: any) {
 			showAlert(
@@ -197,7 +190,6 @@ export default function LogWorkout() {
 				/>
 			}
 		>
-			{/* Search Bar with Dropdown Suggestions */}
 			<View className="px-5 pt-4 pb-6 relative z-10">
 				<View className="bg-zinc-900 rounded-2xl flex-row items-center px-5 border border-zinc-800">
 					<Ionicons name="search" size={20} color="#a1a1aa" />
@@ -230,11 +222,11 @@ export default function LogWorkout() {
 				)}
 			</View>
 
-			{/* Current Workout Exercises */}
 			{exercises.map((exercise) => (
 				<ExerciseSlot
 					key={exercise.localId}
 					exercise={exercise}
+					weightUnit={userUnit}
 					onUpdate={(newData) => updateExercise(exercise.localId, newData)}
 					onRemove={() => removeExercise(exercise.localId)}
 					nextSetId={nextSetId}
@@ -242,7 +234,6 @@ export default function LogWorkout() {
 				/>
 			))}
 
-			{/* Empty State */}
 			{!loadingLibrary && exercises.length === 0 && (
 				<View className="items-center py-20">
 					<Ionicons name="barbell-outline" size={70} color="#3f3f46" />

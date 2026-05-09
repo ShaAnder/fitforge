@@ -11,8 +11,6 @@ import { getSupabase } from "./supabase";
 export const fetchWorkouts = async (userId: string) => {
 	const supabase = getSupabase();
 
-	console.log(`[fetchWorkouts] 🚀 Starting query for user: ${userId}`);
-
 	try {
 		const { data, error } = await supabase
 			.from("workouts")
@@ -22,9 +20,6 @@ export const fetchWorkouts = async (userId: string) => {
 
 		if (error) throw error;
 
-		console.log(
-			`[fetchWorkouts] ✅ Success: ${data?.length || 0} workouts returned`,
-		);
 		return data || [];
 	} catch (err: any) {
 		console.error(
@@ -68,7 +63,6 @@ export const getAllExercises = async (): Promise<Exercise[]> => {
 		throw error;
 	}
 
-	console.log(`[getAllExercises] ✅ Loaded ${data?.length} exercises`);
 	return data || [];
 };
 
@@ -115,12 +109,9 @@ export const getProfile = async (userId: string, email: string = "") => {
 		if (error) throw error;
 
 		if (data) {
-			console.log(`[getProfile] ✅ Profile found`);
 			return data;
 		}
 
-		// No row yet; return sensible default
-		console.log(`[getProfile] ℹ️  No profile row yet; using default`);
 		return {
 			id: userId,
 			username: email.split("@")[0].replace(/[^a-zA-Z0-9]/g, "") || "user",
@@ -153,8 +144,6 @@ export const updateProfile = async (
 	});
 
 	if (error) throw error;
-
-	console.log("[updateProfile] ✅ Profile updated successfully");
 };
 
 /**
@@ -190,8 +179,6 @@ export const uploadAvatar = async (userId: string, asset: any) => {
 	const fileName = userId + "-" + Date.now() + "." + (fileExt || "jpeg");
 
 	try {
-		console.log("[uploadAvatar] 📤 Uploading:", fileName);
-
 		const pickedFile = new ExpoFile(asset.uri);
 		const arrayBuffer = await pickedFile.arrayBuffer();
 
@@ -210,7 +197,6 @@ export const uploadAvatar = async (userId: string, asset: any) => {
 
 		if (!urlData?.publicUrl) throw new Error("Failed to create public URL");
 
-		console.log("[uploadAvatar] ✅ SUCCESS:", urlData.publicUrl);
 		return urlData.publicUrl;
 	} catch (err: any) {
 		console.error("[uploadAvatar] ❌", err);

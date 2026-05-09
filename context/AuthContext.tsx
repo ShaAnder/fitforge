@@ -66,15 +66,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	// Prevent repeated bootstraps for the same user id
 	const lastUserIdRef = useRef<string | null>(null);
 
-	const MIN_SPLASH_MS = 3500;
-
 	// ─────────────────────────────────────────────────────────────
 	// EFFECT 1: Auth Session + Real-time Listener
 	// ─────────────────────────────────────────────────────────────
 	useEffect(() => {
-		const supabase = getSupabase();
+		let cancelled = false;
+		let unsubscribe: (() => void) | null = null;
 
 		const initializeAuth = async () => {
+			let supabase: ReturnType<typeof getSupabase>;
+
+			try {
+				supabase = getSupabase();
+			} catch (err: any) {
+				console.error(
+					"[AuthProvider] Supabase init failed:",
+					err?.message ?? String(err),
+				);
+
+				if (!cancelled) {
+					// Fail open so splash/loading does not block forever
+					setSession(null);
+					setUser(null);
+					setAuthResolved(true);
+					setLoading(false);
+
+					showAlertRef.current?.(
+						"Configuration Error",
+						"Missing Supabase configuration in this build. Rebuild after setting EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY.",
+						"error",
+					);
+				}
+				return;
+			}
+
 			try {
 				const {
 					data: { session },
@@ -82,30 +107,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				} = await supabase.auth.getSession();
 
 				if (error) {
-					// Non-critical - we can still proceed
+					console.warn("[AuthProvider] getSession error:", error.message);
 				}
 
-				setSession(session);
-				setUser(session?.user ?? null);
-			} catch (err) {
-				// getSession error is non-critical
+				if (!cancelled) {
+					setSession(session);
+					setUser(session?.user ?? null);
+				}
+			} catch (err: any) {
+				console.error(
+					"[AuthProvider] getSession threw:",
+					err?.message ?? String(err),
+				);
 			} finally {
-				setAuthResolved(true);
+				if (!cancelled) {
+					setAuthResolved(true);
+				}
 			}
+
+			if (cancelled) return;
+
+			const {
+				data: { subscription },
+			} = supabase.auth.onAuthStateChange((_event, currentSession) => {
+				if (cancelled) return;
+				setSession(currentSession);
+				setUser(currentSession?.user ?? null);
+			});
+
+			unsubscribe = () => subscription.unsubscribe();
 		};
 
 		initializeAuth();
 
-		// Real-time auth state listener
-		const {
-			data: { subscription },
-		} = supabase.auth.onAuthStateChange((event, currentSession) => {
-			setSession(currentSession);
-			setUser(currentSession?.user ?? null);
-		});
-
 		return () => {
-			subscription.unsubscribe();
+			cancelled = true;
+			if (unsubscribe) unsubscribe();
 		};
 	}, []);
 
@@ -119,18 +156,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 		const bootstrap = async () => {
 			const currentUserId = user?.id ?? null;
-
-			// avoid re-running bootstrap for the same user id
-			if (lastUserIdRef.current === currentUserId) return;
-			lastUserIdRef.current = currentUserId;
+			const currentUserEmail = user?.email ?? "";
 
 			if (!currentUserId) {
+				lastUserIdRef.current = null;
 				setProfile(null);
 				setWorkouts([]);
 				setAccentId("green");
 				setLoading(false);
 				return;
 			}
+
+			// avoid re-running bootstrap for the same user id
+			if (lastUserIdRef.current === currentUserId) return;
+			lastUserIdRef.current = currentUserId;
 
 			setLoading(true);
 
@@ -141,7 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				const { data: existingProfile, error: profileErr } = await supabase
 					.from("profiles")
 					.select("*")
-					.eq("id", user.id)
+					.eq("id", currentUserId)
 					.maybeSingle();
 
 				if (profileErr) throw profileErr;
@@ -149,10 +188,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				let resolvedProfile = existingProfile;
 
 				if (!resolvedProfile) {
-					const defaultUsername = user.email?.split("@")[0]?.trim() || "User";
+					const defaultUsername =
+						currentUserEmail.split("@")[0]?.trim() || "User";
 
 					const { error: upsertErr } = await supabase.from("profiles").upsert({
-						id: user.id,
+						id: currentUserId,
 						username: defaultUsername,
 						updated_at: new Date().toISOString(),
 					});
@@ -162,7 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 					const { data: createdProfile } = await supabase
 						.from("profiles")
 						.select("*")
-						.eq("id", user.id)
+						.eq("id", currentUserId)
 						.single();
 
 					resolvedProfile = createdProfile;
@@ -172,7 +212,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				const { data: workoutsData, error: workoutsErr } = await supabase
 					.from("workouts")
 					.select("*")
-					.eq("user_id", user.id)
+					.eq("user_id", currentUserId)
 					.order("date", { ascending: false });
 
 				if (workoutsErr) throw workoutsErr;
@@ -183,7 +223,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				setAccentId(normalizeAccentKey(resolvedProfile?.accent) as AccentKey);
 				setWorkouts(workoutsData || []);
 			} catch (err: any) {
-				// use the ref to call showAlert to avoid making it a dependency
 				showAlertRef.current?.(
 					"Loading Error",
 					"Failed to load your dashboard data. Please try again.",
@@ -191,7 +230,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				);
 				setAccentId("green");
 			} finally {
-				if (!cancelled) setLoading(false);
+				if (!cancelled) {
+					setLoading(false);
+				}
 			}
 		};
 
@@ -200,7 +241,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		return () => {
 			cancelled = true;
 		};
-	}, [authResolved, user?.id, setAccentId]);
+	}, [authResolved, user?.id, user?.email, setAccentId]);
 
 	// ─────────────────────────────────────────────────────────────
 	// AUTH ACTION METHODS
