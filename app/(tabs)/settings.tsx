@@ -5,7 +5,7 @@ import { useAlert } from "@/context/AlertContext";
 import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { ACCENT_LIST, AccentKey, getAccentPreset } from "@/constants/accents";
@@ -17,6 +17,7 @@ import {
 
 import ModalView from "@/components/ui/ModalView";
 import { getSupabase } from "@/lib/supabase";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type ReminderKey = "workout" | "streak";
 
@@ -78,11 +79,12 @@ export default function SettingsScreen() {
 	const [streakReminderEnabled, setStreakReminderEnabled] = useState(false);
 	const [notificationsLoading, setNotificationsLoading] = useState(true);
 
-	// Custom Time Modal States
+	// Custom Time Modal States - TWO FIELDS
 	const [customTimeModalVisible, setCustomTimeModalVisible] = useState(false);
 	const [activeReminderKey, setActiveReminderKey] =
 		useState<ReminderKey | null>(null);
-	const [tempTimeInput, setTempTimeInput] = useState("18:00");
+	const [tempHour, setTempHour] = useState("18");
+	const [tempMinute, setTempMinute] = useState("00");
 
 	const [workoutTime, setWorkoutTime] = useState("18:00");
 	const [streakTime, setStreakTime] = useState("20:00");
@@ -105,30 +107,9 @@ export default function SettingsScreen() {
 		await updateProfile({ accent: key });
 	};
 
-	const displayName =
-		(profile?.username as string | undefined) ||
-		user?.email?.split("@")[0] ||
-		"User";
+	const displayName = profile?.username || user?.email?.split("@")[0] || "User";
 
-	const devNextMinute = useMemo(() => {
-		const now = new Date();
-		let hour = now.getHours();
-		let minute = now.getMinutes() + 1;
-		if (minute >= 60) {
-			minute = 0;
-			hour = (hour + 1) % 24;
-		}
-		return { hour, minute };
-	}, []);
-
-	const formatTime = (hour24: number, minute: number) => {
-		const ampm = hour24 >= 12 ? "PM" : "AM";
-		const hour12 = hour24 % 12 || 12;
-		const mm = String(minute).padStart(2, "0");
-		return `${hour12}:${mm} ${ampm}`;
-	};
-
-	// Load both scheduled status and saved times
+	// Load saved data
 	useEffect(() => {
 		if (!profile) return;
 
@@ -141,8 +122,13 @@ export default function SettingsScreen() {
 
 	const openCustomTimeModal = (reminderKey: ReminderKey) => {
 		setActiveReminderKey(reminderKey);
+
 		const currentTime = reminderKey === "workout" ? workoutTime : streakTime;
-		setTempTimeInput(currentTime);
+		const { hour, minute } = parseReminderTime(currentTime);
+
+		setTempHour(String(hour).padStart(2, "0"));
+		setTempMinute(String(minute).padStart(2, "0"));
+
 		setCustomTimeModalVisible(true);
 	};
 
@@ -154,23 +140,21 @@ export default function SettingsScreen() {
 	const saveCustomTime = async () => {
 		if (!activeReminderKey) return;
 
-		const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
-		if (!timeRegex.test(tempTimeInput)) {
-			showAlert(
-				"Invalid time",
-				"Please enter time in 24-hour format (HH:MM)",
-				"info",
-			);
+		const hour = parseInt(tempHour) || 0;
+		const minute = parseInt(tempMinute) || 0;
+
+		if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+			showAlert("Invalid time", "Hour must be 0-23 and minute 0-59", "info");
 			return;
 		}
 
-		const config = REMINDER_CONFIG[activeReminderKey];
-		const timeString = tempTimeInput;
+		const timeString = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
 
 		if (activeReminderKey === "workout") setWorkoutTime(timeString);
 		else setStreakTime(timeString);
 
 		try {
+			const config = REMINDER_CONFIG[activeReminderKey];
 			const isEnabled =
 				activeReminderKey === "workout"
 					? workoutReminderEnabled
@@ -188,7 +172,6 @@ export default function SettingsScreen() {
 				}
 
 				await cancelDailyReminder(config.storageKey);
-				const { hour, minute } = parseReminderTime(timeString);
 				await scheduleDailyReminder(
 					config.storageKey,
 					hour,
@@ -389,498 +372,526 @@ export default function SettingsScreen() {
 	};
 
 	return (
-		<TabScreen title="Settings" subtitle="Preferences">
-			<View className="gap-6">
-				<Card className="p-6">
-					<Text className="text-zinc-400 text-sm mb-4">Appearance</Text>
+		<SafeAreaView className="flex-1 bg-zinc-950" edges={["top"]}>
+			<TabScreen title="Settings" subtitle="Preferences">
+				<View className="gap-6">
+					<Card className="p-6">
+						<Text className="text-zinc-400 text-sm mb-4">Appearance</Text>
 
-					<View className="flex-row items-center justify-between">
-						{ACCENT_LIST.map((a) => {
-							const selected = currentAccent === a.key;
+						<View className="flex-row items-center justify-between">
+							{ACCENT_LIST.map((a) => {
+								const selected = currentAccent === a.key;
 
-							return (
-								<TouchableOpacity
-									key={a.key}
-									onPress={() => setAccent(a.key)}
-									activeOpacity={0.85}
-									style={{
-										width: 34,
-										height: 34,
-										borderRadius: 999,
-										backgroundColor: a.hex500,
-										borderWidth: selected ? 3 : 0,
-										borderColor: selected ? "#fff" : "transparent",
-									}}
-								/>
-							);
-						})}
-					</View>
-				</Card>
-
-				<Card className="p-6">
-					<Text className="text-zinc-400 text-sm mb-4">Notifications</Text>
-
-					{/* Workout Reminder */}
-					<View className="py-3">
-						<View className="flex-row items-start justify-between gap-4">
-							<View className="flex-1 pr-4">
-								<Text className="text-white text-base font-semibold">
-									{REMINDER_CONFIG.workout.label}
-								</Text>
-								<Text className="text-zinc-400 text-sm mt-1">
-									{REMINDER_CONFIG.workout.description}
-								</Text>
-								<Text className="text-zinc-500 text-xs mt-3">
-									Time: {formatReminderTime(workoutTime)}
-								</Text>
-							</View>
-							<View className="items-end gap-3">
-								<TouchableOpacity
-									onPress={() => openCustomTimeModal("workout")}
-									className="px-4 py-2 rounded-2xl border border-zinc-700 bg-zinc-900"
-								>
-									<Text className="text-white font-semibold">Set time</Text>
-								</TouchableOpacity>
-								<Switch
-									value={workoutReminderEnabled}
-									disabled={notificationsLoading}
-									onValueChange={(value) =>
-										setDailyReminder(
-											"workout",
-											value,
-											setWorkoutReminderEnabled,
-										)
-									}
-									trackColor={{ false: "#3f3f46", true: accentPreset.hex500 }}
-									thumbColor="#ffffff"
-								/>
-							</View>
+								return (
+									<TouchableOpacity
+										key={a.key}
+										onPress={() => setAccent(a.key)}
+										activeOpacity={0.85}
+										style={{
+											width: 34,
+											height: 34,
+											borderRadius: 999,
+											backgroundColor: a.hex500,
+											borderWidth: selected ? 3 : 0,
+											borderColor: selected ? "#fff" : "transparent",
+										}}
+									/>
+								);
+							})}
 						</View>
-					</View>
+					</Card>
 
-					<View className="h-px bg-zinc-800 my-3" />
+					<Card className="p-6">
+						<Text className="text-zinc-400 text-sm mb-4">Notifications</Text>
 
-					{/* Streak Reminder */}
-					<View className="py-3">
-						<View className="flex-row items-start justify-between gap-4">
-							<View className="flex-1 pr-4">
-								<Text className="text-white text-base font-semibold">
-									{REMINDER_CONFIG.streak.label}
-								</Text>
-								<Text className="text-zinc-400 text-sm mt-1">
-									{REMINDER_CONFIG.streak.description}
-								</Text>
-								<Text className="text-zinc-500 text-xs mt-3">
-									Time: {formatReminderTime(streakTime)}
-								</Text>
-							</View>
-							<View className="items-end gap-3">
-								<TouchableOpacity
-									onPress={() => openCustomTimeModal("streak")}
-									className="px-4 py-2 rounded-2xl border border-zinc-700 bg-zinc-900"
-								>
-									<Text className="text-white font-semibold">Set time</Text>
-								</TouchableOpacity>
-								<Switch
-									value={streakReminderEnabled}
-									disabled={notificationsLoading}
-									onValueChange={(value) =>
-										setDailyReminder("streak", value, setStreakReminderEnabled)
-									}
-									trackColor={{ false: "#3f3f46", true: accentPreset.hex500 }}
-									thumbColor="#ffffff"
-								/>
-							</View>
-						</View>
-					</View>
-				</Card>
-
-				<Card className="p-6">
-					<Text className="text-zinc-400 text-sm mb-4">Preferences</Text>
-
-					<Text className="text-white text-base font-semibold mb-3">Units</Text>
-					<View className="flex-row gap-3">
-						{(["kg", "lb"] as const).map((u) => {
-							const active = (profile?.units ?? "kg") === u;
-							return (
-								<TouchableOpacity
-									key={u}
-									onPress={() => updateProfile({ units: u })}
-									className={`px-4 py-3 rounded-2xl border ${
-										active
-											? "bg-zinc-800 border-zinc-700"
-											: "bg-zinc-900 border-zinc-800"
-									}`}
-								>
-									<Text className="text-white font-semibold">
-										{u.toUpperCase()}
+						{/* Workout Reminder */}
+						<View className="py-3">
+							<View className="flex-row items-start justify-between gap-4">
+								<View className="flex-1 pr-4">
+									<Text className="text-white text-base font-semibold">
+										{REMINDER_CONFIG.workout.label}
 									</Text>
-								</TouchableOpacity>
-							);
-						})}
+									<Text className="text-zinc-400 text-sm mt-1">
+										{REMINDER_CONFIG.workout.description}
+									</Text>
+									<Text className="text-zinc-500 text-xs mt-3">
+										Time: {formatReminderTime(workoutTime)}
+									</Text>
+								</View>
+								<View className="items-end gap-3">
+									<TouchableOpacity
+										onPress={() => openCustomTimeModal("workout")}
+										className="px-4 py-2 rounded-2xl border border-zinc-700 bg-zinc-900"
+									>
+										<Text className="text-white font-semibold">Set time</Text>
+									</TouchableOpacity>
+									<Switch
+										value={workoutReminderEnabled}
+										disabled={notificationsLoading}
+										onValueChange={(value) =>
+											setDailyReminder(
+												"workout",
+												value,
+												setWorkoutReminderEnabled,
+											)
+										}
+										trackColor={{ false: "#3f3f46", true: accentPreset.hex500 }}
+										thumbColor="#ffffff"
+									/>
+								</View>
+							</View>
+						</View>
+
+						<View className="h-px bg-zinc-800 my-3" />
+
+						{/* Streak Reminder */}
+						<View className="py-3">
+							<View className="flex-row items-start justify-between gap-4">
+								<View className="flex-1 pr-4">
+									<Text className="text-white text-base font-semibold">
+										{REMINDER_CONFIG.streak.label}
+									</Text>
+									<Text className="text-zinc-400 text-sm mt-1">
+										{REMINDER_CONFIG.streak.description}
+									</Text>
+									<Text className="text-zinc-500 text-xs mt-3">
+										Time: {formatReminderTime(streakTime)}
+									</Text>
+								</View>
+								<View className="items-end gap-3">
+									<TouchableOpacity
+										onPress={() => openCustomTimeModal("streak")}
+										className="px-4 py-2 rounded-2xl border border-zinc-700 bg-zinc-900"
+									>
+										<Text className="text-white font-semibold">Set time</Text>
+									</TouchableOpacity>
+									<Switch
+										value={streakReminderEnabled}
+										disabled={notificationsLoading}
+										onValueChange={(value) =>
+											setDailyReminder(
+												"streak",
+												value,
+												setStreakReminderEnabled,
+											)
+										}
+										trackColor={{ false: "#3f3f46", true: accentPreset.hex500 }}
+										thumbColor="#ffffff"
+									/>
+								</View>
+							</View>
+						</View>
+					</Card>
+
+					<Card className="p-6">
+						<Text className="text-zinc-400 text-sm mb-4">Preferences</Text>
+
+						<Text className="text-white text-base font-semibold mb-3">
+							Units
+						</Text>
+						<View className="flex-row gap-3">
+							{(["kg", "lb"] as const).map((u) => {
+								const active = (profile?.units ?? "kg") === u;
+								return (
+									<TouchableOpacity
+										key={u}
+										onPress={() => updateProfile({ units: u })}
+										className={`px-4 py-3 rounded-2xl border ${
+											active
+												? "bg-zinc-800 border-zinc-700"
+												: "bg-zinc-900 border-zinc-800"
+										}`}
+									>
+										<Text className="text-white font-semibold">
+											{u.toUpperCase()}
+										</Text>
+									</TouchableOpacity>
+								);
+							})}
+						</View>
+
+						<View className="h-px bg-zinc-800 my-5" />
+
+						<Text className="text-white text-base font-semibold mb-3">
+							Week starts on
+						</Text>
+						<View className="flex-row gap-3">
+							{(
+								[
+									{ key: "mon", label: "Monday" },
+									{ key: "sun", label: "Sunday" },
+								] as const
+							).map((opt) => {
+								const active = (profile?.week_start ?? "mon") === opt.key;
+								return (
+									<TouchableOpacity
+										key={opt.key}
+										onPress={() => updateProfile({ week_start: opt.key })}
+										className={`px-4 py-3 rounded-2xl border ${
+											active
+												? "bg-zinc-800 border-zinc-700"
+												: "bg-zinc-900 border-zinc-800"
+										}`}
+									>
+										<Text className="text-white font-semibold">
+											{opt.label}
+										</Text>
+									</TouchableOpacity>
+								);
+							})}
+						</View>
+					</Card>
+					<Card className="p-6">
+						<Text className="text-zinc-400 text-sm mb-4">Account</Text>
+						<Text className="text-white text-xl font-bold">{displayName}</Text>
+						{user?.email ? (
+							<Text className="text-zinc-400 text-sm mt-2">{user.email}</Text>
+						) : null}
+
+						<View className="h-px bg-zinc-800 my-5" />
+
+						<TouchableOpacity
+							onPress={() => router.push("/(tabs)/profile?edit=1")}
+							className="flex-row items-center justify-between py-4"
+							activeOpacity={0.85}
+						>
+							<Text className="text-white text-lg font-semibold">
+								Edit profile
+							</Text>
+							<Ionicons name="chevron-forward" size={20} color="#a1a1aa" />
+						</TouchableOpacity>
+
+						<View className="h-px bg-zinc-800" />
+
+						<TouchableOpacity
+							onPress={() => setChangePasswordVisible(true)}
+							className="flex-row items-center justify-between py-4"
+							activeOpacity={0.85}
+						>
+							<Text className="text-white text-lg font-semibold">
+								Change password
+							</Text>
+							<Ionicons name="chevron-forward" size={20} color="#a1a1aa" />
+						</TouchableOpacity>
+
+						<View className="h-px bg-zinc-800" />
+
+						<TouchableOpacity
+							onPress={() => setDeleteAccountVisible(true)}
+							className="flex-row items-center justify-between py-4"
+							activeOpacity={0.85}
+						>
+							<Text className="text-red-400 text-lg font-semibold">
+								Delete account
+							</Text>
+							<Ionicons name="chevron-forward" size={20} color="#a1a1aa" />
+						</TouchableOpacity>
+					</Card>
+
+					<Card className="p-6">
+						<Text className="text-zinc-400 text-sm mb-4">Contact</Text>
+
+						<TouchableOpacity
+							onPress={() => router.push("/(tabs)/report-bug" as any)}
+							className="flex-row items-center justify-between py-4"
+							activeOpacity={0.85}
+						>
+							<Text className="text-white text-lg font-semibold">
+								Report a bug
+							</Text>
+							<Ionicons name="chevron-forward" size={20} color="#a1a1aa" />
+						</TouchableOpacity>
+					</Card>
+
+					<Card className="p-6">
+						<Text className="text-zinc-400 text-sm mb-4">Legal</Text>
+
+						<TouchableOpacity
+							onPress={() => router.push("/privacy")}
+							className="flex-row items-center justify-between py-4"
+							activeOpacity={0.85}
+						>
+							<Text className="text-white text-lg font-semibold">
+								Privacy Policy
+							</Text>
+							<Ionicons name="chevron-forward" size={20} color="#a1a1aa" />
+						</TouchableOpacity>
+
+						<View className="h-px bg-zinc-800" />
+
+						<TouchableOpacity
+							onPress={() => router.push("/terms")}
+							className="flex-row items-center justify-between py-4"
+							activeOpacity={0.85}
+						>
+							<Text className="text-white text-lg font-semibold">
+								Terms of Service
+							</Text>
+							<Ionicons name="chevron-forward" size={20} color="#a1a1aa" />
+						</TouchableOpacity>
+					</Card>
+
+					{/* Sign Out Button - at the bottom, scrolls naturally */}
+					<View className="pb-6">
+						<Button
+							title="Sign Out"
+							variant="outline"
+							size="large"
+							onPress={signOut}
+						/>
 					</View>
 
-					<View className="h-px bg-zinc-800 my-5" />
+					{/* Custom Time Modal */}
 
-					<Text className="text-white text-base font-semibold mb-3">
-						Week starts on
-					</Text>
-					<View className="flex-row gap-3">
-						{(
-							[
-								{ key: "mon", label: "Monday" },
-								{ key: "sun", label: "Sunday" },
-							] as const
-						).map((opt) => {
-							const active = (profile?.week_start ?? "mon") === opt.key;
-							return (
-								<TouchableOpacity
-									key={opt.key}
-									onPress={() => updateProfile({ week_start: opt.key })}
-									className={`px-4 py-3 rounded-2xl border ${
-										active
-											? "bg-zinc-800 border-zinc-700"
-											: "bg-zinc-900 border-zinc-800"
-									}`}
-								>
-									<Text className="text-white font-semibold">{opt.label}</Text>
-								</TouchableOpacity>
-							);
-						})}
-					</View>
-				</Card>
-				<Card className="p-6">
-					<Text className="text-zinc-400 text-sm mb-4">Account</Text>
-					<Text className="text-white text-xl font-bold">{displayName}</Text>
-					{user?.email ? (
-						<Text className="text-zinc-400 text-sm mt-2">{user.email}</Text>
-					) : null}
-
-					<View className="h-px bg-zinc-800 my-5" />
-
-					<TouchableOpacity
-						onPress={() => router.push("/(tabs)/profile?edit=1")}
-						className="flex-row items-center justify-between py-4"
-						activeOpacity={0.85}
+					<ModalView
+						visible={customTimeModalVisible}
+						onRequestClose={closeCustomTimeModal}
+						height="42%"
 					>
-						<Text className="text-white text-lg font-semibold">
-							Edit profile
-						</Text>
-						<Ionicons name="chevron-forward" size={20} color="#a1a1aa" />
-					</TouchableOpacity>
+						<View className="flex-1 px-6 pt-8">
+							<Text className="text-white text-3xl font-bold mb-2">
+								Set Reminder Time
+							</Text>
+							<Text className="text-zinc-400 text-lg mb-10">
+								When should we send the daily reminder?
+							</Text>
 
-					<View className="h-px bg-zinc-800" />
+							<View className="flex-row items-center justify-center gap-6">
+								<TextInput
+									className="bg-zinc-900 text-white text-6xl font-semibold text-center rounded-3xl w-36 border-2 border-zinc-700 focus:border-accent-500"
+									value={tempHour}
+									onChangeText={(text) =>
+										setTempHour(text.replace(/[^0-9]/g, "").slice(0, 2))
+									}
+									keyboardType="number-pad"
+									maxLength={2}
+									placeholder="18"
+									placeholderTextColor="#52525b"
+								/>
 
-					<TouchableOpacity
-						onPress={() => setChangePasswordVisible(true)}
-						className="flex-row items-center justify-between py-4"
-						activeOpacity={0.85}
+								<Text className="text-6xl text-zinc-400 font-light">:</Text>
+
+								<TextInput
+									className="bg-zinc-900 text-white text-6xl font-semibold text-center rounded-3xl w-36 border-2 border-zinc-700 focus:border-accent-500"
+									value={tempMinute}
+									onChangeText={(text) =>
+										setTempMinute(text.replace(/[^0-9]/g, "").slice(0, 2))
+									}
+									keyboardType="number-pad"
+									maxLength={2}
+									placeholder="00"
+									placeholderTextColor="#52525b"
+								/>
+							</View>
+
+							<Text className="text-zinc-500 text-center mt-8 text-sm">
+								24-hour format (00:00 - 23:59)
+							</Text>
+
+							<View className="flex-1" />
+
+							<View className="flex-row gap-4 pb-8">
+								<View className="flex-1">
+									<Button
+										title="Cancel"
+										size="large"
+										variant="outline"
+										onPress={closeCustomTimeModal}
+									/>
+								</View>
+								<View className="flex-1">
+									<Button
+										title="Save"
+										size="large"
+										variant="primary"
+										onPress={saveCustomTime}
+									/>
+								</View>
+							</View>
+						</View>
+					</ModalView>
+
+					{/* Change Password Modal */}
+					<ModalView
+						visible={changePasswordVisible}
+						onRequestClose={() => {
+							if (!changingPassword) setChangePasswordVisible(false);
+						}}
+						height="45%"
 					>
-						<Text className="text-white text-lg font-semibold">
-							Change password
-						</Text>
-						<Ionicons name="chevron-forward" size={20} color="#a1a1aa" />
-					</TouchableOpacity>
+						<View className="flex-1">
+							<Text className="text-white text-3xl font-bold mb-3">
+								Change password
+							</Text>
+							<Text className="text-zinc-400 text-lg mb-8">
+								Enter your new password.
+							</Text>
 
-					<View className="h-px bg-zinc-800" />
+							<Text className="text-zinc-400 text-base mb-2 ml-1">
+								New password
+							</Text>
+							<TextInput
+								className="bg-zinc-900 text-white p-5 rounded-2xl text-lg border border-zinc-700 focus:border-zinc-500"
+								placeholder="••••••••"
+								placeholderTextColor="#71717a"
+								secureTextEntry
+								autoCapitalize="none"
+								value={newPassword}
+								onChangeText={setNewPassword}
+							/>
 
-					<TouchableOpacity
-						onPress={() => setDeleteAccountVisible(true)}
-						className="flex-row items-center justify-between py-4"
-						activeOpacity={0.85}
+							<View className="h-6" />
+
+							<Text className="text-zinc-400 text-base mb-2 ml-1">
+								Confirm password
+							</Text>
+							<TextInput
+								className="bg-zinc-900 text-white p-5 rounded-2xl text-lg border border-zinc-700 focus:border-zinc-500"
+								placeholder="••••••••"
+								placeholderTextColor="#71717a"
+								secureTextEntry
+								autoCapitalize="none"
+								value={confirmPassword}
+								onChangeText={setConfirmPassword}
+							/>
+
+							<View className="flex-1" />
+
+							{/* Side-by-side buttons */}
+							<View className="flex-row gap-3">
+								<View className="flex-1">
+									<Button
+										title={changingPassword ? "Confirming..." : "Confirm"}
+										size="large"
+										variant="primary"
+										onPress={submitChangePassword}
+										disabled={changingPassword}
+									/>
+								</View>
+								<View className="flex-1">
+									<Button
+										title="Cancel"
+										size="large"
+										variant="outline"
+										onPress={() => setChangePasswordVisible(false)}
+										disabled={changingPassword}
+									/>
+								</View>
+							</View>
+						</View>
+					</ModalView>
+
+					{/* Delete Account Modal - 2 Steps with Safe Cancel */}
+					<ModalView
+						visible={deleteAccountVisible}
+						onRequestClose={resetDeleteModal}
+						height="40%"
 					>
-						<Text className="text-red-400 text-lg font-semibold">
-							Delete account
-						</Text>
-						<Ionicons name="chevron-forward" size={20} color="#a1a1aa" />
-					</TouchableOpacity>
-				</Card>
+						<View className="flex-1">
+							{deleteStep === 1 && (
+								<>
+									<Text className="text-white text-3xl font-bold mb-3">
+										Delete Account
+									</Text>
+									<Text className="text-red-400 text-lg mb-8">
+										This action is irreversible and will permanently delete your
+										account and all your data.
+									</Text>
 
-				<Card className="p-6">
-					<Text className="text-zinc-400 text-sm mb-4">Contact</Text>
+									<Text className="text-zinc-400 text-lg mb-2 ml-1">
+										Type your email to confirm
+									</Text>
+									<Text className="text-zinc-500 text-base mb-3 ml-1">
+										{user?.email}
+									</Text>
 
-					<TouchableOpacity
-						onPress={() => router.push("/(tabs)/report-bug" as any)}
-						className="flex-row items-center justify-between py-4"
-						activeOpacity={0.85}
-					>
-						<Text className="text-white text-lg font-semibold">
-							Report a bug
-						</Text>
-						<Ionicons name="chevron-forward" size={20} color="#a1a1aa" />
-					</TouchableOpacity>
-				</Card>
+									<TextInput
+										className="bg-zinc-900 text-white p-5 rounded-2xl text-lg border border-zinc-700 focus:border-zinc-500"
+										placeholder="your@email.com"
+										placeholderTextColor="#71717a"
+										value={confirmEmail}
+										onChangeText={setConfirmEmail}
+										autoCapitalize="none"
+										keyboardType="email-address"
+									/>
 
-				<Card className="p-6">
-					<Text className="text-zinc-400 text-sm mb-4">Legal</Text>
+									<View className="flex-1" />
 
-					<TouchableOpacity
-						onPress={() => router.push("/privacy")}
-						className="flex-row items-center justify-between py-4"
-						activeOpacity={0.85}
-					>
-						<Text className="text-white text-lg font-semibold">
-							Privacy Policy
-						</Text>
-						<Ionicons name="chevron-forward" size={20} color="#a1a1aa" />
-					</TouchableOpacity>
+									{/* Side-by-side buttons */}
+									<View className="flex-row gap-3">
+										<View className="flex-1">
+											<Button
+												title="Continue"
+												size="large"
+												variant="primary"
+												onPress={submitDeleteAccount}
+											/>
+										</View>
+										<View className="flex-1">
+											<Button
+												title="Cancel"
+												size="large"
+												variant="outline"
+												onPress={resetDeleteModal}
+											/>
+										</View>
+									</View>
+								</>
+							)}
 
-					<View className="h-px bg-zinc-800" />
+							{deleteStep === 2 && (
+								<>
+									<Text className="text-white text-3xl font-bold mb-3">
+										Confirm Deletion
+									</Text>
+									<Text className="text-red-400 text-lg mb-8">
+										Are you sure? This action cannot be undone.
+									</Text>
 
-					<TouchableOpacity
-						onPress={() => router.push("/terms")}
-						className="flex-row items-center justify-between py-4"
-						activeOpacity={0.85}
-					>
-						<Text className="text-white text-lg font-semibold">
-							Terms of Service
-						</Text>
-						<Ionicons name="chevron-forward" size={20} color="#a1a1aa" />
-					</TouchableOpacity>
-				</Card>
+									<Text className="text-zinc-400 text-lg mb-8">
+										Enter your password to permanently delete your account.
+									</Text>
 
-				{/* Sign Out Button - at the bottom, scrolls naturally */}
-				<View className="pb-6">
-					<Button
-						title="Sign Out"
-						variant="outline"
-						size="large"
-						onPress={signOut}
-					/>
+									<TextInput
+										className="bg-zinc-900 text-white p-5 rounded-2xl text-lg border border-zinc-700 focus:border-zinc-500"
+										placeholder="••••••••"
+										placeholderTextColor="#71717a"
+										secureTextEntry
+										value={deletePassword}
+										onChangeText={setDeletePassword}
+									/>
+
+									<View className="flex-1" />
+
+									{/* Side-by-side buttons */}
+									<View className="flex-row gap-3">
+										<View className="flex-1">
+											<Button
+												title={
+													deletingAccount ? "Deleting Account..." : "Confirm"
+												}
+												size="large"
+												variant="primary"
+												onPress={submitDeleteAccount}
+												disabled={deletingAccount}
+											/>
+										</View>
+										<View className="flex-1">
+											<Button
+												title="Cancel"
+												size="large"
+												variant="outline"
+												onPress={resetDeleteModal}
+												disabled={deletingAccount}
+											/>
+										</View>
+									</View>
+								</>
+							)}
+						</View>
+					</ModalView>
 				</View>
-
-				{/* Custom Time Modal */}
-
-				<ModalView
-					visible={customTimeModalVisible}
-					onRequestClose={closeCustomTimeModal}
-					height="35%"
-				>
-					<View className="flex-1">
-						<Text className="text-white text-3xl font-bold mb-2">
-							Set Reminder Time
-						</Text>
-						<Text className="text-zinc-400 text-lg mb-6">
-							Enter time in 24-hour format (HH:MM)
-						</Text>
-
-						<TextInput
-							className="bg-zinc-900 text-white p-5 rounded-2xl text-4xl text-center border border-zinc-700 focus:border-accent-500"
-							value={tempTimeInput}
-							onChangeText={setTempTimeInput}
-							placeholder="18:00"
-							placeholderTextColor="#52525b"
-							keyboardType="numeric"
-							maxLength={5}
-						/>
-
-						<Text className="text-zinc-500 text-xs mt-3 text-center">
-							Example: 09:30 or 17:45
-						</Text>
-
-						<View className="flex-1" />
-
-						<View className="flex-row gap-3">
-							<View className="flex-1">
-								<Button
-									title="Cancel"
-									size="large"
-									variant="outline"
-									onPress={closeCustomTimeModal}
-								/>
-							</View>
-							<View className="flex-1">
-								<Button
-									title="Save Time"
-									size="large"
-									variant="primary"
-									onPress={saveCustomTime}
-								/>
-							</View>
-						</View>
-					</View>
-				</ModalView>
-
-				{/* Change Password Modal */}
-				<ModalView
-					visible={changePasswordVisible}
-					onRequestClose={() => {
-						if (!changingPassword) setChangePasswordVisible(false);
-					}}
-					height="45%"
-				>
-					<View className="flex-1">
-						<Text className="text-white text-3xl font-bold mb-3">
-							Change password
-						</Text>
-						<Text className="text-zinc-400 text-lg mb-8">
-							Enter your new password.
-						</Text>
-
-						<Text className="text-zinc-400 text-base mb-2 ml-1">
-							New password
-						</Text>
-						<TextInput
-							className="bg-zinc-900 text-white p-5 rounded-2xl text-lg border border-zinc-700 focus:border-zinc-500"
-							placeholder="••••••••"
-							placeholderTextColor="#71717a"
-							secureTextEntry
-							autoCapitalize="none"
-							value={newPassword}
-							onChangeText={setNewPassword}
-						/>
-
-						<View className="h-6" />
-
-						<Text className="text-zinc-400 text-base mb-2 ml-1">
-							Confirm password
-						</Text>
-						<TextInput
-							className="bg-zinc-900 text-white p-5 rounded-2xl text-lg border border-zinc-700 focus:border-zinc-500"
-							placeholder="••••••••"
-							placeholderTextColor="#71717a"
-							secureTextEntry
-							autoCapitalize="none"
-							value={confirmPassword}
-							onChangeText={setConfirmPassword}
-						/>
-
-						<View className="flex-1" />
-
-						{/* Side-by-side buttons */}
-						<View className="flex-row gap-3">
-							<View className="flex-1">
-								<Button
-									title={changingPassword ? "Confirming..." : "Confirm"}
-									size="large"
-									variant="primary"
-									onPress={submitChangePassword}
-									disabled={changingPassword}
-								/>
-							</View>
-							<View className="flex-1">
-								<Button
-									title="Cancel"
-									size="large"
-									variant="outline"
-									onPress={() => setChangePasswordVisible(false)}
-									disabled={changingPassword}
-								/>
-							</View>
-						</View>
-					</View>
-				</ModalView>
-
-				{/* Delete Account Modal - 2 Steps with Safe Cancel */}
-				<ModalView
-					visible={deleteAccountVisible}
-					onRequestClose={resetDeleteModal}
-					height="40%"
-				>
-					<View className="flex-1">
-						{deleteStep === 1 && (
-							<>
-								<Text className="text-white text-3xl font-bold mb-3">
-									Delete Account
-								</Text>
-								<Text className="text-red-400 text-lg mb-8">
-									This action is irreversible and will permanently delete your
-									account and all your data.
-								</Text>
-
-								<Text className="text-zinc-400 text-lg mb-2 ml-1">
-									Type your email to confirm
-								</Text>
-								<Text className="text-zinc-500 text-base mb-3 ml-1">
-									{user?.email}
-								</Text>
-
-								<TextInput
-									className="bg-zinc-900 text-white p-5 rounded-2xl text-lg border border-zinc-700 focus:border-zinc-500"
-									placeholder="your@email.com"
-									placeholderTextColor="#71717a"
-									value={confirmEmail}
-									onChangeText={setConfirmEmail}
-									autoCapitalize="none"
-									keyboardType="email-address"
-								/>
-
-								<View className="flex-1" />
-
-								{/* Side-by-side buttons */}
-								<View className="flex-row gap-3">
-									<View className="flex-1">
-										<Button
-											title="Continue"
-											size="large"
-											variant="primary"
-											onPress={submitDeleteAccount}
-										/>
-									</View>
-									<View className="flex-1">
-										<Button
-											title="Cancel"
-											size="large"
-											variant="outline"
-											onPress={resetDeleteModal}
-										/>
-									</View>
-								</View>
-							</>
-						)}
-
-						{deleteStep === 2 && (
-							<>
-								<Text className="text-white text-3xl font-bold mb-3">
-									Confirm Deletion
-								</Text>
-								<Text className="text-red-400 text-lg mb-8">
-									Are you sure? This action cannot be undone.
-								</Text>
-
-								<Text className="text-zinc-400 text-lg mb-8">
-									Enter your password to permanently delete your account.
-								</Text>
-
-								<TextInput
-									className="bg-zinc-900 text-white p-5 rounded-2xl text-lg border border-zinc-700 focus:border-zinc-500"
-									placeholder="••••••••"
-									placeholderTextColor="#71717a"
-									secureTextEntry
-									value={deletePassword}
-									onChangeText={setDeletePassword}
-								/>
-
-								<View className="flex-1" />
-
-								{/* Side-by-side buttons */}
-								<View className="flex-row gap-3">
-									<View className="flex-1">
-										<Button
-											title={
-												deletingAccount ? "Deleting Account..." : "Confirm"
-											}
-											size="large"
-											variant="primary"
-											onPress={submitDeleteAccount}
-											disabled={deletingAccount}
-										/>
-									</View>
-									<View className="flex-1">
-										<Button
-											title="Cancel"
-											size="large"
-											variant="outline"
-											onPress={resetDeleteModal}
-											disabled={deletingAccount}
-										/>
-									</View>
-								</View>
-							</>
-						)}
-					</View>
-				</ModalView>
-			</View>
-		</TabScreen>
+			</TabScreen>
+		</SafeAreaView>
 	);
 }

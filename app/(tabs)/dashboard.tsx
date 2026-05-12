@@ -19,6 +19,7 @@ import { useAccent } from "@/hooks/useAccent";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
  * Dashboard Screen - Main home screen of FitForge.
@@ -67,7 +68,7 @@ export default function Dashboard() {
 	const unitLabel = getUnitLabel(userUnit);
 
 	return (
-		<View className="flex-1 bg-zinc-950">
+		<SafeAreaView className="flex-1 bg-zinc-950" edges={["top"]}>
 			<StatusBar style="light" />
 
 			<TabScreen
@@ -157,6 +158,6 @@ export default function Dashboard() {
 
 			{/* Placeholder drawer (hidden by default) */}
 			<NavDrawer isOpen={false} onClose={() => {}} />
-		</View>
+		</SafeAreaView>
 	);
 }

@@ -18,6 +18,7 @@ import { useAlert } from "@/context/AlertContext";
 import { useAuth } from "@/context/AuthContext";
 import { useAccent } from "@/hooks/useAccent";
 import { uploadAvatar } from "@/lib/supabaseQueries";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
  * Profile Screen - Full editable profile view.
@@ -137,130 +138,132 @@ export default function Profile() {
 		: resolveAvatarUrl(profile?.avatar_url);
 
 	return (
-		<TabScreen title="Profile" subtitle="Your Account">
-			{/* Profile Picture */}
-			<View className="items-center mt-8 mb-10">
-				<TouchableOpacity
-					onPress={isEditing ? handlePickImage : undefined}
-					disabled={!isEditing || uploading}
-				>
-					<View
-						className={`w-36 h-36 rounded-full border-4 ${accent.border500} overflow-hidden bg-zinc-800 relative`}
-					>
-						{displayedAvatarUrl ? (
-							<Image
-								key={avatarKey}
-								source={{ uri: displayedAvatarUrl }}
-								className="w-full h-full"
-								resizeMode="cover"
-							/>
-						) : (
-							<View className="flex-1 items-center justify-center">
-								<Ionicons name="person" size={80} color={accent.hex500} />
-							</View>
-						)}
-
-						{uploading && (
-							<View className="absolute inset-0 bg-black/60 items-center justify-center">
-								<ActivityIndicator size="large" color={accent.hex500} />
-							</View>
-						)}
-					</View>
-				</TouchableOpacity>
-
-				{isEditing && (
+		<SafeAreaView className="flex-1 bg-zinc-950" edges={["top"]}>
+			<TabScreen title="Profile" subtitle="Your Account">
+				{/* Profile Picture */}
+				<View className="items-center mt-8 mb-10">
 					<TouchableOpacity
-						onPress={handlePickImage}
-						className="mt-4"
-						disabled={uploading}
+						onPress={isEditing ? handlePickImage : undefined}
+						disabled={!isEditing || uploading}
 					>
-						<Text className={`${accent.text400} font-medium`}>
-							Change Profile Picture
-						</Text>
+						<View
+							className={`w-36 h-36 rounded-full border-4 ${accent.border500} overflow-hidden bg-zinc-800 relative`}
+						>
+							{displayedAvatarUrl ? (
+								<Image
+									key={avatarKey}
+									source={{ uri: displayedAvatarUrl }}
+									className="w-full h-full"
+									resizeMode="cover"
+								/>
+							) : (
+								<View className="flex-1 items-center justify-center">
+									<Ionicons name="person" size={80} color={accent.hex500} />
+								</View>
+							)}
+
+							{uploading && (
+								<View className="absolute inset-0 bg-black/60 items-center justify-center">
+									<ActivityIndicator size="large" color={accent.hex500} />
+								</View>
+							)}
+						</View>
 					</TouchableOpacity>
-				)}
-			</View>
 
-			{/* Username */}
-			<View className="bg-zinc-900 rounded-3xl p-6 mb-6">
-				<Text className="text-zinc-400 text-sm mb-2">Username</Text>
-				{isEditing ? (
-					<TextInput
-						className="bg-zinc-800 text-white text-xl px-4 py-3 rounded-2xl"
-						value={username}
-						onChangeText={setUsername}
-						autoFocus
-					/>
-				) : (
-					<Text className="text-white text-3xl font-bold tracking-tighter">
-						{displayName}
+					{isEditing && (
+						<TouchableOpacity
+							onPress={handlePickImage}
+							className="mt-4"
+							disabled={uploading}
+						>
+							<Text className={`${accent.text400} font-medium`}>
+								Change Profile Picture
+							</Text>
+						</TouchableOpacity>
+					)}
+				</View>
+
+				{/* Username */}
+				<View className="bg-zinc-900 rounded-3xl p-6 mb-6">
+					<Text className="text-zinc-400 text-sm mb-2">Username</Text>
+					{isEditing ? (
+						<TextInput
+							className="bg-zinc-800 text-white text-xl px-4 py-3 rounded-2xl"
+							value={username}
+							onChangeText={setUsername}
+							autoFocus
+						/>
+					) : (
+						<Text className="text-white text-3xl font-bold tracking-tighter">
+							{displayName}
+						</Text>
+					)}
+				</View>
+
+				{/* Join Date */}
+				<View className="bg-zinc-900 rounded-3xl p-6 mb-10">
+					<Text className="text-zinc-400 text-sm">Member Since</Text>
+					<Text className="text-white text-xl">
+						{user?.created_at
+							? new Date(user.created_at).toLocaleDateString("en-US", {
+									year: "numeric",
+									month: "long",
+									day: "numeric",
+								})
+							: "N/A"}
 					</Text>
-				)}
-			</View>
+				</View>
 
-			{/* Join Date */}
-			<View className="bg-zinc-900 rounded-3xl p-6 mb-10">
-				<Text className="text-zinc-400 text-sm">Member Since</Text>
-				<Text className="text-white text-xl">
-					{user?.created_at
-						? new Date(user.created_at).toLocaleDateString("en-US", {
-								year: "numeric",
-								month: "long",
-								day: "numeric",
-							})
-						: "N/A"}
-				</Text>
-			</View>
+				{/* Placeholder sections */}
+				<View className="mb-10">
+					<Text className="text-zinc-400 text-lg font-semibold mb-5">
+						Achievements
+					</Text>
+					<Text className="text-zinc-500 text-center py-8">
+						Achievements coming soon...
+					</Text>
+				</View>
 
-			{/* Placeholder sections */}
-			<View className="mb-10">
-				<Text className="text-zinc-400 text-lg font-semibold mb-5">
-					Achievements
-				</Text>
-				<Text className="text-zinc-500 text-center py-8">
-					Achievements coming soon...
-				</Text>
-			</View>
+				<View className="mb-10">
+					<Text className="text-zinc-400 text-lg font-semibold mb-5">
+						Lifetime Totals
+					</Text>
+					<Text className="text-zinc-500 text-center py-8">
+						Lifetime totals builder coming soon...
+					</Text>
+				</View>
 
-			<View className="mb-10">
-				<Text className="text-zinc-400 text-lg font-semibold mb-5">
-					Lifetime Totals
-				</Text>
-				<Text className="text-zinc-500 text-center py-8">
-					Lifetime totals builder coming soon...
-				</Text>
-			</View>
-
-			{/* Action Buttons */}
-			<View className="gap-4">
-				{isEditing ? (
-					<>
-						<Button
-							title={uploading ? "Saving..." : "Save Changes"}
-							variant="primary"
-							size="large"
-							onPress={saveChanges}
-							disabled={uploading}
-						/>
-						<Button
-							title="Discard Changes"
-							variant="outline"
-							size="large"
-							onPress={discardChanges}
-							disabled={uploading}
-						/>
-					</>
-				) : (
-					<>
-						<Button
-							title="Edit Profile"
-							variant="secondary"
-							size="large"
-							onPress={() => setIsEditing(true)}
-						/>
-					</>
-				)}
-			</View>
-		</TabScreen>
+				{/* Action Buttons */}
+				<View className="gap-4">
+					{isEditing ? (
+						<>
+							<Button
+								title={uploading ? "Saving..." : "Save Changes"}
+								variant="primary"
+								size="large"
+								onPress={saveChanges}
+								disabled={uploading}
+							/>
+							<Button
+								title="Discard Changes"
+								variant="outline"
+								size="large"
+								onPress={discardChanges}
+								disabled={uploading}
+							/>
+						</>
+					) : (
+						<>
+							<Button
+								title="Edit Profile"
+								variant="secondary"
+								size="large"
+								onPress={() => setIsEditing(true)}
+							/>
+						</>
+					)}
+				</View>
+			</TabScreen>
+		</SafeAreaView>
 	);
 }

@@ -30,9 +30,6 @@ export default function TabScreen({
 
 	return (
 		<View className="flex-1 bg-zinc-950">
-			{/* Safe top padding for devices with notches, dynamic islands, or status bar */}
-			<View className="pt-12" />
-
 			{/* Consistent branded header with profile avatar across all tabs */}
 			<Header
 				title={title}
@@ -50,14 +47,7 @@ export default function TabScreen({
 			</ScrollView>
 
 			{/* Fixed footer section (does not scroll with content) */}
-			{footer && (
-				<View
-					className="px-5 mt-5 pb-8 bg-zinc-950"
-					style={{ paddingBottom: 50 }}
-				>
-					{footer}
-				</View>
-			)}
+			{footer && <View className="px-5 mt-5 pb-12 bg-zinc-950">{footer}</View>}
 		</View>
 	);
 }

@@ -24,6 +24,7 @@ import { getSupabase } from "@/lib/supabase";
 
 import { convertInputWeightToKg, getUnitLabel } from "@/helpers/unitConverter";
 import { Exercise, getAllExercises } from "@/lib/supabaseQueries";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function LogWorkout() {
 	const { user, profile, refreshWorkouts } = useAuth();
@@ -177,73 +178,75 @@ export default function LogWorkout() {
 	};
 
 	return (
-		<TabScreen
-			title="Log Workout"
-			subtitle="Today's Session"
-			footer={
-				<Button
-					title={isSaving ? "Saving Workout..." : "Save Workout"}
-					variant="primary"
-					size="large"
-					onPress={saveWorkout}
-					disabled={isSaving}
-				/>
-			}
-		>
-			<View className="px-5 pt-4 pb-6 relative z-10">
-				<View className="bg-zinc-900 rounded-2xl flex-row items-center px-5 border border-zinc-800">
-					<Ionicons name="search" size={20} color="#a1a1aa" />
-					<TextInput
-						className="flex-1 ml-3 py-4 text-white text-base"
-						placeholder="Search exercises..."
-						placeholderTextColor="#71717a"
-						value={searchQuery}
-						onChangeText={setSearchQuery}
+		<SafeAreaView className="flex-1 bg-zinc-950" edges={["top"]}>
+			<TabScreen
+				title="Log Workout"
+				subtitle="Today's Session"
+				footer={
+					<Button
+						title={isSaving ? "Saving Workout..." : "Save Workout"}
+						variant="primary"
+						size="large"
+						onPress={saveWorkout}
+						disabled={isSaving}
 					/>
+				}
+			>
+				<View className="px-5 pt-4 pb-6 relative z-10">
+					<View className="bg-zinc-900 rounded-2xl flex-row items-center px-5 border border-zinc-800">
+						<Ionicons name="search" size={20} color="#a1a1aa" />
+						<TextInput
+							className="flex-1 ml-3 py-4 text-white text-base"
+							placeholder="Search exercises..."
+							placeholderTextColor="#71717a"
+							value={searchQuery}
+							onChangeText={setSearchQuery}
+						/>
+					</View>
+
+					{searchQuery.length > 0 && filteredExercises.length > 0 && (
+						<View className="absolute top-16 left-5 right-5 bg-zinc-900 rounded-2xl border border-zinc-800 z-20 max-h-80 overflow-hidden">
+							{filteredExercises.map((ex) => (
+								<TouchableOpacity
+									key={ex.id}
+									className="px-5 py-4 border-b border-zinc-800 active:bg-zinc-800"
+									onPress={() => addExercise(ex)}
+								>
+									<Text className="text-white text-base font-medium">
+										{ex.name}
+									</Text>
+									<Text className={`${accent.text400} text-xs capitalize`}>
+										{ex.muscle} • {ex.difficulty}
+									</Text>
+								</TouchableOpacity>
+							))}
+						</View>
+					)}
 				</View>
 
-				{searchQuery.length > 0 && filteredExercises.length > 0 && (
-					<View className="absolute top-16 left-5 right-5 bg-zinc-900 rounded-2xl border border-zinc-800 z-20 max-h-80 overflow-hidden">
-						{filteredExercises.map((ex) => (
-							<TouchableOpacity
-								key={ex.id}
-								className="px-5 py-4 border-b border-zinc-800 active:bg-zinc-800"
-								onPress={() => addExercise(ex)}
-							>
-								<Text className="text-white text-base font-medium">
-									{ex.name}
-								</Text>
-								<Text className={`${accent.text400} text-xs capitalize`}>
-									{ex.muscle} • {ex.difficulty}
-								</Text>
-							</TouchableOpacity>
-						))}
+				{exercises.map((exercise) => (
+					<ExerciseSlot
+						key={exercise.localId}
+						exercise={exercise}
+						weightUnit={userUnit}
+						onUpdate={(newData) => updateExercise(exercise.localId, newData)}
+						onRemove={() => removeExercise(exercise.localId)}
+						nextSetId={nextSetId}
+						setNextSetId={setNextSetId}
+					/>
+				))}
+
+				{!loadingLibrary && exercises.length === 0 && (
+					<View className="items-center py-20">
+						<Ionicons name="barbell-outline" size={70} color="#3f3f46" />
+						<Text className="text-zinc-500 mt-6 text-center px-10">
+							Search above to add exercises
+						</Text>
 					</View>
 				)}
-			</View>
 
-			{exercises.map((exercise) => (
-				<ExerciseSlot
-					key={exercise.localId}
-					exercise={exercise}
-					weightUnit={userUnit}
-					onUpdate={(newData) => updateExercise(exercise.localId, newData)}
-					onRemove={() => removeExercise(exercise.localId)}
-					nextSetId={nextSetId}
-					setNextSetId={setNextSetId}
-				/>
-			))}
-
-			{!loadingLibrary && exercises.length === 0 && (
-				<View className="items-center py-20">
-					<Ionicons name="barbell-outline" size={70} color="#3f3f46" />
-					<Text className="text-zinc-500 mt-6 text-center px-10">
-						Search above to add exercises
-					</Text>
-				</View>
-			)}
-
-			<View className="h-32" />
-		</TabScreen>
+				<View className="h-32" />
+			</TabScreen>
+		</SafeAreaView>
 	);
 }

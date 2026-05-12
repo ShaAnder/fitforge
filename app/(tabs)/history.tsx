@@ -10,6 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import { convertWeight, getUnitLabel } from "@/helpers/unitConverter";
 import { useAccent } from "@/hooks/useAccent";
 import { fetchWorkouts } from "@/lib/supabaseQueries";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
  * History Screen - Displays past workouts with details.
@@ -70,133 +71,140 @@ export default function History() {
 	};
 
 	return (
-		<TabScreen title="History" subtitle="Past Workouts">
-			<ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-				{loading ? (
-					<Text className="text-zinc-400 text-center py-12">
-						Loading workouts...
-					</Text>
-				) : workouts.length === 0 ? (
-					<View className="items-center justify-center py-20 min-h-[500px]">
-						<Ionicons name="calendar-outline" size={80} color="#3f3f46" />
-						<Text className="text-zinc-400 text-2xl font-semibold mt-8">
-							No workouts yet
-						</Text>
-						<Text className="text-zinc-500 text-center mt-4 px-10">
-							Your logged workouts will appear here
-						</Text>
-					</View>
-				) : (
-					workouts.map((workout) => {
-						const totalVolumeConverted = convertWeight(
-							workout.total_volume || 0,
-							userUnit,
-						);
-
-						const workoutDate = new Date(workout.date);
-
-						const dateString = workoutDate.toLocaleDateString("en-US", {
-							weekday: "long",
-							month: "short",
-							day: "numeric",
-						});
-
-						const timeString = workoutDate.toLocaleTimeString("en-US", {
-							hour: "numeric",
-							minute: "2-digit",
-							hour12: true,
-						});
-
-						return (
-							<TouchableOpacity
-								key={workout.id}
-								onPress={() => openWorkoutDetail(workout)}
-								className="bg-zinc-900 rounded-3xl p-5 mb-4 active:bg-zinc-800"
-							>
-								<View className="flex-row justify-between items-start">
-									<View>
-										<Text className="text-white text-lg font-semibold">
-											{dateString}
-										</Text>
-										<Text className="text-zinc-400 text-sm mt-1">
-											{timeString} • {workout.exercises?.length || 0} exercises
-										</Text>
-									</View>
-
-									<View className="items-end">
-										<Text className={`${accent.text400} font-bold text-xl`}>
-											{totalVolumeConverted} {unitLabel}
-										</Text>
-										<Text className="text-zinc-500 text-xs">total volume</Text>
-									</View>
-								</View>
-							</TouchableOpacity>
-						);
-					})
-				)}
-			</ScrollView>
-
-			{/* Workout Detail Modal */}
-			<ModalView
-				visible={!!selectedWorkout}
-				onRequestClose={closeDetail}
-				width="90%"
-				height="70%"
-			>
-				<Text className="text-white text-2xl font-bold mb-6">
-					{selectedWorkout &&
-						new Date(selectedWorkout.date).toLocaleDateString("en-US", {
-							weekday: "long",
-							month: "long",
-							day: "numeric",
-						})}{" "}
-					•{" "}
-					{selectedWorkout &&
-						new Date(selectedWorkout.date).toLocaleTimeString("en-US", {
-							hour: "numeric",
-							minute: "2-digit",
-							hour12: true,
-						})}
-				</Text>
-
-				<ScrollView
-					className="flex-1 -mx-1 px-1"
-					showsVerticalScrollIndicator={false}
-					contentContainerStyle={{ paddingBottom: 40 }}
-				>
-					{selectedWorkout?.exercises?.map((ex: any, idx: number) => (
-						<View key={idx} className="mb-6 bg-zinc-800 rounded-2xl p-5">
-							<Text className={`${accent.text400} font-semibold text-lg mb-3`}>
-								{ex?.name || "Unnamed Exercise"}
-							</Text>
-
-							{ex?.sets?.map((set: any, sIdx: number) => {
-								const weightConverted = convertWeight(
-									set?.weight || 0,
-									userUnit,
-								);
-								return (
-									<Text key={sIdx} className="text-zinc-300 text-base mb-1">
-										Set {sIdx + 1}: {set?.reps || "?"} reps × {weightConverted}{" "}
-										{unitLabel}
-									</Text>
-								);
-							})}
-						</View>
-					)) || (
+		<SafeAreaView className="flex-1 bg-zinc-950" edges={["top"]}>
+			<TabScreen title="History" subtitle="Past Workouts">
+				<ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+					{loading ? (
 						<Text className="text-zinc-400 text-center py-12">
-							No exercises in this workout
+							Loading workouts...
 						</Text>
+					) : workouts.length === 0 ? (
+						<View className="items-center justify-center py-20 min-h-[500px]">
+							<Ionicons name="calendar-outline" size={80} color="#3f3f46" />
+							<Text className="text-zinc-400 text-2xl font-semibold mt-8">
+								No workouts yet
+							</Text>
+							<Text className="text-zinc-500 text-center mt-4 px-10">
+								Your logged workouts will appear here
+							</Text>
+						</View>
+					) : (
+						workouts.map((workout) => {
+							const totalVolumeConverted = convertWeight(
+								workout.total_volume || 0,
+								userUnit,
+							);
+
+							const workoutDate = new Date(workout.date);
+
+							const dateString = workoutDate.toLocaleDateString("en-US", {
+								weekday: "long",
+								month: "short",
+								day: "numeric",
+							});
+
+							const timeString = workoutDate.toLocaleTimeString("en-US", {
+								hour: "numeric",
+								minute: "2-digit",
+								hour12: true,
+							});
+
+							return (
+								<TouchableOpacity
+									key={workout.id}
+									onPress={() => openWorkoutDetail(workout)}
+									className="bg-zinc-900 rounded-3xl p-5 mb-4 active:bg-zinc-800"
+								>
+									<View className="flex-row justify-between items-start">
+										<View>
+											<Text className="text-white text-lg font-semibold">
+												{dateString}
+											</Text>
+											<Text className="text-zinc-400 text-sm mt-1">
+												{timeString} • {workout.exercises?.length || 0}{" "}
+												exercises
+											</Text>
+										</View>
+
+										<View className="items-end">
+											<Text className={`${accent.text400} font-bold text-xl`}>
+												{totalVolumeConverted} {unitLabel}
+											</Text>
+											<Text className="text-zinc-500 text-xs">
+												total volume
+											</Text>
+										</View>
+									</View>
+								</TouchableOpacity>
+							);
+						})
 					)}
 				</ScrollView>
 
-				<TouchableOpacity
-					onPress={closeDetail}
-					className="bg-zinc-700 py-4 rounded-2xl mt-4"
+				{/* Workout Detail Modal */}
+				<ModalView
+					visible={!!selectedWorkout}
+					onRequestClose={closeDetail}
+					width="90%"
+					height="70%"
 				>
-					<Text className="text-white text-center font-semibold">Close</Text>
-				</TouchableOpacity>
-			</ModalView>
-		</TabScreen>
+					<Text className="text-white text-2xl font-bold mb-6">
+						{selectedWorkout &&
+							new Date(selectedWorkout.date).toLocaleDateString("en-US", {
+								weekday: "long",
+								month: "long",
+								day: "numeric",
+							})}{" "}
+						•{" "}
+						{selectedWorkout &&
+							new Date(selectedWorkout.date).toLocaleTimeString("en-US", {
+								hour: "numeric",
+								minute: "2-digit",
+								hour12: true,
+							})}
+					</Text>
+
+					<ScrollView
+						className="flex-1 -mx-1 px-1"
+						showsVerticalScrollIndicator={false}
+						contentContainerStyle={{ paddingBottom: 40 }}
+					>
+						{selectedWorkout?.exercises?.map((ex: any, idx: number) => (
+							<View key={idx} className="mb-6 bg-zinc-800 rounded-2xl p-5">
+								<Text
+									className={`${accent.text400} font-semibold text-lg mb-3`}
+								>
+									{ex?.name || "Unnamed Exercise"}
+								</Text>
+
+								{ex?.sets?.map((set: any, sIdx: number) => {
+									const weightConverted = convertWeight(
+										set?.weight || 0,
+										userUnit,
+									);
+									return (
+										<Text key={sIdx} className="text-zinc-300 text-base mb-1">
+											Set {sIdx + 1}: {set?.reps || "?"} reps ×{" "}
+											{weightConverted} {unitLabel}
+										</Text>
+									);
+								})}
+							</View>
+						)) || (
+							<Text className="text-zinc-400 text-center py-12">
+								No exercises in this workout
+							</Text>
+						)}
+					</ScrollView>
+
+					<TouchableOpacity
+						onPress={closeDetail}
+						className="bg-zinc-700 py-4 rounded-2xl mt-4"
+					>
+						<Text className="text-white text-center font-semibold">Close</Text>
+					</TouchableOpacity>
+				</ModalView>
+			</TabScreen>
+		</SafeAreaView>
 	);
 }
