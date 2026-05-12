@@ -8,11 +8,10 @@ import type { WeeklyVolumeItem } from "@/types";
 interface WeeklyVolumeChartProps {
 	chartData: WeeklyVolumeItem[];
 }
+
 /**
  * Weekly Volume Chart Component.
- *
- * Displays a bar chart showing the user's weekly lifting volume.
- * Dynamically calculates bar width and spacing based on available screen width.
+ * Uses react-native-gifted-charts to display weekly lifting volume.
  */
 export default function WeeklyVolumeChart({
 	chartData,
@@ -20,7 +19,6 @@ export default function WeeklyVolumeChart({
 	const [containerWidth, setContainerWidth] = useState<number>(0);
 	const accent = useAccent();
 
-	// Wait for container to measure its width before rendering chart
 	if (containerWidth === 0) {
 		return (
 			<View
@@ -30,15 +28,12 @@ export default function WeeklyVolumeChart({
 		);
 	}
 
-	// Find highest value and round up to nice increments for y-axis
 	const maxValue = Math.max(...chartData.map((item) => item.value), 100);
 	const roundedMax = Math.ceil(maxValue / 50) * 50;
 
-	// Calculate usable space for bars
 	const horizontalPadding = containerWidth * 0.05;
 	const availableWidth = containerWidth - horizontalPadding * 2;
 
-	// Responsive spacing and bar width
 	const spacing = containerWidth > 420 ? 24 : 14;
 	const barWidth = Math.max(
 		26,
@@ -51,7 +46,11 @@ export default function WeeklyVolumeChart({
 			style={{ marginLeft: spacing }}
 		>
 			<BarChart
-				data={chartData}
+				data={chartData.map((item) => ({
+					value: item.value,
+					label: item.label || item.day || "",
+					topLabelComponent: item.topLabelComponent,
+				}))}
 				width={availableWidth}
 				barWidth={barWidth}
 				spacing={spacing}
