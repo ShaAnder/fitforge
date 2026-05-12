@@ -100,3 +100,40 @@ export type IoniconsName =
 	| "calendar-outline"
 	| "search"
 	| "add-circle-outline";
+
+// ─────────────────────────────────────────────────────────────
+// DASHBOARD WIDGET TYPES
+// ─────────────────────────────────────────────────────────────
+
+export interface StreakData {
+	streak: number;
+}
+
+export interface DaysTrainedData {
+	daysTrained: number;
+	daysInMonth: number;
+	progress: number;
+}
+
+export interface WorkoutsLoggedData {
+	workoutsThisMonth: number;
+}
+
+export interface CaloriesBurnedData {
+	estCalories: number;
+}
+
+export interface TotalSetsData {
+	totalSets: number;
+}
+
+export interface TotalVolumeData {
+	totalVolume: number;
+}
+
+export interface WeeklyVolumeItem {
+	day?: string;
+	value: number;
+	label?: string;
+	topLabelComponent?: () => React.ReactNode;
+}

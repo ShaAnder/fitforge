@@ -3,12 +3,11 @@ import { View } from "react-native";
 import { BarChart } from "react-native-gifted-charts";
 
 import { useAccent } from "@/hooks/useAccent";
+import type { WeeklyVolumeItem } from "@/types";
 
 interface WeeklyVolumeChartProps {
-	// Array of { value, label } objects for each day of the week
-	chartData: { value: number; label: string }[];
+	chartData: WeeklyVolumeItem[];
 }
-
 /**
  * Weekly Volume Chart Component.
  *
