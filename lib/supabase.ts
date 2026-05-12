@@ -6,74 +6,45 @@ let supabaseInstance: SupabaseClient | null = null;
 const FETCH_TIMEOUT_MS = 10_000;
 
 /**
- * Formats a request URL for clean logging (if debugging is enabled).
+ * Custom fetch wrapper with timeout support.
  *
- * - Removes query strings and noise while keeping origin + pathname.
- * - Handles string, URL, and Request-like inputs gracefully.
- */
-function formatUrlForLogs(input: RequestInfo | URL): string {
-	try {
-		const raw =
-			typeof input === "string"
-				? input
-				: input instanceof URL
-					? input.toString()
-					: // Request-like
-						((input as any)?.url ?? String(input));
-
-		const u = new URL(raw);
-		// Avoid logging querystring noise; keep enough to verify routing
-		return `${u.origin}${u.pathname}`;
-	} catch {
-		return typeof input === "string" ? input : String(input);
-	}
-}
-
-/**
- * Custom fetch wrapper with timeout.
- *
- * - Adds AbortController with configurable timeout.
- * - Forwards any existing signal from the caller.
+ * Uses AbortController to enforce a maximum request duration.
+ * Safely combines caller-provided signals if they exist.
  */
 const fetchWithTimeout = async (
 	input: RequestInfo | URL,
 	init?: RequestInit,
 ): Promise<Response> => {
 	const controller = new AbortController();
-	const timeoutId = setTimeout(() => {
-		controller.abort();
-	}, FETCH_TIMEOUT_MS);
+	const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
-	// If caller already provided a signal, forward its abort to ours
+	// Forward any existing signal from the caller
 	if (init?.signal) {
-		const signal = init.signal as AbortSignal;
-		if (signal.aborted) controller.abort();
-		else
-			signal.addEventListener("abort", () => controller.abort(), {
-				once: true,
-			});
+		(init.signal as AbortSignal).addEventListener(
+			"abort",
+			() => controller.abort(),
+			{ once: true },
+		);
 	}
 
 	try {
-		const res = await fetch(input as any, {
-			...(init as any),
+		const response = await fetch(input, {
+			...init,
 			signal: controller.signal,
 		});
 
-		return res;
-	} catch (err: any) {
-		throw err;
+		return response;
 	} finally {
 		clearTimeout(timeoutId);
 	}
 };
 
 /**
- * Singleton Supabase client factory for React Native / Expo.
+ * Singleton Supabase client for the entire app.
  *
- * - Returns cached instance on subsequent calls (prevents multiple clients).
- * - Uses AsyncStorage for auth persistence (required for React Native).
- * - Attaches custom fetchWithTimeout for timeout safety.
+ * - Prevents creating multiple clients (important for React Native).
+ * - Uses AsyncStorage for session persistence.
+ * - Applies custom timeout fetch wrapper.
  */
 export const getSupabase = (): SupabaseClient => {
 	if (supabaseInstance) return supabaseInstance;
@@ -83,12 +54,15 @@ export const getSupabase = (): SupabaseClient => {
 
 	if (!supabaseUrl || !supabaseAnonKey) {
 		throw new Error(
-			"Missing env vars: EXPO_PUBLIC_SUPABASE_URL and/or EXPO_PUBLIC_SUPABASE_ANON_KEY",
+			"Missing Supabase environment variables. " +
+				"Make sure EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY are set.",
 		);
 	}
 
 	supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
-		global: { fetch: fetchWithTimeout as typeof fetch },
+		global: {
+			fetch: fetchWithTimeout,
+		},
 		auth: {
 			storage: AsyncStorage,
 			autoRefreshToken: true,

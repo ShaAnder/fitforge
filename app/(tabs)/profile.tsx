@@ -18,6 +18,8 @@ import { useAlert } from "@/context/AlertContext";
 import { useAuth } from "@/context/AuthContext";
 import { useAccent } from "@/hooks/useAccent";
 import { uploadAvatar } from "@/lib/supabaseQueries";
+import type { UploadAsset } from "@/types";
+import { getErrorMessage } from "@/utils/getError";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
@@ -41,7 +43,8 @@ export default function Profile() {
 	const [isEditing, setIsEditing] = useState(false);
 	const [uploading, setUploading] = useState(false);
 	const [username, setUsername] = useState(profile?.username || "");
-	const [selectedAvatarAsset, setSelectedAvatarAsset] = useState<any>(null);
+	const [selectedAvatarAsset, setSelectedAvatarAsset] =
+		useState<UploadAsset | null>(null);
 	const [avatarKey, setAvatarKey] = useState(0);
 
 	const displayName = profile?.username || user?.email?.split("@")[0] || "User";
@@ -79,10 +82,17 @@ export default function Profile() {
 			quality: 0.8,
 		});
 
-		if (result.canceled || !result.assets?.[0]) return;
-
-		setSelectedAvatarAsset(result.assets[0]);
-		setAvatarKey((prev) => prev + 1);
+		if (!result.canceled && result.assets?.[0]) {
+			const asset = result.assets[0];
+			setSelectedAvatarAsset({
+				uri: asset.uri,
+				type: asset.type ?? undefined,
+				fileName: asset.fileName ?? undefined,
+				width: asset.width,
+				height: asset.height,
+				fileSize: asset.fileSize,
+			});
+		}
 	};
 
 	/**
@@ -109,12 +119,10 @@ export default function Profile() {
 			setAvatarKey((prev) => prev + 1);
 
 			showAlert("Profile Updated", "Your changes have been saved.", "success");
-		} catch (err: any) {
-			showAlert(
-				"Update Failed",
-				err.message || "Could not save profile.",
-				"error",
-			);
+		} catch (err: unknown) {
+			const message = getErrorMessage(err);
+
+			showAlert("Update Failed", message || "Could not save profile.", "error");
 		} finally {
 			setUploading(false);
 		}

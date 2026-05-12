@@ -4,6 +4,7 @@ import { AlertProvider } from "@/context/AlertContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import "@/global.css";
 import { useInitNotifications } from "@/handlers/notificationHandler";
+import { getErrorMessage } from "@/utils/getError";
 import {
 	Redirect,
 	Stack,
@@ -14,7 +15,9 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 
 // Prevent the native splash screen from auto-hiding so we control when it disappears
-SplashScreen.preventAutoHideAsync().catch(() => {});
+SplashScreen.preventAutoHideAsync().catch((err: unknown) => {
+	if (__DEV__) console.warn(getErrorMessage(err));
+});
 
 /**
  * Root Layout Navigation Component.
@@ -56,7 +59,9 @@ function RootLayoutNav() {
 	 */
 	useEffect(() => {
 		if (rootNavState?.key && !loading) {
-			SplashScreen.hideAsync().catch(() => {});
+			SplashScreen.hideAsync().catch((err: unknown) => {
+				if (__DEV__) console.warn(getErrorMessage(err));
+			});
 		}
 	}, [rootNavState?.key, loading]);
 

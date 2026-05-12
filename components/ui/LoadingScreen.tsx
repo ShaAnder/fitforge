@@ -31,37 +31,42 @@ export default function LoadingScreen({
 		<View
 			className={`items-center justify-center ${fullScreen ? "flex-1 bg-zinc-950" : ""}`}
 		>
-			<View className="items-center">
+			<View key="loading-content" className="items-center">
 				{/* Brand Logo - Optional */}
 				{showBrand && (
-					<View className="mb-8">
+					<View key="brand-logo" className="mb-8">
 						<Ionicons name="barbell" size={72} color={accent.hex500} />
 					</View>
 				)}
 
 				{/* App Name + Tagline - Only on full screen loading */}
 				{showBrand && fullScreen && (
-					<>
+					<View key="brand-copy">
 						<Text className="text-white text-4xl font-bold tracking-tighter mb-1">
 							FitForge
 						</Text>
 						<Text className="text-zinc-400 text-lg mb-10">
 							Getting ready for you...
 						</Text>
-					</>
+					</View>
 				)}
 
 				{/* Loading Spinner */}
-				<ActivityIndicator size={size} color={accent.hex500} />
+				<ActivityIndicator key="spinner" size={size} color={accent.hex500} />
 
 				{/* Main Message */}
-				<Text className="text-zinc-400 text-base font-medium mt-6 text-center">
+				<Text
+					key="main-message"
+					className="text-zinc-400 text-base font-medium mt-6 text-center"
+				>
 					{message}
 				</Text>
 
 				{/* Optional Sub Message */}
 				{subMessage && (
-					<Text className="text-zinc-500 text-sm mt-2">{subMessage}</Text>
+					<Text key="sub-message" className="text-zinc-500 text-sm mt-2">
+						{subMessage}
+					</Text>
 				)}
 			</View>
 		</View>

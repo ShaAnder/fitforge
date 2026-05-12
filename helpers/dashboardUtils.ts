@@ -1,3 +1,5 @@
+import { Workout, WorkoutExercise } from "@/types";
+
 /**
  * Helper utilities for dashboard calculations.
  *
@@ -12,7 +14,7 @@ const isString = (v: unknown): v is string => typeof v === "string";
  *
  * Accepts multiple possible date fields and formats.
  */
-const getWorkoutDate = (workout: any): Date | null => {
+const getWorkoutDate = (workout: Workout): Date | null => {
 	const raw: unknown = workout?.date ?? workout?.created_at;
 	if (
 		!raw ||
@@ -30,7 +32,7 @@ const getWorkoutDate = (workout: any): Date | null => {
 /**
  * Extracts total volume from a workout record safely.
  */
-const getWorkoutVolume = (workout: any): number => {
+const getWorkoutVolume = (workout: Workout): number => {
 	const v = workout?.total_volume;
 
 	if (typeof v === "number") return Number.isFinite(v) ? v : 0;
@@ -43,14 +45,22 @@ const getWorkoutVolume = (workout: any): number => {
 };
 
 /**
- * Counts total number of sets across all exercises in a workout.
+ * Counts the total number of sets in a workout.
+ * Safely handles cases where exercises or sets might be missing or malformed.
  */
-const countWorkoutSets = (workout: any): number => {
-	const exercises = Array.isArray(workout?.exercises) ? workout.exercises : [];
+const countWorkoutSets = (workout: Workout): number => {
+	// Guard against null/undefined workout
+	if (!workout?.exercises) return 0;
 
-	return exercises.reduce((setSum: number, ex: any) => {
-		return setSum + (Array.isArray(ex?.sets) ? ex.sets.length : 0);
-	}, 0);
+	return workout.exercises.reduce(
+		(totalSets: number, exercise: WorkoutExercise) => {
+			// Guard against malformed exercise
+			if (!Array.isArray(exercise?.sets)) return totalSets;
+
+			return totalSets + exercise.sets.length;
+		},
+		0,
+	);
 };
 
 /**
@@ -58,7 +68,7 @@ const countWorkoutSets = (workout: any): number => {
  *
  * Returns training days, total volume, sets, estimated calories, etc.
  */
-export const getThisMonthStats = (workouts: any[]) => {
+export const getThisMonthStats = (workouts: Workout[]) => {
 	const now = new Date();
 	const year = now.getFullYear();
 	const month = now.getMonth();
@@ -118,7 +128,7 @@ export const getThisMonthStats = (workouts: any[]) => {
  * Multiple workouts on the same day still count as only 1 day.
  * Returns 0 if no workouts exist.
  */
-export const calculateStreak = (workouts: any[]): number => {
+export const calculateStreak = (workouts: Workout[]): number => {
 	if (!workouts?.length) return 0;
 
 	// Get unique dates sorted newest → oldest
@@ -165,7 +175,7 @@ export const calculateStreak = (workouts: any[]): number => {
  * Returns array of { value, label } for use in WeeklyVolumeChart.
  */
 export const getWeeklyVolumeData = (
-	workouts: any[],
+	workouts: Workout[],
 	weekStart: "mon" | "sun" = "mon",
 ) => {
 	const now = new Date();
@@ -191,10 +201,12 @@ export const getWeeklyVolumeData = (
 
 		const dayStr = currentDay.toISOString().split("T")[0];
 
-		const dayWorkouts = workouts.filter((w: any) => w.date?.startsWith(dayStr));
+		const dayWorkouts = workouts.filter((workout: Workout) =>
+			workout.date?.startsWith(dayStr),
+		);
 
-		const volume = dayWorkouts.reduce((sum: number, w: any) => {
-			return sum + (w.total_volume || 0);
+		const volume = dayWorkouts.reduce((sum: number, workout: Workout) => {
+			return sum + (workout.total_volume || 0);
 		}, 0);
 
 		data.push({

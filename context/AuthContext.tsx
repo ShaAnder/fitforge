@@ -2,7 +2,10 @@ import { normalizeAccentKey, type AccentKey } from "@/constants/accents";
 import { useAccentContext } from "@/context/AccentContext";
 import { getSupabase } from "@/lib/supabase";
 import { uploadAvatar as uploadAvatarFromQueries } from "@/lib/supabaseQueries";
+import type { Profile, Workout } from "@/types";
+import { getErrorMessage } from "@/utils/getError";
 import { Session, User } from "@supabase/supabase-js";
+import { ImagePickerAsset } from "expo-image-picker";
 import {
 	createContext,
 	ReactNode,
@@ -26,8 +29,8 @@ import { useAlert } from "./AlertContext";
 type AuthContextType = {
 	user: User | null;
 	session: Session | null;
-	profile: any | null;
-	workouts: any[];
+	profile: Profile | null;
+	workouts: Workout[];
 	loading: boolean;
 
 	signup: (
@@ -37,8 +40,8 @@ type AuthContextType = {
 	) => Promise<void>;
 	signIn: (email: string, password: string) => Promise<void>;
 	signOut: () => Promise<void>;
-	updateProfile: (updates: any) => Promise<void>;
-	uploadAvatar: (file: any) => Promise<string>;
+	updateProfile: (updates: Partial<Profile>) => Promise<void>;
+	uploadAvatar: (asset: ImagePickerAsset) => Promise<string>;
 	refreshWorkouts: () => Promise<void>;
 };
 
@@ -47,8 +50,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
 	const [user, setUser] = useState<User | null>(null);
 	const [session, setSession] = useState<Session | null>(null);
-	const [profile, setProfile] = useState<any>(null);
-	const [workouts, setWorkouts] = useState<any[]>([]);
+	const [profile, setProfile] = useState<Profile | null>(null);
+	const [workouts, setWorkouts] = useState<Workout[]>([]);
 
 	// Global loading state - blocks UI until auth + initial data is ready
 	const [loading, setLoading] = useState(true);
@@ -78,24 +81,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 			try {
 				supabase = getSupabase();
-			} catch (err: any) {
-				console.error(
-					"[AuthProvider] Supabase init failed:",
-					err?.message ?? String(err),
-				);
+			} catch (err: unknown) {
+				console.error("[AuthProvider] Supabase init failed:", err);
+
+				const message = getErrorMessage(err);
 
 				if (!cancelled) {
-					// Fail open so splash/loading does not block forever
 					setSession(null);
 					setUser(null);
 					setAuthResolved(true);
 					setLoading(false);
 
-					showAlertRef.current?.(
-						"Configuration Error",
-						"Missing Supabase configuration in this build. Rebuild after setting EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY.",
-						"error",
-					);
+					showAlertRef.current?.("Configuration Error", message, "error");
 				}
 				return;
 			}
@@ -114,11 +111,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 					setSession(session);
 					setUser(session?.user ?? null);
 				}
-			} catch (err: any) {
-				console.error(
-					"[AuthProvider] getSession threw:",
-					err?.message ?? String(err),
-				);
+			} catch (err: unknown) {
+				console.error("[AuthProvider] getSession threw:", err);
 			} finally {
 				if (!cancelled) {
 					setAuthResolved(true);
@@ -222,12 +216,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				setProfile(resolvedProfile);
 				setAccentId(normalizeAccentKey(resolvedProfile?.accent) as AccentKey);
 				setWorkouts(workoutsData || []);
-			} catch (err: any) {
-				showAlertRef.current?.(
-					"Loading Error",
-					"Failed to load your dashboard data. Please try again.",
-					"error",
-				);
+			} catch (err: unknown) {
+				const message = getErrorMessage(err);
+				showAlertRef.current?.("Loading Error", message, "error");
 				setAccentId("green");
 			} finally {
 				if (!cancelled) {
@@ -298,13 +289,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				"You have been successfully signed out.",
 				"success",
 			);
-		} catch (err: any) {
-			showAlert("Sign Out Failed", err.message, "error");
+		} catch (err: unknown) {
+			const message = getErrorMessage(err);
+			showAlert("Sign Out Failed", message, "error");
 			throw err;
 		}
 	};
 
-	const updateProfile = async (updates: any) => {
+	const updateProfile = async (updates: Partial<Profile>) => {
 		if (!user?.id) throw new Error("No user logged in");
 
 		try {
@@ -320,21 +312,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 			if (error) throw error;
 
-			setProfile((prev: any) => ({
-				...(prev ?? {}),
-				...(data ?? {}),
-				...updates,
-			}));
+			setProfile(
+				(prev: Profile | null) =>
+					({
+						...(prev ?? {}),
+						...(data ?? {}),
+						...updates,
+					}) as Profile,
+			);
 
 			if (updates?.accent) {
 				setAccentId(normalizeAccentKey(updates.accent) as AccentKey);
 			}
-		} catch (err: any) {
-			throw err;
+		} catch (err: unknown) {
+			const message = getErrorMessage(err);
+			console.error("[AuthProvider] updateProfile failed:", err);
+			throw new Error(message);
 		}
 	};
 
-	const uploadAvatar = async (asset: any): Promise<string> => {
+	const uploadAvatar = async (asset: ImagePickerAsset): Promise<string> => {
 		if (!user?.id) throw new Error("No user logged in");
 
 		try {
@@ -345,8 +342,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			await updateProfile({ avatar_url: fileName });
 
 			return fileName;
-		} catch (err: any) {
-			throw err;
+		} catch (err: unknown) {
+			const message = getErrorMessage(err);
+			console.error("[AuthProvider] uploadAvatar failed:", err);
+			throw new Error(message);
 		}
 	};
 
@@ -363,8 +362,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			if (error) throw error;
 
 			setWorkouts(data || []);
-		} catch (err) {
-			showAlertRef.current?.("Error", "Failed to refresh workouts", "error");
+		} catch (err: unknown) {
+			const message = getErrorMessage(err);
+			showAlertRef.current?.("Error", message, "error");
 		}
 	}, [user?.id]);
 

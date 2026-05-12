@@ -34,14 +34,12 @@ export default function Signup() {
 		if (password.length < 6) return;
 
 		setLoading(true);
-
+		// All errors are handled globally inside AuthContext + AlertContext so no catch needed
 		try {
 			await signup(email, password, () => {
 				// This callback runs AFTER the success alert is closed
 				router.replace("/login");
 			});
-		} catch (err) {
-			// All errors are handled globally inside AuthContext + AlertContext
 		} finally {
 			setLoading(false);
 		}

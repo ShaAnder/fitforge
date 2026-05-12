@@ -66,7 +66,8 @@ export function AlertProvider({ children }: { children: ReactNode }) {
 		// Run callback AFTER state update
 		const currentOnClose = onCloseRef.current;
 		if (currentOnClose) {
-			setTimeout(currentOnClose, 0); // prevent any sync issues
+			// prevent any sync issues
+			setTimeout(currentOnClose, 0);
 		}
 	}, []);
 

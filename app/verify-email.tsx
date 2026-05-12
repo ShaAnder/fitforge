@@ -1,6 +1,7 @@
 import { useAlert } from "@/context/AlertContext";
 import { useAccent } from "@/hooks/useAccent";
 import { getSupabase } from "@/lib/supabase";
+import { getErrorMessage } from "@/utils/getError";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect } from "react";
@@ -47,12 +48,10 @@ export default function VerifyEmail() {
 					// Missing tokens → invalid link
 					router.replace("/login");
 				}
-			} catch (err) {
-				showAlert(
-					"Verification Failed",
-					"Please try logging in manually.",
-					"error",
-				);
+			} catch (err: unknown) {
+				const message = getErrorMessage(err);
+				showAlert("Verification Failed", message, "error");
+
 				router.replace("/login");
 			}
 		};

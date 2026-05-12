@@ -10,6 +10,8 @@ import { useAuth } from "@/context/AuthContext";
 import { convertWeight, getUnitLabel } from "@/helpers/unitConverter";
 import { useAccent } from "@/hooks/useAccent";
 import { fetchWorkouts } from "@/lib/supabaseQueries";
+import type { Workout, WorkoutExercise, WorkoutSet } from "@/types";
+import { getErrorMessage } from "@/utils/getError";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
@@ -30,9 +32,9 @@ export default function History() {
 	const userUnit = (profile?.units as "kg" | "lb") ?? "kg";
 	const unitLabel = getUnitLabel(userUnit);
 
-	const [workouts, setWorkouts] = useState<any[]>([]);
+	const [workouts, setWorkouts] = useState<Workout[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [selectedWorkout, setSelectedWorkout] = useState<any>(null);
+	const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
 
 	/**
 	 * Reload workouts every time the screen comes into focus.
@@ -46,23 +48,22 @@ export default function History() {
 	/**
 	 * Load all workouts for the current user.
 	 */
-	const loadWorkouts = async () => {
+	const loadWorkouts = useCallback(async () => {
+		if (!user?.id) return;
+
 		try {
 			setLoading(true);
-			const data = await fetchWorkouts(user!.id);
+			const data = await fetchWorkouts(user.id);
 			setWorkouts(data || []);
-		} catch (err: any) {
-			showAlert(
-				"Failed to Load",
-				err.message || "Could not load history.",
-				"error",
-			);
+		} catch (err: unknown) {
+			const message = getErrorMessage(err);
+			showAlert("Failed to Load", message, "error");
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [user?.id, showAlert]);
 
-	const openWorkoutDetail = (workout: any) => {
+	const openWorkoutDetail = (workout: Workout) => {
 		setSelectedWorkout(workout);
 	};
 
@@ -169,28 +170,30 @@ export default function History() {
 						showsVerticalScrollIndicator={false}
 						contentContainerStyle={{ paddingBottom: 40 }}
 					>
-						{selectedWorkout?.exercises?.map((ex: any, idx: number) => (
-							<View key={idx} className="mb-6 bg-zinc-800 rounded-2xl p-5">
-								<Text
-									className={`${accent.text400} font-semibold text-lg mb-3`}
-								>
-									{ex?.name || "Unnamed Exercise"}
-								</Text>
+						{selectedWorkout?.exercises?.map(
+							(ex: WorkoutExercise, idx: number) => (
+								<View key={idx} className="mb-6 bg-zinc-800 rounded-2xl p-5">
+									<Text
+										className={`${accent.text400} font-semibold text-lg mb-3`}
+									>
+										{ex?.name || "Unnamed Exercise"}
+									</Text>
 
-								{ex?.sets?.map((set: any, sIdx: number) => {
-									const weightConverted = convertWeight(
-										set?.weight || 0,
-										userUnit,
-									);
-									return (
-										<Text key={sIdx} className="text-zinc-300 text-base mb-1">
-											Set {sIdx + 1}: {set?.reps || "?"} reps ×{" "}
-											{weightConverted} {unitLabel}
-										</Text>
-									);
-								})}
-							</View>
-						)) || (
+									{ex.sets?.map((set: WorkoutSet, sIdx: number) => {
+										const weightConverted = convertWeight(
+											set?.weight || 0,
+											userUnit,
+										);
+										return (
+											<Text key={sIdx} className="text-zinc-300 text-base mb-1">
+												Set {sIdx + 1}: {set?.reps || "?"} reps ×{" "}
+												{weightConverted} {unitLabel}
+											</Text>
+										);
+									})}
+								</View>
+							),
+						) || (
 							<Text className="text-zinc-400 text-center py-12">
 								No exercises in this workout
 							</Text>

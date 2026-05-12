@@ -14,13 +14,11 @@ import ModalView from "@/components/ui/ModalView";
 
 import { useAccent } from "@/hooks/useAccent";
 
-import {
-	Exercise,
-	getAllExercises,
-	getUniqueMuscles,
-} from "@/lib/supabaseQueries";
+import { useAlert } from "@/context/AlertContext";
+import { getAllExercises, getUniqueMuscles } from "@/lib/supabaseQueries";
+import { getErrorMessage } from "@/utils/getError";
 import { SafeAreaView } from "react-native-safe-area-context";
-
+import { Exercise } from "@/types";
 /**
  * Exercise Library Screen.
  *
@@ -40,6 +38,8 @@ export default function Library() {
 	const [exercises, setExercises] = useState<Exercise[]>([]);
 	const [loading, setLoading] = useState(true);
 
+	const { showAlert } = useAlert();
+
 	/**
 	 * Load all exercises on screen mount.
 	 */
@@ -48,8 +48,9 @@ export default function Library() {
 			try {
 				const data = await getAllExercises();
 				setExercises(data);
-			} catch (err: any) {
-				// Error handled silently - UI will show empty state
+			} catch (err: unknown) {
+				const message = getErrorMessage(err);
+				showAlert("Failed to Load", message, "error");
 			} finally {
 				setLoading(false);
 			}
@@ -150,7 +151,6 @@ export default function Library() {
 				<ScrollView
 					className="flex-1 px-5"
 					showsVerticalScrollIndicator={false}
-
 				>
 					{loading ? (
 						<View className="flex-1 justify-center items-center min-h-[400px]">

@@ -3,6 +3,7 @@ import AuthHeader from "@/components/ui/authPages/AuthHeader";
 import AuthLink from "@/components/ui/authPages/AuthLink";
 import { useAlert } from "@/context/AlertContext";
 import { getSupabase } from "@/lib/supabase";
+import { getErrorMessage } from "@/utils/getError";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
@@ -53,12 +54,9 @@ export default function ResendVerification() {
 
 			// Return user to login after successful resend
 			router.replace("/login");
-		} catch (err: any) {
-			showAlert(
-				"Error",
-				err.message || "Failed to resend verification email",
-				"error",
-			);
+		} catch (err: unknown) {
+			const message = getErrorMessage(err);
+			showAlert("Failed to resend verification", message, "error");
 		} finally {
 			setLoading(false);
 		}

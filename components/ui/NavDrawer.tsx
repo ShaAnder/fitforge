@@ -1,6 +1,7 @@
 import Avatar from "@/components/common/Avatar";
 import { useAuth } from "@/context/AuthContext";
 import { useAccent } from "@/hooks/useAccent";
+import type { IoniconsName } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { usePathname, useRouter } from "expo-router";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
@@ -36,7 +37,12 @@ export default function NavDrawer({ isOpen, onClose }: NavDrawerProps) {
 	const accent = useAccent();
 
 	// Menu configuration
-	const menuItems = [
+	const menuItems: Array<{
+		title: string;
+		icon: IoniconsName;
+		route: string;
+		isSignOut?: boolean;
+	}> = [
 		{ title: "Dashboard", icon: "home-outline", route: "/(tabs)/dashboard" },
 		{ title: "Community", icon: "people-outline", route: "/(tabs)/community" },
 		{
@@ -80,8 +86,12 @@ export default function NavDrawer({ isOpen, onClose }: NavDrawerProps) {
 		try {
 			await signOut();
 			onClose();
-		} catch (error) {
-			// Error handled globally via AlertContext
+		} catch (err: unknown) {
+			// Error handled globally via AlertContext — log in dev for visibility
+			if (__DEV__) {
+				// eslint-disable-next-line no-console
+				console.warn("Sign out failed:", String(err));
+			}
 		}
 	};
 
@@ -140,7 +150,7 @@ export default function NavDrawer({ isOpen, onClose }: NavDrawerProps) {
 							}}
 							className="flex-row items-center py-5 border-b border-zinc-800"
 						>
-							<Ionicons name={item.icon as any} size={26} color={iconColor} />
+							<Ionicons name={item.icon} size={26} color={iconColor} />
 							<Text className={textClass}>{item.title}</Text>
 						</TouchableOpacity>
 					);

@@ -3,10 +3,10 @@ import AuthHeader from "@/components/ui/authPages/AuthHeader";
 import AuthLink from "@/components/ui/authPages/AuthLink";
 import { useAlert } from "@/context/AlertContext";
 import { getSupabase } from "@/lib/supabase";
+import { getErrorMessage } from "@/utils/getError";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
-
 /**
  * Forgot Password Screen.
  *
@@ -46,8 +46,9 @@ export default function ForgotPassword() {
 				"Check your email for the password reset link.",
 				"success",
 			);
-		} catch (err: any) {
-			showAlert("Error", err.message || "Failed to send reset link", "error");
+		} catch (err: unknown) {
+			const message = getErrorMessage(err);
+			showAlert("Failed to resend reset link", message, "error");
 		} finally {
 			setLoading(false);
 		}

@@ -22,8 +22,10 @@ import { useAuth } from "@/context/AuthContext";
 import { useAccent } from "@/hooks/useAccent";
 import { getSupabase } from "@/lib/supabase";
 
-import { convertInputWeightToKg, getUnitLabel } from "@/helpers/unitConverter";
-import { Exercise, getAllExercises } from "@/lib/supabaseQueries";
+import { convertInputWeightToKg } from "@/helpers/unitConverter";
+import { getAllExercises } from "@/lib/supabaseQueries";
+import type { Exercise, LogWorkoutExercise, LogWorkoutSet } from "@/types";
+import { getErrorMessage } from "@/utils/getError";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function LogWorkout() {
@@ -33,9 +35,8 @@ export default function LogWorkout() {
 	const supabase = getSupabase();
 
 	const userUnit = (profile?.units as "kg" | "lb") ?? "kg";
-	const unitLabel = getUnitLabel(userUnit);
 
-	const [exercises, setExercises] = useState<any[]>([]);
+	const [exercises, setExercises] = useState<LogWorkoutExercise[]>([]);
 	const [allExercises, setAllExercises] = useState<Exercise[]>([]);
 	const [loadingLibrary, setLoadingLibrary] = useState(true);
 
@@ -50,8 +51,9 @@ export default function LogWorkout() {
 			try {
 				const data = await getAllExercises();
 				setAllExercises(data);
-			} catch (err: any) {
-				// non-critical
+			} catch (err: unknown) {
+				const message = getErrorMessage(err);
+				showAlert("Failed to Load", message, "error");
 			} finally {
 				setLoadingLibrary(false);
 			}
@@ -71,11 +73,13 @@ export default function LogWorkout() {
 		const localId = nextExerciseId;
 		setNextExerciseId((prev) => prev + 1);
 		setNextSetId((prev) => prev + 1);
-
 		setExercises((prev) => [
 			{
 				localId,
-				...exercise,
+				id: Number(exercise.id),
+				name: exercise.name,
+				muscle: exercise.muscle,
+				difficulty: exercise.difficulty,
 				sets: [{ id: nextSetId, reps: "", weight: "" }],
 			},
 			...prev,
@@ -84,9 +88,19 @@ export default function LogWorkout() {
 		setSearchQuery("");
 	};
 
-	const updateExercise = (localId: number, newData: any) => {
+	const updateExercise = (
+		localId: number,
+		newData: Partial<LogWorkoutExercise>,
+	) => {
 		setExercises((prev) =>
-			prev.map((ex) => (ex.localId === localId ? { ...ex, ...newData } : ex)),
+			prev.map((ex) => {
+				if (ex.localId === localId) {
+					const updated = { ...ex, ...newData };
+					// We return as safe assertion
+					return updated as LogWorkoutExercise;
+				}
+				return ex;
+			}),
 		);
 	};
 
@@ -96,21 +110,27 @@ export default function LogWorkout() {
 
 	const calculateTotalVolume = (): number => {
 		return exercises.reduce((total, exercise) => {
-			const exerciseVolume = exercise.sets.reduce((sum: number, set: any) => {
-				const weight = parseFloat(set.weight) || 0;
-				const reps = parseFloat(set.reps) || 0;
-				const kgWeight = convertInputWeightToKg(weight, userUnit);
-				return sum + kgWeight * reps;
-			}, 0);
+			const exerciseVolume = exercise.sets.reduce(
+				(sum: number, set: LogWorkoutSet) => {
+					const weight = parseFloat(set.weight || "0");
+					const reps = parseFloat(set.reps || "0");
+					const kgWeight = convertInputWeightToKg(weight, userUnit);
+					return sum + kgWeight * reps;
+				},
+				0,
+			);
+
 			return total + exerciseVolume;
 		}, 0);
 	};
 
 	const isWorkoutValid = (): boolean => {
 		if (exercises.length === 0) return false;
+
 		return exercises.every((exercise) =>
 			exercise.sets.every(
-				(set: any) => set.reps?.trim() !== "" && set.weight?.trim() !== "",
+				(set) =>
+					(set.reps || "").trim() !== "" && (set.weight || "").trim() !== "",
 			),
 		);
 	};
@@ -138,7 +158,7 @@ export default function LogWorkout() {
 
 		const normalizedExercises = exercises.map((exercise) => ({
 			...exercise,
-			sets: exercise.sets.map((set: any) => ({
+			sets: exercise.sets.map((set: LogWorkoutSet) => ({
 				...set,
 				weight: convertInputWeightToKg(parseFloat(set.weight) || 0, userUnit),
 			})),
@@ -166,12 +186,9 @@ export default function LogWorkout() {
 			setExercises([]);
 			setSearchQuery("");
 			await refreshWorkouts();
-		} catch (err: any) {
-			showAlert(
-				"Save Failed",
-				err.message || "Could not save workout.",
-				"error",
-			);
+		} catch (err: unknown) {
+			const message = getErrorMessage(err);
+			showAlert("Save Failed", message || "Could not save workout.", "error");
 		} finally {
 			setIsSaving(false);
 		}

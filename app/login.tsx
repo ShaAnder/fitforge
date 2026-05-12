@@ -30,12 +30,10 @@ export default function Login() {
 		if (!email || !password) return;
 
 		setLoading(true);
-
+		// Error handled globally in AuthContext + AlertContext so no catch needed
 		try {
 			await signIn(email, password);
 			router.replace("/(tabs)/dashboard");
-		} catch (err: any) {
-			// Error handled globally in AuthContext + AlertContext
 		} finally {
 			setLoading(false);
 		}

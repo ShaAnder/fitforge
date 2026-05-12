@@ -15,8 +15,12 @@ function tryGetNotificationsModule():
 		// Lazy require to avoid crashing app startup if native modules are missing
 		// eslint-disable-next-line @typescript-eslint/no-var-requires
 		return require("expo-notifications") as typeof import("expo-notifications");
-	} catch (error) {
+	} catch (err: unknown) {
 		// Silently fail in production; only log in dev
+		if (__DEV__) {
+			// eslint-disable-next-line no-console
+			console.warn("Failed to load expo-notifications:", String(err));
+		}
 		return null;
 	}
 }

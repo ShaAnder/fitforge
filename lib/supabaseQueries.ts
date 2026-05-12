@@ -1,3 +1,5 @@
+import { Exercise, UploadAsset } from "@/types";
+import { getErrorMessage } from "@/utils/getError";
 import { File as ExpoFile } from "expo-file-system";
 import { getSupabase } from "./supabase";
 
@@ -21,10 +23,8 @@ export const fetchWorkouts = async (userId: string) => {
 		if (error) throw error;
 
 		return data || [];
-	} catch (err: any) {
-		console.error(
-			`[fetchWorkouts] ❌ Error: ${err?.message || JSON.stringify(err)}`,
-		);
+	} catch (err: unknown) {
+		console.error(`[fetchWorkouts] ❌ Error: ${getErrorMessage(err)}`);
 		throw err;
 	}
 };
@@ -32,18 +32,6 @@ export const fetchWorkouts = async (userId: string) => {
 // ─────────────────────────────────────────────────────────────
 // EXERCISES (Dynamic from Supabase)
 // ─────────────────────────────────────────────────────────────
-
-export type Exercise = {
-	id: number;
-	name: string;
-	muscle: string;
-	difficulty: "Beginner" | "Intermediate" | "Advanced";
-	description: string;
-	instructions: string | null;
-	// kept same name for compatibility
-	estimated_calories_per_set?: string;
-	img_url?: string | null;
-};
 
 /**
  * Get all approved exercises
@@ -117,10 +105,8 @@ export const getProfile = async (userId: string, email: string = "") => {
 			username: email.split("@")[0].replace(/[^a-zA-Z0-9]/g, "") || "user",
 			avatar_url: null,
 		};
-	} catch (err: any) {
-		console.error(
-			`[getProfile] ❌ Error: ${err?.message || JSON.stringify(err)}`,
-		);
+	} catch (err: unknown) {
+		console.error(`[getProfile] ❌ Error: ${getErrorMessage(err)}`);
 		throw err;
 	}
 };
@@ -154,12 +140,12 @@ export const updateProfile = async (
  * - Returns public URL for immediate use in UI.
  */
 
-export const uploadAvatar = async (userId: string, asset: any) => {
+export const uploadAvatar = async (userId: string, asset: UploadAsset) => {
 	const supabase = getSupabase();
 
 	if (!asset?.uri) throw new Error("No image selected");
 
-	const rawMimeType: string | undefined = asset?.mimeType;
+	const rawMimeType = asset?.mimeType ?? undefined;
 	const mimeType =
 		rawMimeType === "image/jpg" ? "image/jpeg" : rawMimeType || "image/jpeg";
 
@@ -198,8 +184,8 @@ export const uploadAvatar = async (userId: string, asset: any) => {
 		if (!urlData?.publicUrl) throw new Error("Failed to create public URL");
 
 		return urlData.publicUrl;
-	} catch (err: any) {
-		console.error("[uploadAvatar] ❌", err);
+	} catch (err: unknown) {
+		console.error("[uploadAvatar] ❌", getErrorMessage(err));
 		throw err;
 	}
 };

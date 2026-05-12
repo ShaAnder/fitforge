@@ -4,6 +4,7 @@ import AuthLink from "@/components/ui/authPages/AuthLink";
 import LoadingScreen from "@/components/ui/LoadingScreen";
 import { useAlert } from "@/context/AlertContext";
 import { getSupabase } from "@/lib/supabase";
+import { getErrorMessage } from "@/utils/getError";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
@@ -72,8 +73,9 @@ export default function ResetPassword() {
 			);
 
 			router.replace("/login");
-		} catch (error: any) {
-			showAlert("Error", error.message || "Failed to reset password", "error");
+		} catch (err: unknown) {
+			const message = getErrorMessage(err);
+			showAlert("Failed To Reset Password", message, "error");
 		} finally {
 			setIsProcessing(false);
 		}

@@ -17,9 +17,9 @@ import {
 
 import ModalView from "@/components/ui/ModalView";
 import { getSupabase } from "@/lib/supabase";
+import { Profile, ReminderKey } from "@/types";
+import { getErrorMessage } from "@/utils/getError";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-type ReminderKey = "workout" | "streak";
 
 const REMINDER_CONFIG = {
 	workout: {
@@ -61,7 +61,7 @@ function formatReminderTime(timeString: string) {
 	return `${hour12}:${String(minute).padStart(2, "0")} ${ampm}`;
 }
 
-function getReminderTime(profile: any, reminderKey: ReminderKey) {
+function getReminderTime(profile: Profile, reminderKey: ReminderKey) {
 	const config = REMINDER_CONFIG[reminderKey];
 	const rawTime = profile?.[config.timeField];
 	if (typeof rawTime === "string" && /^\d{2}:\d{2}(:\d{2})?$/.test(rawTime)) {
@@ -189,9 +189,10 @@ export default function SettingsScreen() {
 				`Daily reminder set for ${formatReminderTime(timeString)}.`,
 				"success",
 			);
-		} catch (error) {
-			showAlert("Notification error", "Failed to save reminder time.", "error");
-			if (__DEV__) console.warn(error);
+		} catch (err: unknown) {
+			const message = getErrorMessage(err);
+			showAlert("Failed to save reminder time", message, "error");
+			if (__DEV__) console.warn(err);
 		} finally {
 			closeCustomTimeModal();
 		}
@@ -258,14 +259,11 @@ export default function SettingsScreen() {
 					"success",
 				);
 			}
-		} catch (error) {
+		} catch (err: unknown) {
+			const message = getErrorMessage(err);
 			setEnabled(!enabled);
-			showAlert(
-				"Notification error",
-				"Something went wrong while updating reminders.",
-				"error",
-			);
-			if (__DEV__) console.warn(error);
+			showAlert("Failed to update reminder", message, "error");
+			if (__DEV__) console.warn(err);
 		}
 	};
 
@@ -294,10 +292,11 @@ export default function SettingsScreen() {
 				"Your password has been changed.",
 				"success",
 			);
-		} catch (err: any) {
+		} catch (err: unknown) {
+			const message = getErrorMessage(err);
 			showAlert(
 				"Change password failed",
-				err?.message || "Please try again.",
+				message || "Please try again.",
 				"error",
 			);
 		} finally {
@@ -360,10 +359,11 @@ export default function SettingsScreen() {
 			await signOut();
 			router.replace("/login");
 			resetDeleteModal();
-		} catch (err: any) {
+		} catch (err: unknown) {
+			const message = getErrorMessage(err);
 			showAlert(
 				"Delete failed",
-				err?.message || "Please check your password and try again.",
+				message || "Please check your password and try again.",
 				"error",
 			);
 		} finally {
@@ -592,6 +592,7 @@ export default function SettingsScreen() {
 						<Text className="text-zinc-400 text-sm mb-4">Contact</Text>
 
 						<TouchableOpacity
+							// TODO: Improve typed routes when report-bug screen is built
 							onPress={() => router.push("/(tabs)/report-bug" as any)}
 							className="flex-row items-center justify-between py-4"
 							activeOpacity={0.85}
