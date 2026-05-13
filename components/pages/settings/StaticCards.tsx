@@ -10,8 +10,7 @@ export function ContactCard() {
 		<Card className="p-6">
 			<Text className="text-zinc-400 text-sm mb-4">Contact</Text>
 			<TouchableOpacity
-				// TODO: Improve typed routes when report-bug screen is built
-				onPress={() => router.push("/(tabs)/report-bug" as any)}
+				onPress={() => router.push("/(tabs)/report-bug")}
 				className="flex-row items-center justify-between py-4"
 				activeOpacity={0.85}
 			>
@@ -45,7 +44,9 @@ export function LegalCard() {
 				className="flex-row items-center justify-between py-4"
 				activeOpacity={0.85}
 			>
-				<Text className="text-white text-lg font-semibold">Terms of Service</Text>
+				<Text className="text-white text-lg font-semibold">
+					Terms of Service
+				</Text>
 				<Ionicons name="chevron-forward" size={20} color="#a1a1aa" />
 			</TouchableOpacity>
 		</Card>

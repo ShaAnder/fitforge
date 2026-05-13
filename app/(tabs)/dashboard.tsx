@@ -2,14 +2,14 @@ import TabScreen from "@/components/layout/TabScreen";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import CaloriesBurnedWidget from "@/components/dashboard/widgets/CaloriesBurnedWidget";
-import DaysTrainedWidget from "@/components/dashboard/widgets/DaysTrainedWidget";
-import QuickLogWidget from "@/components/dashboard/widgets/QuickLogWidget";
-import StreakWidget from "@/components/dashboard/widgets/StreakWidget";
-import TotalSetsWidget from "@/components/dashboard/widgets/TotalSetsWidget";
-import TotalVolumeWidget from "@/components/dashboard/widgets/TotalVolumeWidget";
-import WeeklyVolumeWidget from "@/components/dashboard/widgets/WeeklyVolumeWidget";
-import WorkoutsLoggedWidget from "@/components/dashboard/widgets/WorkoutsLoggedWidget";
+import CaloriesBurnedWidget from "@/components/pages/dashboard/widgets/CaloriesBurnedWidget";
+import DaysTrainedWidget from "@/components/pages/dashboard/widgets/DaysTrainedWidget";
+import QuickLogWidget from "@/components/pages/dashboard/widgets/QuickLogWidget";
+import StreakWidget from "@/components/pages/dashboard/widgets/StreakWidget";
+import TotalSetsWidget from "@/components/pages/dashboard/widgets/TotalSetsWidget";
+import TotalVolumeWidget from "@/components/pages/dashboard/widgets/TotalVolumeWidget";
+import WeeklyVolumeWidget from "@/components/pages/dashboard/widgets/WeeklyVolumeWidget";
+import WorkoutsLoggedWidget from "@/components/pages/dashboard/widgets/WorkoutsLoggedWidget";
 
 import NavDrawer from "@/components/ui/NavDrawer";
 

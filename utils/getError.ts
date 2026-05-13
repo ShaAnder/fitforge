@@ -3,7 +3,7 @@ export function isError(value: unknown): value is Error {
 		typeof value === "object" &&
 		value !== null &&
 		"message" in value &&
-		typeof (value as any).message === "string"
+		typeof value.message === "string"
 	);
 }
 

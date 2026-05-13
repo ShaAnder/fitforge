@@ -4,12 +4,7 @@ import { Text, TouchableOpacity, View } from "react-native";
 import { useAccent } from "@/hooks/useAccent";
 
 type AuthLinkProps = {
-	to:
-		| "/login"
-		| "/signup"
-		| "/forgot-password"
-		| "/resend-verification"
-		| string;
+	to: "/login" | "/signup" | "/forgot-password" | "/resend-verification";
 	children: string;
 	prefix?: string;
 	className?: string;
@@ -37,7 +32,7 @@ export default function AuthLink({
 
 			{/* Clickable link text */}
 			<TouchableOpacity
-				onPress={() => router.replace(to as any)}
+				onPress={() => router.replace(to)}
 				className="active:opacity-70"
 			>
 				<Text className={`${accent.text500} font-medium`}>{children}</Text>

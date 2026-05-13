@@ -1,4 +1,4 @@
-import WeeklyVolumeChart from "@/components/dashboard/WeeklyVolumeChart";
+import WeeklyVolumeChart from "../WeeklyVolumeChart";
 import { useAuth } from "@/context/AuthContext";
 import { getWeeklyVolumeData } from "@/helpers/dashboardUtils";
 import { convertVolumeData, getUnitLabel } from "@/helpers/unitConverter";

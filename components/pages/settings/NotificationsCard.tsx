@@ -1,16 +1,19 @@
 import Card from "@/components/ui/Card";
 import { getAccentPreset } from "@/constants/accents";
+import { REMINDER_CONFIG, formatReminderTime } from "@/constants/reminders";
+import { useReminderSettings } from "@/hooks/useReminderSettings";
 import { Profile } from "@/types";
 import { Switch, Text, TouchableOpacity, View } from "react-native";
-import { REMINDER_CONFIG, formatReminderTime } from "../constants/reminders";
-import { useReminderSettings } from "../hooks/useReminderSettings";
 
 interface NotificationsCardProps {
 	reminder: ReturnType<typeof useReminderSettings>;
 	profile: Profile | null;
 }
 
-export function NotificationsCard({ reminder, profile }: NotificationsCardProps) {
+export function NotificationsCard({
+	reminder,
+	profile,
+}: NotificationsCardProps) {
 	const accentPreset = getAccentPreset(profile?.accent);
 
 	return (
@@ -82,7 +85,9 @@ function ReminderRow({
 					<Text className="text-white text-base font-semibold">
 						{config.label}
 					</Text>
-					<Text className="text-zinc-400 text-sm mt-1">{config.description}</Text>
+					<Text className="text-zinc-400 text-sm mt-1">
+						{config.description}
+					</Text>
 					<Text className="text-zinc-500 text-xs mt-3">
 						Time: {formatReminderTime(time)}
 					</Text>

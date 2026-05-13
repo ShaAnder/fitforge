@@ -51,7 +51,7 @@ export default function CustomAlert({
 				<View className="bg-zinc-900 w-full max-w-[340px] rounded-3xl p-8 border border-zinc-700">
 					<View className="items-center mb-6">
 						<Ionicons
-							name={currentColor.icon} // ← No "as any" needed
+							name={currentColor.icon}
 							size={64}
 							color={currentColor.bg}
 						/>

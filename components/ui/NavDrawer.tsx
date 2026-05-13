@@ -11,6 +11,28 @@ interface NavDrawerProps {
 	onClose: () => void;
 }
 
+type DrawerRoute =
+	| "/(tabs)/dashboard"
+	| "/(tabs)/community"
+	| "/(tabs)/achievements"
+	| "/(tabs)/settings"
+	| "/privacy"
+	| "/terms";
+
+type DrawerMenuItem =
+	| {
+			title: string;
+			icon: IoniconsName;
+			route: DrawerRoute;
+			isSignOut?: false;
+	  }
+	| {
+			title: "Sign Out";
+			icon: IoniconsName;
+			route: "signout";
+			isSignOut: true;
+	  };
+
 /**
  * Normalizes route paths by removing route groups (e.g. /(tabs)) and trailing slashes.
  * Used to determine which menu item is currently active.
@@ -37,12 +59,7 @@ export default function NavDrawer({ isOpen, onClose }: NavDrawerProps) {
 	const accent = useAccent();
 
 	// Menu configuration
-	const menuItems: Array<{
-		title: string;
-		icon: IoniconsName;
-		route: string;
-		isSignOut?: boolean;
-	}> = [
+	const menuItems: DrawerMenuItem[] = [
 		{ title: "Dashboard", icon: "home-outline", route: "/(tabs)/dashboard" },
 		{ title: "Community", icon: "people-outline", route: "/(tabs)/community" },
 		{
@@ -77,8 +94,8 @@ export default function NavDrawer({ isOpen, onClose }: NavDrawerProps) {
 		return email.split("@")[0] || email;
 	};
 
-	const handleMenuPress = (route: string) => {
-		router.push(route as any);
+	const handleMenuPress = (route: DrawerRoute) => {
+		router.push(route);
 		onClose();
 	};
 
