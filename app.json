@@ -1,43 +1,47 @@
 {
-	"expo": {
-		"name": "fitforge",
-		"slug": "fitforge",
-		"version": "1.0.0",
-		"orientation": "portrait",
-		"icon": "./assets/images/icon.png",
-		"scheme": "fitforge",
-		"userInterfaceStyle": "automatic",
-		"splash": {
-			"image": "./assets/images/adaptive-icon.png",
-			"resizeMode": "contain",
-			"backgroundColor": "#09090b"
-		},
-		"ios": {
-			"supportsTablet": true
-		},
-		"android": {
-			"adaptiveIcon": {
-				"foregroundImage": "./assets/images/icon.png",
-				"backgroundColor": "#09090b"
-			},
-			"predictiveBackGestureEnabled": false,
-			"package": "com.anonymous.fitforge"
-		},
-		"web": {
-			"bundler": "metro",
-			"output": "static",
-			"favicon": "./assets/images/icon.png"
-		},
-		"plugins": ["expo-router", "expo-font", "expo-web-browser"],
-		"experiments": {
-			"typedRoutes": true
-		},
-		"extra": {
-			"router": {},
-			"eas": {
-				"projectId": "cdcbe9be-7ca2-40b7-bfd5-381a3bec88e7"
-			}
-		},
-		"owner": "taboonyinc"
-	}
+  "expo": {
+    "name": "fitforge",
+    "slug": "fitforge",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "fitforge",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/images/adaptive-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#09090b"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#09090b"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.fitforge"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/icon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-web-browser"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "owner": "shaanderworks",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "2d861950-c61b-4c6e-98e8-c66fbd4124d9"
+      }
+    }
+  }
 }

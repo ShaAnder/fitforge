@@ -80,7 +80,7 @@ export interface UploadAsset {
 	height?: number;
 	fileSize?: number;
 	// adding these for later
-	exif?: Record<string, any>;
+	exif?: Record<string, any> | null;
 	duration?: number | null;
 }
 
