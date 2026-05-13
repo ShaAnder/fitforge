@@ -335,7 +335,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		if (!user?.id) throw new Error("No user logged in");
 
 		try {
-			const publicUrl = await uploadAvatarFromQueries(user.id, asset);
+			const accessToken = session?.access_token;
+			const publicUrl = await uploadAvatarFromQueries(
+				user.id,
+				asset,
+				accessToken,
+			);
 
 			// Store just the filename in the profile (Supabase public URL is derived)
 			const fileName = publicUrl.split("/").pop() || publicUrl;

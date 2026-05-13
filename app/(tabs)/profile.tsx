@@ -36,7 +36,7 @@ export default function Profile() {
 	const params = useLocalSearchParams<{ edit?: string }>();
 	const router = useRouter();
 
-	const { user, profile, updateProfile } = useAuth();
+	const { user, session, profile, updateProfile } = useAuth();
 	const { showAlert } = useAlert();
 	const accent = useAccent();
 
@@ -79,7 +79,7 @@ export default function Profile() {
 			mediaTypes: ImagePicker.MediaTypeOptions.Images,
 			allowsEditing: true,
 			aspect: [1, 1],
-			quality: 0.8,
+			quality: 0.5, // Optimized for faster upload (~100-200KB)
 		});
 
 		if (!result.canceled && result.assets?.[0]) {
@@ -106,13 +106,18 @@ export default function Profile() {
 			let newAvatarUrl = profile?.avatar_url;
 
 			if (selectedAvatarAsset) {
-				newAvatarUrl = await uploadAvatar(user.id, selectedAvatarAsset);
+				const accessToken = session?.access_token;
+				newAvatarUrl = await uploadAvatar(
+					user.id,
+					selectedAvatarAsset,
+					accessToken,
+				);
 			}
-
 			await updateProfile({
 				username: username.trim(),
 				avatar_url: newAvatarUrl,
 			});
+			console.log("[Profile] ✅ Profile updated");
 
 			setIsEditing(false);
 			setSelectedAvatarAsset(null);
@@ -121,6 +126,7 @@ export default function Profile() {
 			showAlert("Profile Updated", "Your changes have been saved.", "success");
 		} catch (err: unknown) {
 			const message = getErrorMessage(err);
+			console.error("[Profile] ❌ Save failed:", message);
 
 			showAlert("Update Failed", message || "Could not save profile.", "error");
 		} finally {

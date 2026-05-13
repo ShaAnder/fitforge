@@ -1,6 +1,6 @@
 # FitForge
 
-![FitForge](assets/images/splash-icon.png)
+![FitForge](assets/images/icon.png)
 
 **FitForge** is a cross-platform fitness tracking mobile app built with Expo and
 React Native. It delivers fast workout logging, meaningful analytics, secure
@@ -16,6 +16,7 @@ splash screen visible until the entire app (auth + data) is ready.
 - [Key Design & Architecture Choices](#key-design--architecture-choices)
 - [Features](#features)
 - [Testing](#testing)
+- [Challenges](#challenges)
 - [Project Structure](#project-structure)
 - [Technologies Used](#technologies-used)
 - [Setup & Local Development](#setup--local-development)
@@ -152,26 +153,164 @@ npm test                    # Full suite
 npm test -- tests/context/AuthContext.test.tsx   # Single file
 ```
 
+## Challenges
+
+This project encountered real-world integration and platform challenges during
+development. Addressing these helped harden the app and surface common pitfalls
+when building mobile apps with React Native + Supabase.
+
+- **Avatar upload: serialization + RLS policy** — Symptom: image uploads failed
+  intermittently with "Aborted" or "Network request failed" when sending a
+  picked image from the app. Root cause: (1) React Native/SDK serialization
+  mismatch (raw ArrayBuffer didn't serialize reliably on RN) and (2) Storage RLS
+  policies blocked INSERTs for unauthorised object names. Fixes applied: fetch
+  the local file as a Blob and PUT it to Supabase Storage using the user's
+  access token; add Storage RLS SQL to allow authenticated users to upload files
+  whose names start with their user id; increase request timeout and reduce
+  client-side image quality to speed transfers. See
+  [lib/supabaseQueries.ts](lib/supabaseQueries.ts) and
+  [docs/storage-rls-policies.sql](docs/storage-rls-policies.sql).
+
+### How I fixed it (concise steps)
+
+1. Added targeted logging around the image picker, file read, and upload calls
+   to capture file sizes, MIME types, and HTTP responses.
+2. Reproduced the failure and identified that `ArrayBuffer` serialization was
+   unreliable in the RN environment; switching to a web-style `Blob` fixed
+   serialization for network transport.
+3. Verified auth was present and passed the existing `access_token` from
+   `AuthContext` to the uploader to avoid extra `getSession()` network calls.
+4. Applied a Storage RLS policy so authenticated users could INSERT objects
+   whose filenames began with their user id (SQL in
+   `docs/storage-rls-policies.sql`).
+5. Reduced image quality at selection and increased fetch timeout to 60s for
+   robustness on slow mobile networks.
+
+Minimal example of the core change (from `lib/supabaseQueries.ts`):
+
+```ts
+// Read local file as a Blob
+const response = await fetch(asset.uri);
+if (!response.ok) throw new Error("Failed to read file");
+const blob = await response.blob();
+
+// Direct PUT to Supabase Storage REST endpoint using auth token
+const uploadUrl = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/storage/v1/object/avatars/${fileName}`;
+await fetch(uploadUrl, {
+	method: "PUT",
+	headers: {
+		"Content-Type": blob.type,
+		"Authorization": `Bearer ${accessToken}`,
+	},
+	body: blob,
+});
+```
+
+This combination fixed the abort/network errors and made uploads reliable.
+
 ## Project Structure
 
-```js
-
+```txt
 fitforge/
-├── app/                  # Expo Router routes + layouts
-│   ├── (tabs)/           # Main authenticated tab shell
-│   ├── auth flows...     # login, signup, verify, reset, etc.
-│   └── _layout.tsx
-├── components/           # Reusable UI pieces
-│   ├── common/, ui/, dashboard/, workout/, layout/
-│   └── __tests__/
-├── context/              # Global state providers
-├── helpers/              # Pure business logic
-├── lib/                  # Supabase client + query layer
-├── hooks/                # Custom hooks
-├── constants/            # Colors, accents, legal text
-├── tests/                # Jest test files
-├── assets/               # Images, fonts, splash
-└── jest.setup.js
+├── app.json
+├── babel.config.js
+├── eas.json
+├── expo-env.d.ts
+├── global.css
+├── jest.config.js
+├── jest.setup.js
+├── metro.config.js
+├── nativewind-env.d.ts
+├── package.json
+├── README.md
+├── tailwind.config.js
+├── tsconfig.json
+├── __mocks__/
+│   └── react-native-css-interop.js
+├── android/
+│   ├── build.gradle
+│   ├── gradle.properties
+│   ├── gradlew
+│   ├── gradlew.bat
+│   ├── settings.gradle
+│   └── app/
+│       ├── build.gradle
+│       └── src/
+├── app/
+│   ├── _layout.tsx
+│   ├── forgot-password.tsx
+│   ├── login.tsx
+│   ├── resend-verification.tsx
+│   ├── reset-password.tsx
+│   ├── signup.tsx
+│   ├── verify-email.tsx
+│   └── (tabs)/
+│       ├── _layout.tsx
+│       ├── achievements.tsx
+│       ├── community.tsx
+│       ├── dashboard.tsx
+│       ├── history.tsx
+│       ├── index.tsx
+│       ├── library.tsx
+│       ├── log-workout.tsx
+│       ├── more.tsx
+│       ├── privacy.tsx
+│       ├── profile.tsx
+│       ├── report-bug.tsx
+│       ├── settings.tsx
+│       └── tabs-specific files
+├── assets/
+│   ├── fonts/
+│   └── images/
+├── components/
+│   ├── __tests__/
+│   ├── common/
+│   │   ├── Avatar.tsx
+│   │   ├── Header.tsx
+│   │   └── StatCard.tsx
+│   ├── dashboard/
+│   │   └── WeeklyVolumeChart.tsx
+│   ├── layout/
+│   │   └── TabScreen.tsx
+│   ├── ui/
+│   │   ├── Button.tsx
+│   │   ├── Card.tsx
+│   │   └── LoadingScreen.tsx
+│   └── workout/
+│       └── ExerciseSlot.tsx
+├── constants/
+│   ├── accents.ts
+│   ├── legal.ts
+│   └── reminders.ts
+├── context/
+│   ├── AccentContext.tsx
+│   ├── AlertContext.tsx
+│   └── AuthContext.tsx
+├── docs/
+│   └── storage-rls-policies.sql
+├── handlers/
+│   └── notificationHandler.ts
+├── helpers/
+│   ├── dashboardUtils.ts
+│   ├── logWorkoutUtils.ts
+│   └── notificationHelpers.ts
+├── hooks/
+│   ├── useAccent.ts
+│   ├── useAccountActions.ts
+│   └── useAuthActions.ts
+├── lib/
+│   ├── supabase.ts
+│   └── supabaseQueries.ts
+├── tests/
+│   ├── app/
+│   ├── components/
+│   └── helpers/
+├── types/
+│   └── index.ts
+└── utils/
+    ├── avatarUtils.ts
+    ├── getError.ts
+    └── unitUtils.ts
 
 ```
 

@@ -1,6 +1,5 @@
 import { Exercise, UploadAsset } from "@/types";
 import { getErrorMessage } from "@/utils/getError";
-import { File as ExpoFile } from "expo-file-system";
 import { getSupabase } from "./supabase";
 
 /**
@@ -135,15 +134,22 @@ export const updateProfile = async (
 /**
  * Upload avatar to Supabase Storage and return public URL.
  *
- * - Uses upsert to allow overwriting existing avatar.
+ * - Uses direct HTTP PUT to bypass SDK overhead.
  * - Generates filename based on userId + file extension.
  * - Returns public URL for immediate use in UI.
+ * - Optional accessToken to avoid extra getSession() call.
  */
 
-export const uploadAvatar = async (userId: string, asset: UploadAsset) => {
+export const uploadAvatar = async (
+	userId: string,
+	asset: UploadAsset,
+	accessToken?: string,
+) => {
 	const supabase = getSupabase();
 
-	if (!asset?.uri) throw new Error("No image selected");
+	if (!asset?.uri) {
+		throw new Error("No image selected");
+	}
 
 	const rawMimeType = asset?.mimeType ?? undefined;
 	const mimeType =
@@ -165,27 +171,47 @@ export const uploadAvatar = async (userId: string, asset: UploadAsset) => {
 	const fileName = userId + "-" + Date.now() + "." + (fileExt || "jpeg");
 
 	try {
-		const pickedFile = new ExpoFile(asset.uri);
-		const arrayBuffer = await pickedFile.arrayBuffer();
+		const session = accessToken ? null : await supabase.auth.getSession();
+		const response = await fetch(asset.uri);
 
-		const { error } = await supabase.storage
-			.from("avatars")
-			.upload(fileName, arrayBuffer, {
-				upsert: true,
-				contentType: mimeType,
-			});
+		if (!response.ok) {
+			throw new Error(`Failed to fetch file: ${response.statusText}`);
+		}
 
-		if (error) throw error;
+		const blob = await response.blob();
+		const finalMimeType = blob.type || mimeType;
 
-		const { data: urlData } = supabase.storage
-			.from("avatars")
-			.getPublicUrl(fileName);
+		// Use provided token or get from session
+		const token = accessToken || session?.data?.session?.access_token;
+		if (!token) {
+			throw new Error("No access token for upload");
+		}
 
-		if (!urlData?.publicUrl) throw new Error("Failed to create public URL");
+		const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+		if (!supabaseUrl) {
+			throw new Error("Supabase URL not configured");
+		}
 
-		return urlData.publicUrl;
+		const uploadUrl = `${supabaseUrl}/storage/v1/object/avatars/${fileName}`;
+
+		const uploadResponse = await fetch(uploadUrl, {
+			method: "PUT",
+			headers: {
+				"Content-Type": finalMimeType,
+				"Authorization": `Bearer ${token}`,
+			},
+			body: blob,
+		});
+
+		if (!uploadResponse.ok) {
+			const errorText = await uploadResponse.text();
+			throw new Error(`Upload failed: ${uploadResponse.status} - ${errorText}`);
+		}
+
+		const publicUrl = `${supabaseUrl}/storage/v1/object/public/avatars/${fileName}`;
+		return publicUrl;
 	} catch (err: unknown) {
-		console.error("[uploadAvatar] ❌", getErrorMessage(err));
+		console.error("[uploadAvatar]", getErrorMessage(err));
 		throw err;
 	}
 };
