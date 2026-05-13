@@ -159,6 +159,53 @@ This project encountered real-world integration and platform challenges during
 development. Addressing these helped harden the app and surface common pitfalls
 when building mobile apps with React Native + Supabase.
 
+- **First native app: web ≠ mobile** — Symptom: code patterns from web didn't
+  transfer directly; navigation felt clunky, contexts re-rendered excessively,
+  and platform-specific APIs (camera, notifications, permissions) required
+  special handling. Root cause: React Native has different lifecycle and
+  threading models; web idioms don't map 1:1 to mobile. Solution: adopted
+  memoization + `useCallback` + `useMemo` throughout contexts to prevent render
+  storms; used Expo modules (`expo-notifications`, `expo-image-picker`,
+  `expo-permissions`) for safe platform abstraction; learned to debug on both
+  Android emulator and physical device early.
+
+- **AuthContext: state management + bootstrap** — Symptom: the context needed to
+  handle sign-up, login, logout, password reset, email verification, and profile
+  data loading without triggering re-renders or race conditions. Root cause:
+  naive state management led to components rendering multiple times per second;
+  Supabase session changes, profile loads, and UI updates happened
+  asynchronously and out of order. Solution: stabilized the context with
+  `useCallback` for all listeners and state setters; kept only minimal state
+  (session, user, profile) in context and pushed helpers to separate hooks; used
+  a bootstrap sequence (restore session → load profile → mark ready) so the
+  splash screen stays visible until data is truly ready. See
+  [context/AuthContext.tsx](context/AuthContext.tsx).
+
+- **Learning Supabase from scratch** — Symptom: early integration attempts
+  didn't account for RLS policies, real-time subscriptions, and the difference
+  between the Supabase JS SDK (web-optimized) and React Native. Root cause:
+  Supabase documentation is web-centric; mobile environments have stricter
+  serialization, different permission models, and network timeouts. Solution:
+  built a query wrapper layer (`lib/supabaseQueries.ts`) to isolate Supabase
+  calls; applied RLS policies rigorously and tested each policy before moving
+  forward; documented storage bucket permissions in
+  [docs/storage-rls-policies.sql](docs/storage-rls-policies.sql); increased
+  request timeouts for mobile networks (60s vs web defaults); avoided Supabase
+  Storage SDK for uploads in favor of direct HTTP REST calls with bearer token
+  (more reliable in RN).
+
+- **Breaking up settings: context + hooks pattern** — Symptom: profile data
+  (units, notifications, accent color, name, email) lived in one giant context
+  that mixed UI state with data state. Root cause: no clear separation between
+  what belongs in global context (auth session, theme) and what belongs in local
+  component state or custom hooks. Solution: created dedicated contexts
+  (`AccentContext`, `AlertContext`) and custom hooks (`useAccent`,
+  `useReminderSettings`, `useProfilePreferences`) so each domain is
+  independently testable; moved profile mutations to query functions rather than
+  context methods, simplifying logic; contexts now only manage global settings
+  that multiple features need. This made testing easier and reduced context
+  churn.
+
 - **Avatar upload: serialization + RLS policy** — Symptom: image uploads failed
   intermittently with "Aborted" or "Network request failed" when sending a
   picked image from the app. Root cause: (1) React Native/SDK serialization
@@ -171,7 +218,12 @@ when building mobile apps with React Native + Supabase.
   [lib/supabaseQueries.ts](lib/supabaseQueries.ts) and
   [docs/storage-rls-policies.sql](docs/storage-rls-policies.sql).
 
-### How I fixed it (concise steps)
+### Deep Dive: Avatar Upload Fix
+
+The avatar upload challenge involved multiple interconnected issues. Here's how
+I debugged and resolved it:
+
+**Steps taken:**
 
 1. Added targeted logging around the image picker, file read, and upload calls
    to capture file sizes, MIME types, and HTTP responses.
@@ -186,7 +238,7 @@ when building mobile apps with React Native + Supabase.
 5. Reduced image quality at selection and increased fetch timeout to 60s for
    robustness on slow mobile networks.
 
-Minimal example of the core change (from `lib/supabaseQueries.ts`):
+**Core code change** (from `lib/supabaseQueries.ts`):
 
 ```ts
 // Read local file as a Blob

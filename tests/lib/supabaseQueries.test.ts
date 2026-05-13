@@ -1,4 +1,7 @@
+/// <reference types="jest" />
+
 import { File as ExpoFile } from "expo-file-system";
+import { getSupabase } from "../../lib/supabase";
 import {
 	fetchWorkouts,
 	getAllExercises,
@@ -9,7 +12,6 @@ import {
 	updateProfile,
 	uploadAvatar,
 } from "../../lib/supabaseQueries";
-import { getSupabase } from "../../lib/supabase";
 
 jest.mock("../../lib/supabase", () => ({
 	getSupabase: jest.fn(),
@@ -191,7 +193,7 @@ describe("supabaseQueries", () => {
 
 	describe("uploadAvatar", () => {
 		it("throws when no image uri is provided", async () => {
-			await expect(uploadAvatar("user-123", {})).rejects.toThrow(
+			await expect(uploadAvatar("user-123", {} as any)).rejects.toThrow(
 				"No image selected",
 			);
 		});

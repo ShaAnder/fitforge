@@ -3,6 +3,7 @@
 	"compilerOptions": {
 		"strict": true,
 		"useUnknownInCatchVariables": true,
+		"types": ["jest", "node"],
 		// set the paths we set our @as our base path then we set some
 		// additional path aliasing to prevent paths becoming too long
 		"paths": {
