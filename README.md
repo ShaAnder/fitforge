@@ -13,6 +13,7 @@ splash screen visible until the entire app (auth + data) is ready.
 
 - [Project Objectives](#project-objectives)
 - [User Experience](#user-experience)
+- [Flow Notes](#flow-notes)
 - [Key Design & Architecture Choices](#key-design--architecture-choices)
 - [Features](#features)
 - [Testing](#testing)
@@ -69,6 +70,21 @@ The native splash screen stays visible until:
 3. User profile + recent workouts are loaded
 
 This eliminates the common “flash of unauthenticated content” problem.
+
+---
+
+## Flow Notes
+
+FitForge has a dedicated auth-flow explainer for studying and interview prep:
+
+- [docs/auth-flow-notes.md](docs/auth-flow-notes.md)
+
+This note covers:
+
+- the cold-open auth bootstrap flow
+- why `AuthContext` uses two effects
+- what `authResolved`, `loading`, and `lastUserIdRef` protect
+- where the current race-condition protections are strong and where they can be improved
 
 ---
 

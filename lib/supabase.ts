@@ -15,6 +15,7 @@ const fetchWithTimeout = async (
 	input: RequestInfo | URL,
 	init?: RequestInit,
 ): Promise<Response> => {
+	// Create a fresh AbortController for this request
 	const controller = new AbortController();
 	const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
@@ -28,6 +29,7 @@ const fetchWithTimeout = async (
 	}
 
 	try {
+		// Execute the actual fetch with our controlled signal
 		const response = await fetch(input, {
 			...init,
 			signal: controller.signal,
@@ -35,6 +37,7 @@ const fetchWithTimeout = async (
 
 		return response;
 	} finally {
+		// Always clean up the timeout to avoid memory leaks
 		clearTimeout(timeoutId);
 	}
 };
@@ -47,11 +50,13 @@ const fetchWithTimeout = async (
  * - Applies custom timeout fetch wrapper.
  */
 export const getSupabase = (): SupabaseClient => {
+	// Return existing instance if we already have one (singleton pattern)
 	if (supabaseInstance) return supabaseInstance;
 
 	const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 	const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
+	// Basic validation so we fail fast with a clear message
 	if (!supabaseUrl || !supabaseAnonKey) {
 		throw new Error(
 			"Missing Supabase environment variables. " +
@@ -59,6 +64,7 @@ export const getSupabase = (): SupabaseClient => {
 		);
 	}
 
+	// Create the client with our custom fetch and proper RN storage settings
 	supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
 		global: {
 			fetch: fetchWithTimeout,

@@ -31,15 +31,15 @@ export function useDeleteAccount({ user, signOut }: UseDeleteAccountProps) {
 	};
 
 	const submit = async () => {
-		if (step === 1) {
-			if (confirmEmail.trim() !== user?.email) {
-				showAlert(
-					"Email doesn't match",
-					"Please type the exact email shown.",
-					"info",
-				);
-				return;
-			}
+		if (step !== 1) {
+			return;
+		}
+		if (confirmEmail.trim() !== user?.email) {
+			showAlert(
+				"Email doesn't match",
+				"Please type the exact email shown.",
+				"info",
+			);
 			setStep(2);
 			return;
 		}
@@ -59,7 +59,8 @@ export function useDeleteAccount({ user, signOut }: UseDeleteAccountProps) {
 			});
 			if (reauthError) throw reauthError;
 
-			const { error: fnError } = await supabase.functions.invoke("delete-account");
+			const { error: fnError } =
+				await supabase.functions.invoke("delete-account");
 			if (fnError) throw fnError;
 
 			showAlert(
