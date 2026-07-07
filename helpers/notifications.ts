@@ -11,7 +11,7 @@ function tryGetNotificationsModule():
 	| typeof import("expo-notifications")
 	| null {
 	try {
-		// Lazy require to avoid crashing app startup if native modules are missing
+		// lazy require so we don't crash app startup if the native module is missing
 		// eslint-disable-next-line @typescript-eslint/no-var-requires
 		return require("expo-notifications") as typeof import("expo-notifications");
 	} catch (err: unknown) {
@@ -19,6 +19,7 @@ function tryGetNotificationsModule():
 			// eslint-disable-next-line no-console
 			console.warn("expo-notifications require failed:", String(err));
 		}
+		// return null so the rest of our code can handle missing notifications gracefully
 		return null;
 	}
 }
@@ -30,12 +31,15 @@ function tryGetNotificationsModule():
  * Returns true if permission is granted, false otherwise.
  */
 export async function ensureNotificationsPermission() {
+	// try to get the notifications module safely
 	const Notifications = tryGetNotificationsModule();
 	if (!Notifications) return false;
 
+	// check current permission status
 	const { status } = await Notifications.getPermissionsAsync();
 	if (status === "granted") return true;
 
+	// otherwise ask the user for permission
 	const req = await Notifications.requestPermissionsAsync();
 	return req.status === "granted";
 }
@@ -53,11 +57,13 @@ export async function scheduleDailyReminder(
 	body: string,
 	channelId?: string, // optional: Android notification channel
 ) {
+	// safely get our notifications module
 	const Notifications = tryGetNotificationsModule();
 	if (!Notifications) return null;
 
 	type DailyTriggerInput = import("expo-notifications").DailyTriggerInput;
 
+	// build the daily trigger object
 	const trigger: DailyTriggerInput = {
 		type: Notifications.SchedulableTriggerInputTypes.DAILY,
 		hour,
@@ -65,12 +71,13 @@ export async function scheduleDailyReminder(
 		...(channelId ? { channelId } : {}),
 	};
 
+	// schedule the actual notification
 	const id = await Notifications.scheduleNotificationAsync({
 		content: { title, body },
 		trigger,
 	});
 
-	// Persist ID so we can cancel it later
+	// persist the ID in AsyncStorage so we can cancel it later if needed
 	await AsyncStorage.setItem(storageKey, id);
 	return id;
 }
@@ -81,12 +88,16 @@ export async function scheduleDailyReminder(
  * Removes both the scheduled notification and its stored ID.
  */
 export async function cancelDailyReminder(storageKey: string) {
+	// get the module safely
 	const Notifications = tryGetNotificationsModule();
 	if (!Notifications) return;
 
+	// check if we have a stored ID for this reminder
 	const existing = await AsyncStorage.getItem(storageKey);
 	if (existing) {
+		// cancel the notification using the stored ID
 		await Notifications.cancelScheduledNotificationAsync(existing);
+		// clean up the stored ID
 		await AsyncStorage.removeItem(storageKey);
 	}
 }
@@ -95,5 +106,6 @@ export async function cancelDailyReminder(storageKey: string) {
  * Retrieves the stored notification ID for a given reminder.
  */
 export async function getScheduledReminderId(storageKey: string) {
+	// just pull the ID from storage if it exists
 	return AsyncStorage.getItem(storageKey);
 }

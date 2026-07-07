@@ -10,23 +10,25 @@ import { getSupabase } from "./supabase";
  * - Logs start and success for easy debugging.
  */
 export const fetchWorkouts = async (userId: string) => {
-	// Always get the shared Supabase client instance
+	// grab our shared Supabase client instance
 	const supabase = getSupabase();
 
 	try {
-		// Query workouts table with user filter and newest-first sort
-		// This relies on Row Level Security so users only see their data
+		// run the query against our workouts table
+		// filter to just this user's data and sort newest first
 		const { data, error } = await supabase
 			.from("workouts")
 			.select("*")
 			.eq("user_id", userId)
 			.order("date", { ascending: false });
 
+		// bail out with the error if Supabase gave us one
 		if (error) throw error;
 
-		// Return empty array instead of null for safer handling in components
+		// return the data or an empty array so components don't blow up
 		return data || [];
 	} catch (err: unknown) {
+		// log it nicely and re-throw so the caller knows something went wrong
 		console.error(`[fetchWorkouts] ❌ Error: ${getErrorMessage(err)}`);
 		throw err;
 	}
@@ -41,11 +43,12 @@ export const fetchWorkouts = async (userId: string) => {
  * These are the ones visible to users in the app.
  */
 export const getAllExercises = async (): Promise<Exercise[]> => {
+	// get our shared client
 	const supabase = getSupabase();
+	// quick log so we can see this firing in dev
 	console.log("[getAllExercises] 🚀 Fetching dynamic exercises");
 
-	// Pull only approved exercises and sort alphabetically by name
-	// This keeps the list clean and user-friendly
+	// fetch only approved exercises sorted by name
 	const { data, error } = await supabase
 		.from("exercises")
 		.select("*")
@@ -57,6 +60,7 @@ export const getAllExercises = async (): Promise<Exercise[]> => {
 		throw error;
 	}
 
+	// default to empty array if nothing comes back
 	return data || [];
 };
 
@@ -66,7 +70,9 @@ export const getAllExercises = async (): Promise<Exercise[]> => {
  * Used for real-time search as the user types.
  */
 export const searchExercises = (all: Exercise[], query: string = "") => {
+	// no query? just return everything
 	if (!query) return all;
+	// otherwise filter by name, ignoring case
 	return all.filter((ex) =>
 		ex.name.toLowerCase().includes(query.toLowerCase()),
 	);
@@ -78,7 +84,9 @@ export const searchExercises = (all: Exercise[], query: string = "") => {
  * Helps power the muscle group filter UI.
  */
 export const getByMuscle = (all: Exercise[], muscle: string) => {
+	// "All" means show the whole list
 	if (muscle === "All") return all;
+	// otherwise keep only matching muscle
 	return all.filter((ex) => ex.muscle === muscle);
 };
 
@@ -87,7 +95,9 @@ export const getByMuscle = (all: Exercise[], muscle: string) => {
  * Useful for building filter chips or dropdowns without duplicates.
  */
 export const getUniqueMuscles = (all: Exercise[]) => {
+	// pull out every muscle string
 	const muscles = all.map((ex) => ex.muscle);
+	// remove duplicates with Set and turn back into array
 	return Array.from(new Set(muscles));
 };
 
@@ -103,12 +113,14 @@ export const getUniqueMuscles = (all: Exercise[]) => {
  * - Uses .maybeSingle() so missing row doesn't throw.
  */
 export const getProfile = async (userId: string, email: string = "") => {
+	// grab our Supabase client
 	const supabase = getSupabase();
 
+	// log for debugging
 	console.log(`[getProfile] 🚀 Starting query for user: ${userId}`);
 
 	try {
-		// Fetch minimal profile fields with maybeSingle for graceful missing-row handling
+		// fetch the profile row (maybeSingle so missing row is just null)
 		const { data, error } = await supabase
 			.from("profiles")
 			.select("id, username, avatar_url")
@@ -118,10 +130,11 @@ export const getProfile = async (userId: string, email: string = "") => {
 		if (error) throw error;
 
 		if (data) {
+			// we have a real profile, hand it back
 			return data;
 		}
 
-		// Fallback profile when row doesn't exist yet (first time user)
+		// no profile row yet, so build a sensible default
 		return {
 			id: userId,
 			username: email.split("@")[0].replace(/[^a-zA-Z0-9]/g, "") || "user",
@@ -143,9 +156,10 @@ export const updateProfile = async (
 	userId: string,
 	updates: { username?: string; avatar_url?: string },
 ) => {
+	// get our client
 	const supabase = getSupabase();
 
-	// Upsert ensures create or update works cleanly in one call
+	// upsert the profile and always update the timestamp
 	const { error } = await supabase.from("profiles").upsert({
 		id: userId,
 		...updates,
@@ -169,36 +183,41 @@ export const uploadAvatar = async (
 	asset: UploadAsset,
 	accessToken?: string,
 ) => {
+	// our shared client instance
 	const supabase = getSupabase();
 
 	if (!asset?.uri) {
 		throw new Error("No image selected");
 	}
 
-	// Normalize mime type (jpg -> jpeg for consistency)
+	// normalize jpg to jpeg for consistency
 	const rawMimeType = asset?.mimeType ?? undefined;
 	const mimeType =
 		rawMimeType === "image/jpg" ? "image/jpeg" : rawMimeType || "image/jpeg";
 
-	// Determine file extension from filename or mime type as fallback
+	// figure out file extension from filename first
 	const extFromFileName =
 		typeof asset?.fileName === "string" && asset.fileName.includes(".")
 			? asset.fileName.split(".").pop()?.toLowerCase()
 			: undefined;
 
+	// fallback to mime type if no filename extension
 	const extFromMime = mimeType.startsWith("image/")
 		? mimeType.split("/")[1]?.toLowerCase()
 		: undefined;
 
+	// clean up and standardize the extension
 	const fileExt = (extFromFileName || extFromMime || "jpeg")
 		.replace("jpg", "jpeg")
 		.replace(/[^a-z0-9]/g, "");
 
+	// build a unique filename
 	const fileName = userId + "-" + Date.now() + "." + (fileExt || "jpeg");
 
 	try {
-		// Get session only if no token was passed in (for performance)
+		// get session only if we weren't given a token already
 		const session = accessToken ? null : await supabase.auth.getSession();
+		// fetch the local asset so we can upload it
 		const response = await fetch(asset.uri);
 
 		if (!response.ok) {
@@ -208,7 +227,7 @@ export const uploadAvatar = async (
 		const blob = await response.blob();
 		const finalMimeType = blob.type || mimeType;
 
-		// Use provided token or get from session
+		// pick the right token
 		const token = accessToken || session?.data?.session?.access_token;
 		if (!token) {
 			throw new Error("No access token for upload");
@@ -219,9 +238,10 @@ export const uploadAvatar = async (
 			throw new Error("Supabase URL not configured");
 		}
 
+		// build the upload endpoint
 		const uploadUrl = `${supabaseUrl}/storage/v1/object/avatars/${fileName}`;
 
-		// Direct PUT upload for better performance on mobile
+		// do the direct PUT upload
 		const uploadResponse = await fetch(uploadUrl, {
 			method: "PUT",
 			headers: {
@@ -236,7 +256,7 @@ export const uploadAvatar = async (
 			throw new Error(`Upload failed: ${uploadResponse.status} - ${errorText}`);
 		}
 
-		// Return the public URL for immediate display in the UI
+		// return the public URL so we can show the avatar right away
 		const publicUrl = `${supabaseUrl}/storage/v1/object/public/avatars/${fileName}`;
 		return publicUrl;
 	} catch (err: unknown) {

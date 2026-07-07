@@ -16,7 +16,9 @@ export const convertWeight = (
 	kg: number,
 	toUnit: "kg" | "lb" = "kg",
 ): number => {
+	// if user wants kg, just round and return as-is
 	if (toUnit === "kg") return Math.round(kg);
+	// otherwise convert to pounds using our standard factor
 	return Math.round(kg * 2.20462); // Standard kg to lb conversion factor
 };
 
@@ -24,6 +26,7 @@ export const convertWeight = (
  * Returns the correct unit label for display.
  */
 export const getUnitLabel = (unit: "kg" | "lb" = "kg"): string => {
+	// simple ternary so we always show the right label in our UI
 	return unit === "kg" ? "kg" : "lb";
 };
 
@@ -36,8 +39,11 @@ export const convertVolumeData = (
 	data: { value: number; label: string }[],
 	toUnit: "kg" | "lb" = "kg",
 ) => {
+	// map over every data point and convert its value
 	return data.map((item) => ({
+		// spread the original item so we keep label and any other fields
 		...item,
+		// convert the numeric value to the user's preferred unit
 		value: convertWeight(item.value, toUnit),
 	}));
 };
@@ -49,7 +55,9 @@ export const convertInputWeightToKg = (
 	weight: number,
 	fromUnit: "kg" | "lb" = "kg",
 ): number => {
+	// guard against bad numbers so we don't break anything downstream
 	if (!Number.isFinite(weight) || weight <= 0) return 0;
 	if (fromUnit === "kg") return Number(weight.toFixed(2));
+	// convert pounds back to kg and round to 2 decimals
 	return Number((weight / 2.20462).toFixed(2));
 };

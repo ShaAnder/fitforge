@@ -19,28 +19,39 @@ interface UseReminderSettingsProps {
 	updateProfile: (data: Partial<Profile>) => Promise<void>;
 }
 
+/**
+ * Custom hook that manages all reminder settings (workout + streak).
+ *
+ * Handles loading from profile, toggling reminders on/off,
+ * scheduling/cancelling notifications, and the time picker modal.
+ */
 export function useReminderSettings({
 	profile,
 	updateProfile,
 }: UseReminderSettingsProps) {
+	// our alert context for showing success/error messages
 	const { showAlert } = useAlert();
 
+	// local state for the two reminder toggles
 	const [workoutReminderEnabled, setWorkoutReminderEnabled] = useState(false);
 	const [streakReminderEnabled, setStreakReminderEnabled] = useState(false);
+	// current times shown in the UI
 	const [workoutTime, setWorkoutTime] = useState("18:00");
 	const [streakTime, setStreakTime] = useState("20:00");
 
-	// Modal state
+	// modal state for picking a new reminder time
 	const [modalVisible, setModalVisible] = useState(false);
 	const [activeReminderKey, setActiveReminderKey] =
 		useState<ReminderKey | null>(null);
 	const [tempHour, setTempHour] = useState("18");
 	const [tempMinute, setTempMinute] = useState("00");
 
+	// show loading state until we have profile data
 	const notificationsLoading = !profile;
 
 	useEffect(() => {
 		if (!profile) return;
+		// sync local state from the profile when it loads or changes
 		setWorkoutReminderEnabled(!!profile.workout_reminder_enabled);
 		setStreakReminderEnabled(!!profile.streak_reminder_enabled);
 		setWorkoutTime(getReminderTime(profile, "workout"));
@@ -48,6 +59,7 @@ export function useReminderSettings({
 	}, [profile]);
 
 	const openModal = (reminderKey: ReminderKey) => {
+		// set which reminder we're editing and prefill the picker
 		setActiveReminderKey(reminderKey);
 		const currentTime = reminderKey === "workout" ? workoutTime : streakTime;
 		const { hour, minute } = parseReminderTime(currentTime);
@@ -57,6 +69,7 @@ export function useReminderSettings({
 	};
 
 	const closeModal = () => {
+		// reset modal state
 		setModalVisible(false);
 		setActiveReminderKey(null);
 	};
@@ -67,6 +80,7 @@ export function useReminderSettings({
 		const hour = parseInt(tempHour) || 0;
 		const minute = parseInt(tempMinute) || 0;
 
+		// basic validation for the picked time
 		if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
 			showAlert("Invalid time", "Hour must be 0-23 and minute 0-59", "info");
 			return;
@@ -74,6 +88,7 @@ export function useReminderSettings({
 
 		const timeString = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
 
+		// update local state immediately for snappy UI
 		if (activeReminderKey === "workout") setWorkoutTime(timeString);
 		else setStreakTime(timeString);
 
@@ -85,6 +100,7 @@ export function useReminderSettings({
 					: streakReminderEnabled;
 
 			if (isEnabled) {
+				// if the reminder is already on, we need to reschedule it with the new time
 				const hasPermission = await ensureNotificationsPermission();
 				if (!hasPermission) {
 					showAlert(
@@ -105,6 +121,7 @@ export function useReminderSettings({
 				);
 			}
 
+			// save the new time to the profile
 			await updateProfile({ [config.timeField]: timeString });
 			showAlert(
 				"Reminder time saved",
@@ -124,12 +141,14 @@ export function useReminderSettings({
 		enabled: boolean,
 		setEnabled: (v: boolean) => void,
 	) => {
+		// optimistically update the toggle
 		setEnabled(enabled);
 		const config = REMINDER_CONFIG[reminderKey];
 		const timeString = reminderKey === "workout" ? workoutTime : streakTime;
 
 		try {
 			if (enabled) {
+				// user turned it on → ask for permission and schedule
 				const hasPermission = await ensureNotificationsPermission();
 				if (!hasPermission) {
 					setEnabled(false);
@@ -161,6 +180,7 @@ export function useReminderSettings({
 					return;
 				}
 
+				// persist both the enabled flag and the time
 				await updateProfile({
 					[config.enabledField]: true,
 					[config.timeField]: timeString,
@@ -172,6 +192,7 @@ export function useReminderSettings({
 					"success",
 				);
 			} else {
+				// user turned it off → cancel the scheduled notification
 				await cancelDailyReminder(config.storageKey);
 				await updateProfile({ [config.enabledField]: false });
 				showAlert(
@@ -181,6 +202,7 @@ export function useReminderSettings({
 				);
 			}
 		} catch (err: unknown) {
+			// revert the toggle on error
 			setEnabled(!enabled);
 			showAlert("Failed to update reminder", getErrorMessage(err), "error");
 			if (__DEV__) console.warn(err);
