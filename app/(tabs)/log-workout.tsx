@@ -1,15 +1,3 @@
-/**
- * Log Workout Screen.
- *
- * Main screen for recording a new workout session.
- * Features:
- * - Real-time exercise search with dropdown suggestions
- * - Dynamic exercise slots with set management
- * - Total volume calculation
- * - Validation before saving
- * - Refreshes dashboard data on successful save
- */
-
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
@@ -28,6 +16,18 @@ import type { Exercise, LogWorkoutExercise, LogWorkoutSet } from "@/types";
 import { getErrorMessage } from "@/utils/getError";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+/**
+ * Log Workout Screen.
+ *
+ * Main screen for recording a new workout session.
+ * Features:
+ * - Real-time exercise search with dropdown suggestions
+ * - Dynamic exercise slots with set management
+ * - Total volume calculation
+ * - Validation before saving
+ * - Refreshes dashboard data on successful save
+ */
+
 export default function LogWorkout() {
 	const { user, profile, refreshWorkouts } = useAuth();
 	const { showAlert } = useAlert();
@@ -36,16 +36,21 @@ export default function LogWorkout() {
 
 	const userUnit = (profile?.units as "kg" | "lb") ?? "kg";
 
+	// List of exercises currently being logged in this session
 	const [exercises, setExercises] = useState<LogWorkoutExercise[]>([]);
+
+	// Full exercise library loaded from Supabase (for search)
 	const [allExercises, setAllExercises] = useState<Exercise[]>([]);
 	const [loadingLibrary, setLoadingLibrary] = useState(true);
 
+	// Counters for generating unique local IDs
 	const [nextExerciseId, setNextExerciseId] = useState(1);
 	const [nextSetId, setNextSetId] = useState(1);
 
 	const [searchQuery, setSearchQuery] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
 
+	// Load the full exercise library once on mount
 	useEffect(() => {
 		const loadLibrary = async () => {
 			try {
@@ -62,6 +67,7 @@ export default function LogWorkout() {
 		loadLibrary();
 	}, []);
 
+	// Filtered search results (max 12) shown in the dropdown
 	const filteredExercises = useMemo(() => {
 		if (!searchQuery.trim()) return [];
 		return allExercises
@@ -69,6 +75,7 @@ export default function LogWorkout() {
 			.slice(0, 12);
 	}, [allExercises, searchQuery]);
 
+	// Add a new exercise slot with one empty set
 	const addExercise = (exercise: Exercise) => {
 		const localId = nextExerciseId;
 		setNextExerciseId((prev) => prev + 1);
@@ -88,6 +95,7 @@ export default function LogWorkout() {
 		setSearchQuery("");
 	};
 
+	// Update a specific exercise (used by ExerciseSlot child component)
 	const updateExercise = (
 		localId: number,
 		newData: Partial<LogWorkoutExercise>,
@@ -104,10 +112,12 @@ export default function LogWorkout() {
 		);
 	};
 
+	// Remove an entire exercise slot
 	const removeExercise = (localId: number) => {
 		setExercises((prev) => prev.filter((ex) => ex.localId !== localId));
 	};
 
+	// Calculate total volume across all exercises and sets (in kg)
 	const calculateTotalVolume = (): number => {
 		return exercises.reduce((total, exercise) => {
 			const exerciseVolume = exercise.sets.reduce(
@@ -124,6 +134,7 @@ export default function LogWorkout() {
 		}, 0);
 	};
 
+	// Check that every set has both reps and weight filled
 	const isWorkoutValid = (): boolean => {
 		if (exercises.length === 0) return false;
 
@@ -135,6 +146,7 @@ export default function LogWorkout() {
 		);
 	};
 
+	// Save the workout to Supabase
 	const saveWorkout = async () => {
 		if (!user) {
 			showAlert(
@@ -156,6 +168,7 @@ export default function LogWorkout() {
 
 		setIsSaving(true);
 
+		// Convert all weights to kg before saving (for consistent storage)
 		const normalizedExercises = exercises.map((exercise) => ({
 			...exercise,
 			sets: exercise.sets.map((set: LogWorkoutSet) => ({
@@ -209,6 +222,7 @@ export default function LogWorkout() {
 					/>
 				}
 			>
+				{/* Search bar + floating dropdown results */}
 				<View className="px-5 pt-4 pb-6 relative z-10">
 					<View className="bg-zinc-900 rounded-2xl flex-row items-center px-5 border border-zinc-800">
 						<Ionicons name="search" size={20} color="#a1a1aa" />
@@ -221,6 +235,7 @@ export default function LogWorkout() {
 						/>
 					</View>
 
+					{/* Floating dropdown with search results */}
 					{searchQuery.length > 0 && filteredExercises.length > 0 && (
 						<View className="absolute top-16 left-5 right-5 bg-zinc-900 rounded-2xl border border-zinc-800 z-20 max-h-80 overflow-hidden">
 							{filteredExercises.map((ex) => (
@@ -241,6 +256,7 @@ export default function LogWorkout() {
 					)}
 				</View>
 
+				{/* Render one ExerciseSlot for each added exercise */}
 				{exercises.map((exercise) => (
 					<ExerciseSlot
 						key={exercise.localId}
@@ -253,6 +269,7 @@ export default function LogWorkout() {
 					/>
 				))}
 
+				{/* Empty state when no exercises added yet */}
 				{!loadingLibrary && exercises.length === 0 && (
 					<View className="items-center py-20">
 						<Ionicons name="barbell-outline" size={70} color="#3f3f46" />
@@ -262,6 +279,7 @@ export default function LogWorkout() {
 					</View>
 				)}
 
+				{/* Spacer so content doesn't hide behind the fixed footer button */}
 				<View className="h-32" />
 			</TabScreen>
 		</SafeAreaView>

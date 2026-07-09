@@ -22,5 +22,6 @@ export default function MoreScreen() {
 	}, [router]);
 
 	// Empty view required for Expo Router
+	// Expo Router needs at least one element returned from a screen
 	return <View />;
 }

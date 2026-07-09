@@ -40,17 +40,23 @@ export default function Profile() {
 	const { showAlert } = useAlert();
 	const accent = useAccent();
 
+	// Core editing state
 	const [isEditing, setIsEditing] = useState(false);
 	const [uploading, setUploading] = useState(false);
 	const [username, setUsername] = useState(profile?.username || "");
+
+	// Local avatar preview during upload (before it hits Supabase)
 	const [selectedAvatarAsset, setSelectedAvatarAsset] =
 		useState<UploadAsset | null>(null);
+
+	// Key trick to force Image component to re-render when avatar changes
 	const [avatarKey, setAvatarKey] = useState(0);
 
 	const displayName = profile?.username || user?.email?.split("@")[0] || "User";
 
 	/**
 	 * Handle deep link edit mode (e.g. from other screens).
+	 * Automatically opens edit mode when ?edit=1 is in the URL.
 	 */
 	useFocusEffect(
 		useCallback(() => {
@@ -62,7 +68,7 @@ export default function Profile() {
 	);
 
 	/**
-	 * Reset form when exiting edit mode or profile updates.
+	 * Reset form when exiting edit mode or when profile data updates.
 	 */
 	useEffect(() => {
 		if (!isEditing) {
@@ -72,7 +78,8 @@ export default function Profile() {
 	}, [profile?.username, isEditing]);
 
 	/**
-	 * Pick and preview new avatar.
+	 * Pick and preview new avatar from device gallery.
+	 * Uses expo-image-picker with square crop and moderate quality.
 	 */
 	const handlePickImage = async () => {
 		const result = await ImagePicker.launchImageLibraryAsync({
@@ -97,6 +104,10 @@ export default function Profile() {
 
 	/**
 	 * Save username and/or avatar changes.
+	 *
+	 * 1. If a new avatar was picked, upload it first and get the public URL.
+	 * 2. Then update the profile with new username + avatar_url.
+	 * 3. Refresh the avatar image and exit edit mode.
 	 */
 	const saveChanges = async () => {
 		if (!user?.id) return;
@@ -135,7 +146,7 @@ export default function Profile() {
 	};
 
 	/**
-	 * Cancel editing and reset form.
+	 * Cancel editing and reset form to original values.
 	 */
 	const discardChanges = () => {
 		setUsername(profile?.username || "");
@@ -145,7 +156,7 @@ export default function Profile() {
 	};
 
 	/**
-	 * Display either selected preview or current avatar.
+	 * Display either the newly selected preview or the current stored avatar.
 	 */
 	const displayedAvatarUrl = selectedAvatarAsset
 		? selectedAvatarAsset.uri
@@ -154,7 +165,7 @@ export default function Profile() {
 	return (
 		<SafeAreaView className="flex-1 bg-zinc-950" edges={["top"]}>
 			<TabScreen title="Profile" subtitle="Your Account">
-				{/* Profile Picture */}
+				{/* Profile Picture Section */}
 				<View className="items-center mt-8 mb-10">
 					<TouchableOpacity
 						onPress={isEditing ? handlePickImage : undefined}
@@ -176,6 +187,7 @@ export default function Profile() {
 								</View>
 							)}
 
+							{/* Overlay loading spinner while uploading */}
 							{uploading && (
 								<View className="absolute inset-0 bg-black/60 items-center justify-center">
 									<ActivityIndicator size="large" color={accent.hex500} />
@@ -184,6 +196,7 @@ export default function Profile() {
 						</View>
 					</TouchableOpacity>
 
+					{/* "Change Picture" link only visible in edit mode */}
 					{isEditing && (
 						<TouchableOpacity
 							onPress={handlePickImage}
@@ -197,7 +210,7 @@ export default function Profile() {
 					)}
 				</View>
 
-				{/* Username */}
+				{/* Username Section */}
 				<View className="bg-zinc-900 rounded-3xl p-6 mb-6">
 					<Text className="text-zinc-400 text-sm mb-2">Username</Text>
 					{isEditing ? (
@@ -214,7 +227,7 @@ export default function Profile() {
 					)}
 				</View>
 
-				{/* Join Date */}
+				{/* Join Date Section (read-only) */}
 				<View className="bg-zinc-900 rounded-3xl p-6 mb-10">
 					<Text className="text-zinc-400 text-sm">Member Since</Text>
 					<Text className="text-white text-xl">
@@ -228,7 +241,7 @@ export default function Profile() {
 					</Text>
 				</View>
 
-				{/* Placeholder sections */}
+				{/* Placeholder sections for future features */}
 				<View className="mb-10">
 					<Text className="text-zinc-400 text-lg font-semibold mb-5">
 						Achievements
@@ -247,7 +260,7 @@ export default function Profile() {
 					</Text>
 				</View>
 
-				{/* Action Buttons */}
+				{/* Action Buttons - different set depending on edit/view mode */}
 				<View className="gap-4">
 					{isEditing ? (
 						<>

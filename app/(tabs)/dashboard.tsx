@@ -26,39 +26,46 @@ import { Text, View } from "react-native";
 export default function Dashboard() {
 	return (
 		<SafeAreaView className="flex-1 bg-zinc-950" edges={["top"]}>
+			{/* Keep the status bar light on this dark screen */}
 			<StatusBar style="light" />
 
 			<TabScreen
 				title="FitForge"
 				subtitle="Welcome back" // We can make this dynamic later
 			>
+				{/* Top streak widget - always visible at the top */}
 				<StreakWidget />
 
-				{/* Monthly Stats Section */}
+				{/* Monthly Stats Section - grouped overview cards */}
 				<View className="my-8">
 					<Text className="text-zinc-400 text-lg font-semibold mb-6">
 						This Month Overview
 					</Text>
 
+					{/* First row of two widgets side by side */}
 					<View className="flex-row gap-2 mb-2">
 						<DaysTrainedWidget />
 						<WorkoutsLoggedWidget />
 					</View>
 
+					{/* Second row of two widgets side by side */}
 					<View className="flex-row gap-2 mb-2">
 						<CaloriesBurnedWidget />
 						<TotalSetsWidget />
 					</View>
 
+					{/* Full-width total volume widget */}
 					<TotalVolumeWidget />
 				</View>
 
+				{/* Weekly volume chart widget */}
 				<WeeklyVolumeWidget />
 
+				{/* Quick log floating action widget */}
 				<QuickLogWidget />
 			</TabScreen>
 
-			{/* Hidden drawer */}
+			{/* Hidden drawer (currently not interactive - placeholder) */}
 			<NavDrawer isOpen={false} onClose={() => {}} />
 		</SafeAreaView>
 	);

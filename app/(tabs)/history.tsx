@@ -1,8 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from "@react-navigation/native";
-import { useCallback, useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
-
 import TabScreen from "@/components/layout/TabScreen";
 import ModalView from "@/components/ui/ModalView";
 import { useAlert } from "@/context/AlertContext";
@@ -12,6 +7,10 @@ import { useAccent } from "@/hooks/useAccent";
 import { fetchWorkouts } from "@/lib/supabaseQueries";
 import type { Workout, WorkoutExercise, WorkoutSet } from "@/types";
 import { getErrorMessage } from "@/utils/getError";
+import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback, useState } from "react";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
@@ -24,6 +23,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
  * - Unit conversion based on user preference (kg/lb)
  */
 export default function History() {
+	// Pull auth data and user profile (for units)
 	const { user, profile } = useAuth();
 	const { showAlert } = useAlert();
 	const accent = useAccent();
@@ -32,6 +32,7 @@ export default function History() {
 	const userUnit = (profile?.units as "kg" | "lb") ?? "kg";
 	const unitLabel = getUnitLabel(userUnit);
 
+	// State for the list of past workouts
 	const [workouts, setWorkouts] = useState<Workout[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
@@ -46,7 +47,7 @@ export default function History() {
 	);
 
 	/**
-	 * Load all workouts for the current user.
+	 * Load all workouts for the current user from Supabase.
 	 */
 	const loadWorkouts = useCallback(async () => {
 		if (!user?.id) return;
@@ -74,12 +75,14 @@ export default function History() {
 	return (
 		<SafeAreaView className="flex-1 bg-zinc-950" edges={["top"]}>
 			<TabScreen title="History" subtitle="Past Workouts">
+				{/* Main scrollable list of workout cards */}
 				<ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
 					{loading ? (
 						<Text className="text-zinc-400 text-center py-12">
 							Loading workouts...
 						</Text>
 					) : workouts.length === 0 ? (
+						/* Empty state when user has no logged workouts yet */
 						<View className="items-center justify-center py-20 min-h-[500px]">
 							<Ionicons name="calendar-outline" size={80} color="#3f3f46" />
 							<Text className="text-zinc-400 text-2xl font-semibold mt-8">
@@ -90,6 +93,7 @@ export default function History() {
 							</Text>
 						</View>
 					) : (
+						/* Map over workouts and render a card for each one */
 						workouts.map((workout) => {
 							const totalVolumeConverted = convertWeight(
 								workout.total_volume || 0,
@@ -111,6 +115,7 @@ export default function History() {
 							});
 
 							return (
+								/* Tappable workout summary card */
 								<TouchableOpacity
 									key={workout.id}
 									onPress={() => openWorkoutDetail(workout)}
@@ -142,13 +147,14 @@ export default function History() {
 					)}
 				</ScrollView>
 
-				{/* Workout Detail Modal */}
+				{/* Workout Detail Modal - shows when a workout card is tapped */}
 				<ModalView
 					visible={!!selectedWorkout}
 					onRequestClose={closeDetail}
 					width="90%"
 					height="70%"
 				>
+					{/* Modal header with full date + time */}
 					<Text className="text-white text-2xl font-bold mb-6">
 						{selectedWorkout &&
 							new Date(selectedWorkout.date).toLocaleDateString("en-US", {
@@ -165,6 +171,7 @@ export default function History() {
 							})}
 					</Text>
 
+					{/* Scrollable list of exercises inside the modal */}
 					<ScrollView
 						className="flex-1 -mx-1 px-1"
 						showsVerticalScrollIndicator={false}
@@ -172,6 +179,7 @@ export default function History() {
 					>
 						{selectedWorkout?.exercises?.map(
 							(ex: WorkoutExercise, idx: number) => (
+								/* One card per exercise with its sets */
 								<View key={idx} className="mb-6 bg-zinc-800 rounded-2xl p-5">
 									<Text
 										className={`${accent.text400} font-semibold text-lg mb-3`}
@@ -200,6 +208,7 @@ export default function History() {
 						)}
 					</ScrollView>
 
+					{/* Fixed close button at the bottom of the modal */}
 					<TouchableOpacity
 						onPress={closeDetail}
 						className="bg-zinc-700 py-4 rounded-2xl mt-4"

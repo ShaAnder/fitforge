@@ -42,6 +42,7 @@ export default function TabLayout() {
 						tabBarInactiveTintColor: "#a1a1aa",
 					}}
 				>
+					{/* Dashboard tab */}
 					<Tabs.Screen
 						name="dashboard"
 						options={{
@@ -51,6 +52,7 @@ export default function TabLayout() {
 						}}
 					/>
 
+					{/* Exercise Library tab */}
 					<Tabs.Screen
 						name="library"
 						options={{
@@ -60,7 +62,7 @@ export default function TabLayout() {
 						}}
 					/>
 
-					{/* Custom floating "Log Workout" button */}
+					{/* Custom floating "Log Workout" button in the center */}
 					<Tabs.Screen
 						name="log-workout"
 						options={{
@@ -82,6 +84,7 @@ export default function TabLayout() {
 						}}
 					/>
 
+					{/* History tab */}
 					<Tabs.Screen
 						name="history"
 						options={{
@@ -91,7 +94,7 @@ export default function TabLayout() {
 						}}
 					/>
 
-					{/* More button - triggers custom drawer instead of normal tab */}
+					{/* More button - triggers custom drawer instead of normal tab navigation */}
 					<Tabs.Screen
 						name="more"
 						options={{
@@ -107,7 +110,7 @@ export default function TabLayout() {
 						}}
 					/>
 
-					{/* Hidden screens - not shown in tab bar */}
+					{/* Hidden screens - not shown in tab bar (accessed via navigation) */}
 					<Tabs.Screen name="index" options={{ href: null }} />
 					<Tabs.Screen name="profile" options={{ href: null }} />
 					<Tabs.Screen name="privacy" options={{ href: null }} />
@@ -118,14 +121,14 @@ export default function TabLayout() {
 					<Tabs.Screen name="community" options={{ href: null }} />
 				</Tabs>
 
-				{/* Slide-up Modal Drawer */}
+				{/* Slide-up Modal Drawer for "More" options */}
 				<Modal
 					visible={drawerVisible}
 					animationType="slide"
 					transparent
 					onRequestClose={() => setDrawerVisible(false)}
 				>
-					{/* Background overlay - tap to close */}
+					{/* Background overlay - tap anywhere to close the drawer */}
 					<Pressable
 						className="flex-1 bg-black/70 justify-end"
 						onPress={() => setDrawerVisible(false)}
