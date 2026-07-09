@@ -29,31 +29,32 @@ export default function Button({
 }: ButtonProps) {
 	const accent = useAccent();
 
-	// Base styles shared by all button variants
+	// base styles that every button variant shares
 	const baseStyle =
 		"flex-row items-center justify-center rounded-3xl active:opacity-90";
 
-	// Visual style per variant
+	// different visual styles depending on the variant chosen
 	const variantStyles = {
 		primary: `${accent.bg500} ${accent.bg600Active}`,
 		secondary: "bg-zinc-800 active:bg-zinc-700",
 		outline: "border border-zinc-700 bg-transparent active:bg-zinc-900",
 	};
 
-	// Size-specific padding
+	// padding changes based on size
 	const sizeStyles = {
 		small: "py-3 px-5",
 		medium: "py-4 px-6",
 		large: "py-6 px-8",
 	};
 
-	// Text sizing based on button size
+	// text size also scales with button size
 	const textSize = {
 		small: "text-sm",
 		medium: "text-base",
 		large: "text-xl",
 	}[size];
 
+	// primary buttons use black text, everything else uses white
 	const textColor = variant === "primary" ? "text-black" : "text-white";
 	const iconColor = variant === "primary" ? "#000" : "#fff";
 	const iconSize = size === "large" ? 24 : 20;
@@ -63,7 +64,7 @@ export default function Button({
 			className={`${baseStyle} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
 			{...props}
 		>
-			{/* Left Icon (if provided) */}
+			{/* show icon on the left if provided and iconPosition is left */}
 			{icon && iconPosition === "left" && (
 				<Ionicons
 					name={icon}
@@ -73,10 +74,10 @@ export default function Button({
 				/>
 			)}
 
-			{/* Button Text */}
+			{/* the actual button label */}
 			<Text className={`font-semibold ${textColor} ${textSize}`}>{title}</Text>
 
-			{/* Right Icon (if provided) */}
+			{/* show icon on the right if provided and iconPosition is right */}
 			{icon && iconPosition === "right" && (
 				<Ionicons
 					name={icon}

@@ -7,11 +7,22 @@ interface PreferencesCardProps {
 	updateProfile: (data: Partial<Profile>) => Promise<void>;
 }
 
-export function PreferencesCard({ profile, updateProfile }: PreferencesCardProps) {
+/**
+ * PreferencesCard Component
+ *
+ * Lets the user choose their preferred units (kg/lb)
+ * and which day the week should start on (Monday or Sunday).
+ * Both choices are saved directly to the profile.
+ */
+export function PreferencesCard({
+	profile,
+	updateProfile,
+}: PreferencesCardProps) {
 	return (
 		<Card className="p-6">
 			<Text className="text-zinc-400 text-sm mb-4">Preferences</Text>
 
+			{/* Units section */}
 			<Text className="text-white text-base font-semibold mb-3">Units</Text>
 			<View className="flex-row gap-3">
 				{(["kg", "lb"] as const).map((u) => {
@@ -26,7 +37,9 @@ export function PreferencesCard({ profile, updateProfile }: PreferencesCardProps
 									: "bg-zinc-900 border-zinc-800"
 							}`}
 						>
-							<Text className="text-white font-semibold">{u.toUpperCase()}</Text>
+							<Text className="text-white font-semibold">
+								{u.toUpperCase()}
+							</Text>
 						</TouchableOpacity>
 					);
 				})}
@@ -34,6 +47,7 @@ export function PreferencesCard({ profile, updateProfile }: PreferencesCardProps
 
 			<View className="h-px bg-zinc-800 my-5" />
 
+			{/* Week start section */}
 			<Text className="text-white text-base font-semibold mb-3">
 				Week starts on
 			</Text>

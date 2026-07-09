@@ -11,6 +11,7 @@ import { View } from "react-native";
  *
  * Includes basic client-side validation and uses the shared AuthContext
  * for actual registration logic.
+ * Reuses AuthForm, AuthHeader, and AuthLink for consistent auth UI.
  */
 export default function Signup() {
 	const [email, setEmail] = useState("");
@@ -29,6 +30,7 @@ export default function Signup() {
 	 * redirect the user to the login screen.
 	 */
 	const handleSignup = async () => {
+		// Basic client-side checks — more robust validation can live in AuthContext if needed
 		if (!email || !password || !confirmPassword) return;
 		if (password !== confirmPassword) return;
 		if (password.length < 6) return;
@@ -46,6 +48,7 @@ export default function Signup() {
 	};
 
 	// Form fields configuration for the reusable AuthForm component
+	// Each object describes one input and how it connects to local state
 	const signupFields = [
 		{
 			name: "email",

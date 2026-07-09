@@ -12,6 +12,8 @@ import { useAccent } from "@/hooks/useAccent";
  * - Just filename (e.g. "user123.jpg")
  * - "avatars/..." path
  * - Full storage URL
+ *
+ * This keeps avatar display robust even if the stored value format changes over time.
  */
 export function resolveAvatarUrl(
 	avatarUrl: string | null | undefined,
@@ -21,7 +23,7 @@ export function resolveAvatarUrl(
 	const trimmed = avatarUrl.trim();
 	if (!trimmed || trimmed.toLowerCase() === "null") return null;
 
-	// Already a full remote URL
+	// Already a full remote URL — nothing to do
 	if (/^https?:\/\//i.test(trimmed)) return trimmed;
 
 	const supabaseUrl = (process.env.EXPO_PUBLIC_SUPABASE_URL ?? "").replace(
@@ -38,6 +40,7 @@ export function resolveAvatarUrl(
 	);
 	objectPath = objectPath.replace(/^avatars\//i, "");
 
+	// Encode each path segment safely (handles spaces or special chars in filenames)
 	const encoded = objectPath
 		.split("/")
 		.filter(Boolean)
@@ -63,6 +66,7 @@ interface AvatarProps {
  *
  * Displays user profile picture with fallback to default icon.
  * Supports local preview (during upload) and live refresh when profile updates.
+ * Can be made tappable by passing an onPress handler.
  */
 export default function Avatar({
 	size = 56,
@@ -76,6 +80,7 @@ export default function Avatar({
 	const { profile } = useAuth();
 
 	// Force Image re-render when avatar URL changes
+	// Incrementing the key tells React to treat it as a brand new Image component
 	const [avatarKey, setAvatarKey] = useState(0);
 
 	useEffect(() => {
@@ -83,6 +88,7 @@ export default function Avatar({
 	}, [profile?.avatar_url]);
 
 	// Prefer local preview (during upload) over stored URL
+	// This gives instant feedback while the upload is still in progress
 	const avatarUrl = localUri ? localUri : resolveAvatarUrl(profile?.avatar_url);
 
 	const Inner = (
@@ -105,7 +111,7 @@ export default function Avatar({
 					resizeMode="cover"
 				/>
 			) : (
-				/* Default avatar icon */
+				/* Default avatar icon when no image is available */
 				<View className="flex-1 items-center justify-center bg-zinc-800">
 					<Ionicons
 						name="person-circle-outline"

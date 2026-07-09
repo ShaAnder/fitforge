@@ -1,16 +1,28 @@
 import Button from "@/components/ui/Button";
 import ModalView from "@/components/ui/ModalView";
+import { useChangePassword } from "@/hooks/useChangePassword";
+import { useDeleteAccount } from "@/hooks/useDeleteAccount";
+import { useReminderSettings } from "@/hooks/useReminderSettings";
 import { Text, TextInput, View } from "react-native";
-import { useChangePassword } from "../hooks/useChangePassword";
-import { useDeleteAccount } from "../hooks/useDeleteAccount";
-import { useReminderSettings } from "../hooks/useReminderSettings";
-
-// ─── Reminder Time Modal ──────────────────────────────────────────────────────
 
 interface ReminderTimeModalProps {
 	reminder: ReturnType<typeof useReminderSettings>;
 }
 
+interface ChangePasswordModalProps {
+	password: ReturnType<typeof useChangePassword>;
+}
+
+interface DeleteAccountModalProps {
+	deleteAccount: ReturnType<typeof useDeleteAccount>;
+}
+
+/**
+ * ReminderTimeModal
+ *
+ * Modal that lets the user pick a new time for their daily reminder.
+ * Uses two big TextInputs for hour and minute.
+ */
 export function ReminderTimeModal({ reminder }: ReminderTimeModalProps) {
 	return (
 		<ModalView
@@ -26,6 +38,7 @@ export function ReminderTimeModal({ reminder }: ReminderTimeModalProps) {
 					When should we send the daily reminder?
 				</Text>
 
+				{/* hour and minute inputs side by side */}
 				<View className="flex-row items-center justify-center gap-6">
 					<TextInput
 						className="bg-zinc-900 text-white text-6xl font-semibold text-center rounded-3xl w-36 border-2 border-zinc-700 focus:border-accent-500"
@@ -60,6 +73,7 @@ export function ReminderTimeModal({ reminder }: ReminderTimeModalProps) {
 
 				<View className="flex-1" />
 
+				{/* Cancel and Save buttons at the bottom */}
 				<View className="flex-row gap-4 pb-8">
 					<View className="flex-1">
 						<Button
@@ -83,12 +97,12 @@ export function ReminderTimeModal({ reminder }: ReminderTimeModalProps) {
 	);
 }
 
-// ─── Change Password Modal ────────────────────────────────────────────────────
-
-interface ChangePasswordModalProps {
-	password: ReturnType<typeof useChangePassword>;
-}
-
+/**
+ * ChangePasswordModal
+ *
+ * Modal for changing the user's password.
+ * Has two secure inputs (new password + confirm) and a loading state on submit.
+ */
 export function ChangePasswordModal({ password }: ChangePasswordModalProps) {
 	return (
 		<ModalView
@@ -132,6 +146,7 @@ export function ChangePasswordModal({ password }: ChangePasswordModalProps) {
 
 				<View className="flex-1" />
 
+				{/* Confirm and Cancel buttons with loading state */}
 				<View className="flex-row gap-3">
 					<View className="flex-1">
 						<Button
@@ -157,12 +172,13 @@ export function ChangePasswordModal({ password }: ChangePasswordModalProps) {
 	);
 }
 
-// ─── Delete Account Modal ─────────────────────────────────────────────────────
-
-interface DeleteAccountModalProps {
-	deleteAccount: ReturnType<typeof useDeleteAccount>;
-}
-
+/**
+ * DeleteAccountModal
+ *
+ * Two-step modal for deleting the account.
+ * Step 1: confirm email
+ * Step 2: enter password to confirm deletion
+ */
 export function DeleteAccountModal({ deleteAccount }: DeleteAccountModalProps) {
 	return (
 		<ModalView
@@ -171,14 +187,15 @@ export function DeleteAccountModal({ deleteAccount }: DeleteAccountModalProps) {
 			height="40%"
 		>
 			<View className="flex-1">
+				{/* STEP 1: confirm email */}
 				{deleteAccount.step === 1 && (
 					<>
 						<Text className="text-white text-3xl font-bold mb-3">
 							Delete Account
 						</Text>
 						<Text className="text-red-400 text-lg mb-8">
-							This action is irreversible and will permanently delete your account
-							and all your data.
+							This action is irreversible and will permanently delete your
+							account and all your data.
 						</Text>
 
 						<Text className="text-zinc-400 text-lg mb-2 ml-1">
@@ -221,6 +238,7 @@ export function DeleteAccountModal({ deleteAccount }: DeleteAccountModalProps) {
 					</>
 				)}
 
+				{/* STEP 2: confirm with password */}
 				{deleteAccount.step === 2 && (
 					<>
 						<Text className="text-white text-3xl font-bold mb-3">
@@ -248,7 +266,9 @@ export function DeleteAccountModal({ deleteAccount }: DeleteAccountModalProps) {
 						<View className="flex-row gap-3">
 							<View className="flex-1">
 								<Button
-									title={deleteAccount.loading ? "Deleting Account..." : "Confirm"}
+									title={
+										deleteAccount.loading ? "Deleting Account..." : "Confirm"
+									}
 									size="large"
 									variant="primary"
 									onPress={deleteAccount.submit}

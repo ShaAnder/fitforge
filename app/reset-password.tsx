@@ -14,6 +14,7 @@ import { View } from "react-native";
  *
  * Called after user clicks the password reset link from their email.
  * Handles token exchange and password update via Supabase Auth.
+ * Forces re-login after successful reset for security.
  */
 export default function ResetPassword() {
 	const [password, setPassword] = useState("");
@@ -50,6 +51,7 @@ export default function ResetPassword() {
 
 		try {
 			// Exchange reset tokens for a valid session
+			// This is required before we can update the password
 			if (access_token && refresh_token) {
 				await supabase.auth.setSession({
 					access_token: access_token as string,
@@ -61,6 +63,7 @@ export default function ResetPassword() {
 			if (error) throw error;
 
 			// Sign out so user must log in with new password
+			// This is a security best practice after password reset
 			await supabase.auth.signOut();
 
 			// Small delay for better UX before redirect

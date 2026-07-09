@@ -39,6 +39,7 @@ export default function ResendVerification() {
 				email: email.trim(),
 				options: {
 					// Custom redirect URL for email verification on web
+					// This points to a static HTML page that handles the deep link
 					emailRedirectTo:
 						"https://shaander.github.io/fitforge/web-redirect-verify.html",
 				},

@@ -10,6 +10,16 @@ interface NotificationsCardProps {
 	profile: Profile | null;
 }
 
+interface ReminderRowProps {
+	reminderKey: "workout" | "streak";
+	enabled: boolean;
+	time: string;
+	loading: boolean;
+	accentHex: string;
+	onSetTime: () => void;
+	onToggle: (value: boolean) => void;
+}
+
 export function NotificationsCard({
 	reminder,
 	profile,
@@ -55,16 +65,6 @@ export function NotificationsCard({
 			/>
 		</Card>
 	);
-}
-
-interface ReminderRowProps {
-	reminderKey: "workout" | "streak";
-	enabled: boolean;
-	time: string;
-	loading: boolean;
-	accentHex: string;
-	onSetTime: () => void;
-	onToggle: (value: boolean) => void;
 }
 
 function ReminderRow({

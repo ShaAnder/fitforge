@@ -11,14 +11,23 @@ interface WeeklyVolumeChartProps {
 
 /**
  * Weekly Volume Chart Component.
- * Uses react-native-gifted-charts to display weekly lifting volume.
+ *
+ * Displays a bar chart of weekly lifting volume using react-native-gifted-charts.
+ * Dynamically sizes bars based on screen width so it looks good on any device.
+ * Handles the case where container width isn't known yet on first render.
  */
 export default function WeeklyVolumeChart({
 	chartData,
 }: WeeklyVolumeChartProps) {
+	// Track the actual rendered width of the container
+	// We measure it on first layout because we need real pixel values for bar sizing
 	const [containerWidth, setContainerWidth] = useState<number>(0);
+
+	// Pull the user's chosen accent color for the bars
 	const accent = useAccent();
 
+	// While we don't know the container width yet, render an empty placeholder
+	// The onLayout callback will fire and give us the real width on next render
 	if (containerWidth === 0) {
 		return (
 			<View
@@ -28,13 +37,20 @@ export default function WeeklyVolumeChart({
 		);
 	}
 
+	// Find the highest value in the data so we can set a sensible max on the Y axis
 	const maxValue = Math.max(...chartData.map((item) => item.value), 100);
+
+	// Round the max up to the nearest 50 so the chart doesn't look cramped
 	const roundedMax = Math.ceil(maxValue / 50) * 50;
 
+	// Calculate available space for bars after accounting for side padding
 	const horizontalPadding = containerWidth * 0.05;
 	const availableWidth = containerWidth - horizontalPadding * 2;
 
+	// Use tighter spacing on smaller screens, wider on larger ones
 	const spacing = containerWidth > 420 ? 24 : 14;
+
+	// Calculate bar width so bars fill the available space nicely without overflowing
 	const barWidth = Math.max(
 		26,
 		(availableWidth - spacing * (chartData.length - 1)) / chartData.length,
@@ -46,6 +62,7 @@ export default function WeeklyVolumeChart({
 			style={{ marginLeft: spacing }}
 		>
 			<BarChart
+				// Transform our WeeklyVolumeItem data into the shape the chart expects
 				data={chartData.map((item) => ({
 					value: item.value,
 					label: item.label || item.day || "",

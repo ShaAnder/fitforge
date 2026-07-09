@@ -15,6 +15,7 @@ interface HeaderProps {
  *
  * Used across tab screens to provide consistent branding,
  * dynamic subtitle, and quick access to the profile.
+ * Keeps the top of every tab screen looking the same.
  */
 export default function Header({
 	title = "FitForge",
@@ -43,6 +44,7 @@ export default function Header({
 				</View>
 
 				{/* RIGHT SIDE: Profile Avatar */}
+				{/* Falls back to navigating to profile if no onProfilePress handler is passed */}
 				<Avatar
 					size={56}
 					onPress={onProfilePress ?? (() => router.push("/(tabs)/profile"))}

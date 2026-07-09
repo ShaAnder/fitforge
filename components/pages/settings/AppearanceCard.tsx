@@ -8,17 +8,30 @@ interface AppearanceCardProps {
 	updateProfile: (data: Partial<Profile>) => Promise<void>;
 }
 
-export function AppearanceCard({ profile, updateProfile }: AppearanceCardProps) {
+/**
+ * AppearanceCard Component
+ *
+ * Lets the user pick their accent color.
+ * Shows a row of color circles and updates the profile when one is tapped.
+ */
+export function AppearanceCard({
+	profile,
+	updateProfile,
+}: AppearanceCardProps) {
+	// get the current accent preset based on what's saved in the profile
 	const accentPreset = getAccentPreset(profile?.accent);
 	const currentAccent = accentPreset.key;
 
 	const setAccent = async (key: AccentKey) => {
+		// update the profile with the new accent key
 		await updateProfile({ accent: key });
 	};
 
 	return (
 		<Card className="p-6">
 			<Text className="text-zinc-400 text-sm mb-4">Appearance</Text>
+
+			{/* horizontal row of color swatches */}
 			<View className="flex-row items-center justify-between">
 				{ACCENT_LIST.map((a) => {
 					const selected = currentAccent === a.key;
@@ -32,6 +45,7 @@ export function AppearanceCard({ profile, updateProfile }: AppearanceCardProps) 
 								height: 34,
 								borderRadius: 999,
 								backgroundColor: a.hex500,
+								// show a white border when this color is currently selected
 								borderWidth: selected ? 3 : 0,
 								borderColor: selected ? "#fff" : "transparent",
 							}}

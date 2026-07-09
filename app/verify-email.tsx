@@ -12,6 +12,7 @@ import { ActivityIndicator, Text, View } from "react-native";
  *
  * This screen is opened via the magic link from Supabase's email verification.
  * It exchanges the tokens, verifies the account, and redirects the user.
+ * Runs automatically on mount — no user interaction needed.
  */
 export default function VerifyEmail() {
 	const router = useRouter();
@@ -35,6 +36,7 @@ export default function VerifyEmail() {
 					const supabase = getSupabase();
 
 					// Exchange verification tokens for a valid session
+					// This is what actually marks the email as verified
 					await supabase.auth.setSession({
 						access_token: access_token as string,
 						refresh_token: refresh_token as string,
@@ -42,10 +44,10 @@ export default function VerifyEmail() {
 
 					showAlert("Account Verified", "Welcome to FitForge!", "success");
 
-					// Go straight to the main app
+					// Go straight to the main app (replace so user can't go back)
 					router.replace("/(tabs)/dashboard");
 				} else {
-					// Missing tokens → invalid link
+					// Missing tokens → invalid or expired link
 					router.replace("/login");
 				}
 			} catch (err: unknown) {
