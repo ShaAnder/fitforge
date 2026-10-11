@@ -1,461 +1,137 @@
-# FitForge
+# FitForge 🏋️
 
-![FitForge](assets/images/icon.png)
+**A mobile-first workout tracker built with React Native, Expo, TypeScript and Supabase.**
 
-**FitForge** is a cross-platform fitness tracking mobile app built with Expo and
-React Native. It delivers fast workout logging, meaningful analytics, secure
-Supabase-backed authentication, and a polished boot experience that keeps the
-splash screen visible until the entire app (auth + data) is ready.
+FitForge focuses on straightforward workout logging, training history, progress summaries and a customizable mobile experience. It is also a portfolio project exploring authentication, async data flows, reusable UI, automated testing and native-platform debugging.
 
----
+[![Android APK](https://img.shields.io/badge/Android-Download%20APK-3DDC84?logo=android&logoColor=white)](https://github.com/ShaAnder/fitforge/releases/tag/v0.3)
+[![Release](https://img.shields.io/badge/Release-v0.3-blue)](https://github.com/ShaAnder/fitforge/releases/tag/v0.3)
+[![Source](https://img.shields.io/badge/Source-GitHub-181717?logo=github)](https://github.com/ShaAnder/fitforge)
 
-## Contents
+> **Try it:** Download the **v0.3 Android APK** from [GitHub Releases](https://github.com/ShaAnder/fitforge/releases/tag/v0.3). This is an Android app, **not a supported browser demo**. Release v0.3 is currently marked **pre-release** on GitHub. The developer reports testing this APK successfully; compatibility with every device/emulator is not guaranteed.
 
-- [Project Objectives](#project-objectives)
-- [User Experience](#user-experience)
-- [Flow Notes](#flow-notes)
-- [Key Design & Architecture Choices](#key-design--architecture-choices)
-- [Features](#features)
-- [Testing](#testing)
-- [Challenges](#challenges)
-- [Project Structure](#project-structure)
-- [Technologies Used](#technologies-used)
-- [Setup & Local Development](#setup--local-development)
-- [Deployment Notes](#deployment-notes)
-- [Future Enhancements](#future-enhancements)
-- [Credits](#credits)
-- [License](#license)
+## 📱 Install and try FitForge
 
----
+### Option A — Physical Android device (recommended)
 
-## Project Objectives
+1. Visit [FitForge v0.3 on GitHub Releases](https://github.com/ShaAnder/fitforge/releases/tag/v0.3).
+2. Expand **Assets** and download the `.apk` file.
+3. Open the downloaded APK on your Android device and follow Android's installation prompts. You may need to allow installation from the app you used to open the APK.
+4. Launch FitForge and follow the on-screen sign-up/sign-in flow.
 
-This project was built as a **portfolio showcase** to demonstrate
-production-grade React Native development:
+**Security note:** Only download the APK from this repository's official GitHub Release. Android may warn that a sideloaded app did not come from the Play Store; review the source and permissions before choosing to install.
 
-- Clean architecture with separated concerns (contexts, helpers, lib,
-  components)
-- Robust authentication + data bootstrapping flow
-- Testable business logic (dashboard math, unit conversion, Supabase wrappers)
-- Stable, memoized context providers to prevent render loops and performance
-  issues
-- Professional error handling, loading states, and user feedback via global
-  alerts
-- Reusable, accessible UI components with consistent theming (accent system)
+### Option B — Android emulator
 
----
+1. Start an Android emulator (for example, through Android Studio).
+2. Download the v0.3 APK and install it in the emulator. Dragging the APK onto a running emulator may work; alternatively use `adb install path/to/file.apk`.
+3. Launch FitForge from the emulator's app launcher.
+4. For email verification, password reset or other authentication links, **open the URL inside the emulator's own browser** when testing the emulator installation.
 
-## User Experience
+**Why the redirect matters:** If an authentication email opens a link in your computer's desktop browser, the desktop cannot necessarily hand the deep link back to the app running in the emulator. Opening the link in the emulator browser keeps the link handling in the same Android environment. Redirect behavior can vary by email provider, browser and device configuration.
 
-### Target Audience
+### Current testing limitations
 
-Fitness enthusiasts who want a **simple, fast, and beautiful** workout logger
-without bloat. Also built to impress recruiters and technical evaluators.
+- **Android APK:** Available in Release v0.3; developer-tested and reported working.
+- **Android emulator:** A supported way to evaluate the APK, but you may need to handle auth URLs manually as described above.
+- **Desktop/web:** Not an available portfolio demo. Although the Expo project includes web tooling, the browser version is **not currently confirmed functional or supported**.
+- **iOS:** Source includes Expo/iOS tooling; no public iOS installable release is linked here.
 
-### Core User Flows
+## What you can explore
 
-- **Onboarding**: Secure email/password signup → email verification → login
-- **Daily Use**: Quick workout logging → instant dashboard refresh
-- **Review**: History, streak tracking, weekly volume charts, progress cards
-- **Customization**: Profile, accent color picker, unit preference (kg/lbs),
-  notifications
-- **Support**: Bug reporting, privacy/terms, community placeholder
+- **Authentication:** Email/password sign-up and sign-in, email verification, password-reset flow and session restoration.
+- **Workout logging:** Record exercises, sets, reps and weight; validate inputs before saving.
+- **Progress dashboard:** Workout counts, streaks, volume summaries and a weekly volume chart.
+- **Workout history and exercise library:** Review saved training sessions and browse exercises.
+- **Personalization:** Profile editing, avatar upload, kg/lb preferences and accent colors.
+- **Notifications and settings:** Reminder configuration and related native-platform integrations.
 
-### Boot Experience
+Some secondary screens (such as community and achievements) are **placeholders**, not completed social or achievement systems. Features depend on a working backend configuration and permissions.
 
-The native splash screen stays visible until:
+## Technology stack
 
-1. Expo Router is ready
-2. Supabase session is restored
-3. User profile + recent workouts are loaded
+| Area | Technology |
+| --- | --- |
+| Mobile UI and navigation | React Native, Expo, Expo Router, TypeScript |
+| Styling and interaction | NativeWind, React Native Reanimated |
+| Backend services | Supabase Auth, PostgreSQL, Storage |
+| Async data and forms | TanStack React Query, React Hook Form, Zod |
+| Device integrations | Expo Notifications, Expo Image Picker and linking APIs |
+| Tests | Jest, jest-expo, React Native Testing Library |
 
-This eliminates the common “flash of unauthenticated content” problem.
+## Engineering decisions
 
----
+### Session bootstrap and navigation
 
-## Flow Notes
+FitForge coordinates the persisted Supabase session, authentication listeners and user-profile loading during startup. The aim is to prevent protected screens appearing before the application knows the user's authentication state. Context providers expose shared state while keeping reusable domain and data-access logic separate.
 
-FitForge has a dedicated auth-flow explainer for studying and interview prep:
+### Data access and database security
 
-- [docs/auth-flow-notes.md](docs/auth-flow-notes.md)
+Query helpers in `lib/supabaseQueries.ts` centralize parts of the Supabase interaction and error handling. Authentication in the client is not itself an authorization boundary; access to user data and storage must also be enforced by backend/database policies. Avatar-storage policy SQL is documented in [`docs/storage-rls-policies.sql`](docs/storage-rls-policies.sql).
 
-This note covers:
+### Reusable UI and form handling
 
-- the cold-open auth bootstrap flow
-- why `AuthContext` uses two effects
-- what `authResolved`, `loading`, and `lastUserIdRef` protect
-- where the current race-condition protections are strong and where they can be improved
+Shared components, reusable hooks, context providers and validation keep screens smaller and help make flows easier to test. Expo Router organizes navigation through file-based routes.
 
----
+## Debugging examples
 
-## Key Design & Architecture Choices
+**Authentication and startup races:** The app needs to restore a session and load dependent profile data without allowing inconsistent UI or stale async work to control navigation. This prompted more careful coordination of auth state and startup loading.
 
-- **Dark-first UI** with dynamic accent colors (green default, changeable via
-  profile)
-- **Context-driven state**: `AuthContext`, `AlertContext`, `AccentContext`
-- **Stabilized providers**: `useCallback` + `useMemo` + `useRef` patterns to
-  prevent render loops (especially important in tests)
-- **Data Layer**: Clean wrappers in `lib/supabaseQueries.ts` with logging and
-  error handling
-- **Helpers**: Pure functions for dashboard calculations, unit conversion,
-  notifications
-- **Navigation**: Expo Router (file-based) + protected routes + custom tab bar
-  with center log button + slide-up drawer
-- **Theming**: NativeWind + accent system for consistent, swappable color
-  schemes
+**Avatar upload failures:** React Native file/blob handling and Supabase Storage authorization created intermittent upload errors. The implementation and supporting policy documentation address media transfer and per-user upload permissions. The relevant implementation can be inspected in [`lib/supabaseQueries.ts`](lib/supabaseQueries.ts).
 
----
-
-## Features
-
-### Authentication & Onboarding
-
-- Full email/password auth with Supabase
-- Email verification + resend flow
-- Password reset with deep linking support
-- Global `AlertContext` for consistent success/error messaging
-- Secure session restoration + real-time auth listener
-
-### Dashboard
-
-- Current streak counter
-- Monthly volume & workout count cards
-- Weekly volume bar chart (`WeeklyVolumeChart`)
-- Personalized greeting
-- Unit-aware display (kg ↔ lbs)
-
-### Workout Logging
-
-- Dynamic exercise slots
-- Set/reps/weight tracking
-- Exercise library integration
-- Validation before saving
-- Auto-refresh dashboard after logging
-
-### Additional Screens
-
-- **History** – Past workouts with filters
-- **Library** – Browse / search exercises
-- **Profile** – Edit details, avatar upload, accent picker
-- **Settings** – Units, notifications, bug report
-- **Report Bug**, Achievements, Community (placeholders)
-
-### Other Polish
-
-- Push notification setup (expo-notifications with safe fallbacks)
-- Avatar upload to Supabase Storage
-- Responsive cards, modals, progress bars, and loading states
-
----
+**Web versus mobile:** Native permissions, emulator deep links and device-specific APIs don't behave the same way as a desktop React app. The Android installation and redirect instructions above are part of the project's known testing constraints.
 
 ## Testing
 
-FitForge follows a **hybrid testing strategy** focused on critical logic and
-stability.
-
-### Covered Areas
-
-- Dashboard utilities (`dashboardUtils.ts`)
-- Unit conversion logic (`unitConverter.ts`)
-- Supabase query wrappers (`supabaseQueries.test.ts`)
-- `AuthContext` (bootstrap flow, loading states, error handling)
-- `AlertContext` & `AccentContext` stability
-- Core UI components (Button, LoadingScreen, CustomAlert, etc.)
-
-### Running Tests
+The repository includes Jest and React Native Testing Library coverage for utility logic, context behavior, data wrappers and components, as described in the existing project documentation. To run the locally available suite:
 
 ```bash
-npm test                    # Full suite
-npm test -- tests/context/AuthContext.test.tsx   # Single file
+npm install
+npm test
 ```
 
-## Challenges
+The presence of automated tests is not a claim that every feature or Android device has been covered; the packaged APK should also be tested on-device.
 
-This project encountered real-world integration and platform challenges during
-development. Addressing these helped harden the app and surface common pitfalls
-when building mobile apps with React Native + Supabase.
-
-- **First native app: web ≠ mobile** — Symptom: code patterns from web didn't
-  transfer directly; navigation felt clunky, contexts re-rendered excessively,
-  and platform-specific APIs (camera, notifications, permissions) required
-  special handling. Root cause: React Native has different lifecycle and
-  threading models; web idioms don't map 1:1 to mobile. Solution: adopted
-  memoization + `useCallback` + `useMemo` throughout contexts to prevent render
-  storms; used Expo modules (`expo-notifications`, `expo-image-picker`,
-  `expo-permissions`) for safe platform abstraction; learned to debug on both
-  Android emulator and physical device early.
-
-- **AuthContext: state management + bootstrap** — Symptom: the context needed to
-  handle sign-up, login, logout, password reset, email verification, and profile
-  data loading without triggering re-renders or race conditions. Root cause:
-  naive state management led to components rendering multiple times per second;
-  Supabase session changes, profile loads, and UI updates happened
-  asynchronously and out of order. Solution: stabilized the context with
-  `useCallback` for all listeners and state setters; kept only minimal state
-  (session, user, profile) in context and pushed helpers to separate hooks; used
-  a bootstrap sequence (restore session → load profile → mark ready) so the
-  splash screen stays visible until data is truly ready. See
-  [context/AuthContext.tsx](context/AuthContext.tsx).
-
-- **Learning Supabase from scratch** — Symptom: early integration attempts
-  didn't account for RLS policies, real-time subscriptions, and the difference
-  between the Supabase JS SDK (web-optimized) and React Native. Root cause:
-  Supabase documentation is web-centric; mobile environments have stricter
-  serialization, different permission models, and network timeouts. Solution:
-  built a query wrapper layer (`lib/supabaseQueries.ts`) to isolate Supabase
-  calls; applied RLS policies rigorously and tested each policy before moving
-  forward; documented storage bucket permissions in
-  [docs/storage-rls-policies.sql](docs/storage-rls-policies.sql); increased
-  request timeouts for mobile networks (60s vs web defaults); avoided Supabase
-  Storage SDK for uploads in favor of direct HTTP REST calls with bearer token
-  (more reliable in RN).
-
-- **Breaking up settings: context + hooks pattern** — Symptom: profile data
-  (units, notifications, accent color, name, email) lived in one giant context
-  that mixed UI state with data state. Root cause: no clear separation between
-  what belongs in global context (auth session, theme) and what belongs in local
-  component state or custom hooks. Solution: created dedicated contexts
-  (`AccentContext`, `AlertContext`) and custom hooks (`useAccent`,
-  `useReminderSettings`, `useProfilePreferences`) so each domain is
-  independently testable; moved profile mutations to query functions rather than
-  context methods, simplifying logic; contexts now only manage global settings
-  that multiple features need. This made testing easier and reduced context
-  churn.
-
-- **Avatar upload: serialization + RLS policy** — Symptom: image uploads failed
-  intermittently with "Aborted" or "Network request failed" when sending a
-  picked image from the app. Root cause: (1) React Native/SDK serialization
-  mismatch (raw ArrayBuffer didn't serialize reliably on RN) and (2) Storage RLS
-  policies blocked INSERTs for unauthorised object names. Fixes applied: fetch
-  the local file as a Blob and PUT it to Supabase Storage using the user's
-  access token; add Storage RLS SQL to allow authenticated users to upload files
-  whose names start with their user id; increase request timeout and reduce
-  client-side image quality to speed transfers. See
-  [lib/supabaseQueries.ts](lib/supabaseQueries.ts) and
-  [docs/storage-rls-policies.sql](docs/storage-rls-policies.sql).
-
-### Deep Dive: Avatar Upload Fix
-
-The avatar upload challenge involved multiple interconnected issues. Here's how
-I debugged and resolved it:
-
-**Steps taken:**
-
-1. Added targeted logging around the image picker, file read, and upload calls
-   to capture file sizes, MIME types, and HTTP responses.
-2. Reproduced the failure and identified that `ArrayBuffer` serialization was
-   unreliable in the RN environment; switching to a web-style `Blob` fixed
-   serialization for network transport.
-3. Verified auth was present and passed the existing `access_token` from
-   `AuthContext` to the uploader to avoid extra `getSession()` network calls.
-4. Applied a Storage RLS policy so authenticated users could INSERT objects
-   whose filenames began with their user id (SQL in
-   `docs/storage-rls-policies.sql`).
-5. Reduced image quality at selection and increased fetch timeout to 60s for
-   robustness on slow mobile networks.
-
-**Core code change** (from `lib/supabaseQueries.ts`):
-
-```ts
-// Read local file as a Blob
-const response = await fetch(asset.uri);
-if (!response.ok) throw new Error("Failed to read file");
-const blob = await response.blob();
-
-// Direct PUT to Supabase Storage REST endpoint using auth token
-const uploadUrl = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/storage/v1/object/avatars/${fileName}`;
-await fetch(uploadUrl, {
-	method: "PUT",
-	headers: {
-		"Content-Type": blob.type,
-		"Authorization": `Bearer ${accessToken}`,
-	},
-	body: blob,
-});
-```
-
-This combination fixed the abort/network errors and made uploads reliable.
-
-## Project Structure
-
-```txt
-fitforge/
-├── app.json
-├── babel.config.js
-├── eas.json
-├── expo-env.d.ts
-├── global.css
-├── jest.config.js
-├── jest.setup.js
-├── metro.config.js
-├── nativewind-env.d.ts
-├── package.json
-├── README.md
-├── tailwind.config.js
-├── tsconfig.json
-├── __mocks__/
-│   └── react-native-css-interop.js
-├── android/
-│   ├── build.gradle
-│   ├── gradle.properties
-│   ├── gradlew
-│   ├── gradlew.bat
-│   ├── settings.gradle
-│   └── app/
-│       ├── build.gradle
-│       └── src/
-├── app/
-│   ├── _layout.tsx
-│   ├── forgot-password.tsx
-│   ├── login.tsx
-│   ├── resend-verification.tsx
-│   ├── reset-password.tsx
-│   ├── signup.tsx
-│   ├── verify-email.tsx
-│   └── (tabs)/
-│       ├── _layout.tsx
-│       ├── achievements.tsx
-│       ├── community.tsx
-│       ├── dashboard.tsx
-│       ├── history.tsx
-│       ├── index.tsx
-│       ├── library.tsx
-│       ├── log-workout.tsx
-│       ├── more.tsx
-│       ├── privacy.tsx
-│       ├── profile.tsx
-│       ├── report-bug.tsx
-│       ├── settings.tsx
-│       └── tabs-specific files
-├── assets/
-│   ├── fonts/
-│   └── images/
-├── components/
-│   ├── __tests__/
-│   ├── common/
-│   │   ├── Avatar.tsx
-│   │   ├── Header.tsx
-│   │   └── StatCard.tsx
-│   ├── dashboard/
-│   │   └── WeeklyVolumeChart.tsx
-│   ├── layout/
-│   │   └── TabScreen.tsx
-│   ├── ui/
-│   │   ├── Button.tsx
-│   │   ├── Card.tsx
-│   │   └── LoadingScreen.tsx
-│   └── workout/
-│       └── ExerciseSlot.tsx
-├── constants/
-│   ├── accents.ts
-│   ├── legal.ts
-│   └── reminders.ts
-├── context/
-│   ├── AccentContext.tsx
-│   ├── AlertContext.tsx
-│   └── AuthContext.tsx
-├── docs/
-│   └── storage-rls-policies.sql
-├── handlers/
-│   └── notificationHandler.ts
-├── helpers/
-│   ├── dashboardUtils.ts
-│   ├── logWorkoutUtils.ts
-│   └── notificationHelpers.ts
-├── hooks/
-│   ├── useAccent.ts
-│   ├── useAccountActions.ts
-│   └── useAuthActions.ts
-├── lib/
-│   ├── supabase.ts
-│   └── supabaseQueries.ts
-├── tests/
-│   ├── app/
-│   ├── components/
-│   └── helpers/
-├── types/
-│   └── index.ts
-└── utils/
-    ├── avatarUtils.ts
-    ├── getError.ts
-    └── unitUtils.ts
-
-```
-
-## Technologies Used
-
-- **Expo** (SDK + Router + Notifications + Splash Screen)
-- **React Native** + TypeScript
-- **Supabase** (Auth, Postgres, Storage, Realtime)
-- **NativeWind** (Tailwind CSS for React Native)
-- **Jest** + **jest-expo** + React Testing Library
-- **React Reanimated**, `@expo/vector-icons`, and other Expo modules
-
----
-
-## Setup & Local Development
+## Run locally (development)
 
 ### Prerequisites
 
-- Node.js 20+
-- Expo CLI (`npm install -g expo-cli`)
-- iOS Simulator / Android Emulator or a physical device
-- A Supabase project with the required tables (`profiles`, `workouts`) and
-  storage bucket
-
-### Installation
+- Node.js and npm
+- A working Android development environment/emulator (or a physical test device)
+- A Supabase project with compatible database schema, auth settings and storage policies
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/ShaAnder/fitforge.git
 cd fitforge
 npm install
 ```
 
-## Environment Variables
+Create a `.env` file for your own Supabase project:
 
-Create a .env file in the root (or use Expo EAS secrets for production):
-
-```env
-EXPO_PUBLIC_SUPABASE_URL=your_supabase_project_url
-EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```dotenv
+EXPO_PUBLIC_SUPABASE_URL=your_project_url
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your_public_anon_key
 ```
 
-## Run Commands
+Then use the package scripts:
 
 ```bash
-npm run start          # Start development server
-npm run android        # Run on Android
-npm run ios            # Run on iOS
-npm run web            # Run web version (secondary)
-
-npm test               # Run full test suite
+npm start
+npm run android
+npm test
 ```
 
-## Deployment Notes
+**Important:** A fresh clone requires compatible Supabase setup, including schema/policies and redirect configuration; supplying environment variables alone may not reproduce the published installation. Never place a Supabase service-role key in a mobile app or `EXPO_PUBLIC_` variable. The `npm run web` script exists for development tooling but should not be treated as a working browser release.
 
-- Built for Expo Application Services (EAS) builds
-- Splash screen is configured in app.json using assets/images/splash-icon.png
-- Use environment-specific Supabase keys in production
-- Web version is functional but the app is mobile-first
+## Project status and next steps
 
-## Future Enhancements
+- **Available for evaluation:** Android APK v0.3 (GitHub pre-release).
+- **Not advertised as shipped:** Browser deployment, iOS installation, full community/achievements features.
+- **Potential future work:** More advanced analytics, library filtering, offline support, richer notifications, and expanded device testing.
 
-- Advanced analytics & trend charts
-- Enhanced exercise library with muscle group filters and search
-- Social features (share workouts, community feed)
-- Offline support (WatermelonDB or similar)
-- Apple Health / Google Fit integration
-- Full dark/light mode toggle (beyond current accent system)
+## Source and release
 
-## Credits
+- [Repository](https://github.com/ShaAnder/fitforge)
+- [Android APK — v0.3](https://github.com/ShaAnder/fitforge/releases/tag/v0.3)
 
-Built as a focused portfolio project to demonstrate real-world React Native +
-Supabase skills. Special thanks to:
-
-- The Expo team for excellent tooling and documentation
-- Supabase for making auth and backend simple and powerful
-- The React Native and Jest communities
-
-## License
-
-MIT © shaAnder
+Built as an independent software-development portfolio project.
